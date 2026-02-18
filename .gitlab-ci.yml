@@ -9,7 +9,6 @@ variables:
   APP_PORT: "8888"
   APP_SWAGGER_URL: "http://localhost:8888/swagger"
 
-# Stage 1: Build — compile the solution
 build:
   stage: build
   image: mcr.microsoft.com/dotnet/sdk:9.0
@@ -23,7 +22,6 @@ build:
       - "**/bin/Release/"
     expire_in: 1 hour
 
-# Stage 2: Lint — check code formatting
 lint:
   stage: lint
   image: mcr.microsoft.com/dotnet/sdk:9.0
@@ -35,7 +33,6 @@ lint:
   script:
     - dotnet format SuspenseManager.sln --verify-no-changes --verbosity diagnostic
 
-# Stage 3: Security — scan NuGet packages for CVEs (functional task 1)
 security:
   stage: security
   image: mcr.microsoft.com/dotnet/sdk:9.0
@@ -59,8 +56,6 @@ security:
     when: always
     expire_in: 4 weeks
 
-# Stage 4: Docker — build image and deploy container (functional task 2)
-# environment.url ensures GitLab shows a proper URL instead of container ID
 docker:
   stage: docker
   image: docker:latest
