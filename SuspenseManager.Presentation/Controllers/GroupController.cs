@@ -56,7 +56,9 @@ public class GroupController : ControllerBase
     {
         var group = await _groupService.GetByIdAsync(id, ct);
         if (group == null)
+        {
             return NotFound(ApiResponse<object>.Fail(404, $"Группа с ID {id} не найдена", "NOT_FOUND"));
+        }
 
         return Ok(ApiResponse<Models.SuspenseGroup>.Success(group));
     }

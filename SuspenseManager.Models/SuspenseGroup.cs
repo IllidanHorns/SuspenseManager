@@ -1,4 +1,4 @@
-﻿namespace Models;
+namespace Models;
 
 public class SuspenseGroup
 {
@@ -6,38 +6,38 @@ public class SuspenseGroup
     /// PK
     /// </summary>
     public int Id { get; set; }
-    
+
     /// <summary>
     /// Основной статус, с помощью которого определяется состояние объекта.
     /// Статус является общим определением дял строки суспенса и группы, и талицы метаданных
     /// </summary>
     public int BusinessStatus { get; set; }
-    
+
     /// <summary>
     /// Время создания
     /// </summary>
     public DateTime CreateTime { get; set; }
-    
+
     /// <summary>
     /// Время изменения
     /// </summary>
     public DateTime ChangeTime { get; set; }
-    
+
     /// <summary>
     /// Время мягкого удаления
     /// </summary>
     public DateTime ArchiveTime { get; set; }
-    
+
     /// <summary>
     /// Мягкое удаление
     /// </summary>
     public int ArchiveLevel { get; set; }
-    
+
     /// <summary>
     /// FK для связи с аккантом
     /// </summary>
     public int AccountId { get; set; }
-    
+
     /// <summary>
     /// Сущность связи аккаунта
     /// </summary>

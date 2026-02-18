@@ -33,7 +33,9 @@ public class AuthService : IAuthService
             ?? throw new BusinessException("Неверный логин или пароль", "INVALID_CREDENTIALS", 401);
 
         if (!BCrypt.Net.BCrypt.Verify(dto.Password, account.PasswordHash))
+        {
             throw new BusinessException("Неверный логин или пароль", "INVALID_CREDENTIALS", 401);
+        }
 
         var permissions = account.RightsLinks
             .Where(rl => rl.ArchiveLevel == 0)
@@ -65,14 +67,20 @@ public class AuthService : IAuthService
             ?? throw new BusinessException("Невалидный refresh токен", "INVALID_REFRESH_TOKEN", 401);
 
         if (storedToken.IsRevoked)
+        {
             throw new BusinessException("Refresh токен был отозван", "REVOKED_REFRESH_TOKEN", 401);
+        }
 
         if (storedToken.IsExpired)
+        {
             throw new BusinessException("Refresh токен истёк", "EXPIRED_REFRESH_TOKEN", 401);
+        }
 
         var account = storedToken.Account;
         if (account.ArchiveLevel != 0)
+        {
             throw new BusinessException("Аккаунт деактивирован", "ACCOUNT_DISABLED", 401);
+        }
 
         var permissions = account.RightsLinks
             .Where(rl => rl.ArchiveLevel == 0)
@@ -102,7 +110,9 @@ public class AuthService : IAuthService
             ?? throw new BusinessException("Невалидный refresh токен", "INVALID_REFRESH_TOKEN", 400);
 
         if (!storedToken.IsActive)
+        {
             return;
+        }
 
         storedToken.RevokedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);

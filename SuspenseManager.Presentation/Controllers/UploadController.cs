@@ -36,14 +36,20 @@ public class UploadController : ControllerBase
     public async Task<IActionResult> Upload(IFormFile file)
     {
         if (file == null || file.Length == 0)
+        {
             return BadRequest(ApiResponse<object>.Fail(400, "Файл не передан", "FILE_EMPTY"));
+        }
 
         if (file.Length > MaxFileSize)
+        {
             return BadRequest(ApiResponse<object>.Fail(400, "Файл слишком большой. Максимум 50 МБ", "FILE_TOO_LARGE"));
+        }
 
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!AllowedExtensions.Contains(extension))
+        {
             return BadRequest(ApiResponse<object>.Fail(400, "Допустимые форматы: .xlsx, .xls", "FILE_INVALID_FORMAT"));
+        }
 
         _logger.LogInformation("Загрузка файла: {FileName}, размер: {FileSize} байт", file.FileName, file.Length);
 
@@ -51,7 +57,9 @@ public class UploadController : ControllerBase
         var lines = _excelParsingService.ParseExcel(stream);
 
         if (lines.Count == 0)
+        {
             return BadRequest(ApiResponse<object>.Fail(400, "Файл не содержит данных", "FILE_NO_DATA"));
+        }
 
         var result = await _validationService.ValidateBatchAsync(lines);
 

@@ -101,7 +101,9 @@ builder.Services.AddSwaggerGen(c =>
     // XML-комментарии для Swagger
     var xmlFiles = Directory.GetFiles(AppContext.BaseDirectory, "*.xml", SearchOption.TopDirectoryOnly);
     foreach (var xmlFile in xmlFiles)
+    {
         c.IncludeXmlComments(xmlFile);
+    }
 });
 
 var app = builder.Build();

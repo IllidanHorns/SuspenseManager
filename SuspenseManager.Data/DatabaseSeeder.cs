@@ -13,7 +13,9 @@ public static class DatabaseSeeder
     public static async Task SeedAsync(SuspenseManagerDbContext db)
     {
         if (await db.Companies.AnyAsync())
+        {
             return; // уже засидено
+        }
 
         // === Территории ===
         var territories = new[]
@@ -169,9 +171,13 @@ public static class DatabaseSeeder
         // === Пользователь и аккаунт ===
         var user = new User
         {
-            Name = "Админ", Surname = "Системный", MiddleName = "Тестович",
-            Email = "admin@suspense.local", PhoneNumber = "+70001234567",
-            Position = "Администратор", CreateTime = DateTime.UtcNow
+            Name = "Админ",
+            Surname = "Системный",
+            MiddleName = "Тестович",
+            Email = "admin@suspense.local",
+            PhoneNumber = "+70001234567",
+            Position = "Администратор",
+            CreateTime = DateTime.UtcNow
         };
         db.Users.Add(user);
         await db.SaveChangesAsync();

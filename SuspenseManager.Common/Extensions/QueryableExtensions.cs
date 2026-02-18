@@ -47,13 +47,17 @@ public static class QueryableExtensions
         string sortDirection = "asc") where T : class
     {
         if (string.IsNullOrWhiteSpace(sortBy))
+        {
             return query;
+        }
 
         var property = typeof(T).GetProperty(sortBy,
             BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
 
         if (property == null)
+        {
             return query;
+        }
 
         var parameter = Expression.Parameter(typeof(T), "x");
         var propertyAccess = Expression.Property(parameter, property);
@@ -83,14 +87,18 @@ public static class QueryableExtensions
         Dictionary<string, string>? filters) where T : class
     {
         if (filters == null || filters.Count == 0)
+        {
             return query;
+        }
 
         var parameter = Expression.Parameter(typeof(T), "x");
 
         foreach (var filter in filters)
         {
             if (string.IsNullOrWhiteSpace(filter.Value))
+            {
                 continue;
+            }
 
             var (propertyName, operation) = ParseFilterKey(filter.Key);
 
@@ -98,11 +106,15 @@ public static class QueryableExtensions
                 BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
 
             if (property == null)
+            {
                 continue;
+            }
 
             var expression = BuildFilterExpression(parameter, property, operation, filter.Value);
             if (expression == null)
+            {
                 continue;
+            }
 
             var lambda = Expression.Lambda<Func<T, bool>>(expression, parameter);
             query = query.Where(lambda);
@@ -114,19 +126,39 @@ public static class QueryableExtensions
     private static (string propertyName, FilterOperation operation) ParseFilterKey(string key)
     {
         if (key.EndsWith("_contains", StringComparison.OrdinalIgnoreCase))
+        {
             return (key[..^9], FilterOperation.Contains);
+        }
+
         if (key.EndsWith("_gt", StringComparison.OrdinalIgnoreCase))
+        {
             return (key[..^3], FilterOperation.GreaterThan);
+        }
+
         if (key.EndsWith("_gte", StringComparison.OrdinalIgnoreCase))
+        {
             return (key[..^4], FilterOperation.GreaterThanOrEqual);
+        }
+
         if (key.EndsWith("_lt", StringComparison.OrdinalIgnoreCase))
+        {
             return (key[..^3], FilterOperation.LessThan);
+        }
+
         if (key.EndsWith("_lte", StringComparison.OrdinalIgnoreCase))
+        {
             return (key[..^4], FilterOperation.LessThanOrEqual);
+        }
+
         if (key.EndsWith("_from", StringComparison.OrdinalIgnoreCase))
+        {
             return (key[..^5], FilterOperation.GreaterThanOrEqual);
+        }
+
         if (key.EndsWith("_to", StringComparison.OrdinalIgnoreCase))
+        {
             return (key[..^3], FilterOperation.LessThanOrEqual);
+        }
 
         return (key, FilterOperation.Equals);
     }
@@ -167,7 +199,9 @@ public static class QueryableExtensions
         // Для числовых и дат — парсим значение
         object? parsedValue = TryParseValue(propertyType, value);
         if (parsedValue == null)
+        {
             return null;
+        }
 
         var typedConstant = Expression.Constant(parsedValue, property.PropertyType.IsGenericType
             ? property.PropertyType
@@ -185,7 +219,10 @@ public static class QueryableExtensions
 
             var hasValue = Expression.Property(propertyAccess, "HasValue");
             var comparison = BuildComparisonExpression(left, right, operation);
-            if (comparison == null) return null;
+            if (comparison == null)
+            {
+                return null;
+            }
 
             return Expression.AndAlso(hasValue, comparison);
         }
@@ -211,14 +248,46 @@ public static class QueryableExtensions
     {
         try
         {
-            if (type == typeof(int) && int.TryParse(value, out var intVal)) return intVal;
-            if (type == typeof(long) && long.TryParse(value, out var longVal)) return longVal;
-            if (type == typeof(decimal) && decimal.TryParse(value, out var decVal)) return decVal;
-            if (type == typeof(double) && double.TryParse(value, out var dblVal)) return dblVal;
-            if (type == typeof(float) && float.TryParse(value, out var fltVal)) return fltVal;
-            if (type == typeof(bool) && bool.TryParse(value, out var boolVal)) return boolVal;
-            if (type == typeof(DateTime) && DateTime.TryParse(value, out var dtVal)) return dtVal;
-            if (type == typeof(DateOnly) && DateOnly.TryParse(value, out var doVal)) return doVal;
+            if (type == typeof(int) && int.TryParse(value, out var intVal))
+            {
+                return intVal;
+            }
+
+            if (type == typeof(long) && long.TryParse(value, out var longVal))
+            {
+                return longVal;
+            }
+
+            if (type == typeof(decimal) && decimal.TryParse(value, out var decVal))
+            {
+                return decVal;
+            }
+
+            if (type == typeof(double) && double.TryParse(value, out var dblVal))
+            {
+                return dblVal;
+            }
+
+            if (type == typeof(float) && float.TryParse(value, out var fltVal))
+            {
+                return fltVal;
+            }
+
+            if (type == typeof(bool) && bool.TryParse(value, out var boolVal))
+            {
+                return boolVal;
+            }
+
+            if (type == typeof(DateTime) && DateTime.TryParse(value, out var dtVal))
+            {
+                return dtVal;
+            }
+
+            if (type == typeof(DateOnly) && DateOnly.TryParse(value, out var doVal))
+            {
+                return doVal;
+            }
+
             return null;
         }
         catch

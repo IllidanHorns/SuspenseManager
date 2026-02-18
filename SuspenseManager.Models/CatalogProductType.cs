@@ -1,4 +1,4 @@
-﻿namespace Models;
+namespace Models;
 
 public class CatalogProductType
 {
@@ -6,22 +6,22 @@ public class CatalogProductType
     /// PK
     /// </summary>
     public int Id { get; set; }
-    
+
     /// <summary>
     /// Сокращенный код формата продукта
     /// </summary>
     public string Code { get; set; }
-    
+
     /// <summary>
     /// Описание формата продукта порлное
     /// </summary>
-    public string Description  { get; set; }
-    
+    public string Description { get; set; }
+
     /// <summary>
     /// Коллекция продуктов данного типа (1 тип — много продуктов)
     /// </summary>
     public List<CatalogProduct> CatalogProducts { get; set; }
-    
+
     /// <summary>
     /// Дата создания
     /// </summary>

@@ -40,7 +40,9 @@ public class AccountService : IAccountService
     {
         var exists = await _db.Accounts.AnyAsync(a => a.Login == dto.Login && a.ArchiveLevel == 0, ct);
         if (exists)
+        {
             throw new BusinessException("Аккаунт с таким логином уже существует", "ACCOUNT_EXISTS", 409);
+        }
 
         var account = new Account
         {
@@ -69,18 +71,27 @@ public class AccountService : IAccountService
         {
             var exists = await _db.Accounts.AnyAsync(a => a.Login == dto.Login && a.Id != id && a.ArchiveLevel == 0, ct);
             if (exists)
+            {
                 throw new BusinessException("Аккаунт с таким логином уже существует", "ACCOUNT_EXISTS", 409);
+            }
+
             account.Login = dto.Login;
         }
 
         if (dto.Password != null)
+        {
             account.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+        }
 
         if (dto.Description != null)
+        {
             account.Description = dto.Description;
+        }
 
         if (dto.UserId.HasValue)
+        {
             account.UserId = dto.UserId;
+        }
 
         account.ChangeTime = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);

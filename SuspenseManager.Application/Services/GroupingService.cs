@@ -42,7 +42,9 @@ public class GroupingService : IGroupingService
 
         var connection = _db.Database.GetDbConnection();
         if (connection.State != System.Data.ConnectionState.Open)
+        {
             await connection.OpenAsync(ct);
+        }
 
         // COUNT-запрос (количество групп)
         int totalCount;
@@ -100,9 +102,11 @@ public class GroupingService : IGroupingService
         var suspenses = await FindMatchingSuspensesAsync(request, ct);
 
         if (suspenses.Count == 0)
+        {
             throw new BusinessException(
                 "Не найдено суспенсов, соответствующих критериям группировки",
                 "NO_MATCHING_SUSPENSES");
+        }
 
         await using var transaction = await _db.Database.BeginTransactionAsync(ct);
 
@@ -218,7 +222,9 @@ public class GroupingService : IGroupingService
         foreach (var col in request.GroupByColumns.Where(c => catalogColumns.Contains(c)))
         {
             if (!request.KeyValues.TryGetValue(col, out var value))
+            {
                 continue;
+            }
 
             query = col switch
             {
@@ -255,7 +261,9 @@ public class GroupingService : IGroupingService
         foreach (var col in columns)
         {
             if (!keyValues.TryGetValue(col, out var value))
+            {
                 continue;
+            }
 
             query = col switch
             {

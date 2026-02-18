@@ -23,22 +23,22 @@ public class CatalogProductRightsConfiguration : IEntityTypeConfiguration<Catalo
         builder.Property(x => x.CatalogProductId).IsRequired();
         builder.Property(x => x.CreateTime).IsRequired();
         builder.Property(x => x.ArchiveLevel).IsRequired();
-        
+
         builder.HasOne(x => x.CatalogProduct)
             .WithMany(p => p.ProductRights)
             .HasForeignKey(x => x.CatalogProductId)
             .OnDelete(DeleteBehavior.Restrict);
-        
+
         builder.HasOne(x => x.CompanySenderR)
             .WithMany()
             .HasForeignKey(x => x.CompanySenderId)
             .OnDelete(DeleteBehavior.Restrict);
-        
+
         builder.HasOne(x => x.CompanyReceiverR)
             .WithMany()
             .HasForeignKey(x => x.CompanyReceiverId)
             .OnDelete(DeleteBehavior.Restrict);
-        
+
         builder.HasOne(x => x.Territory)
             .WithMany()
             .HasForeignKey(x => x.TerritoryId)

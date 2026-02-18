@@ -1,6 +1,6 @@
-﻿namespace SuspenseManager.Tools;
+namespace SuspenseManager.Tools;
 
 public class qwe
 {
-    
+
 }

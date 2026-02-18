@@ -120,7 +120,9 @@ public class ExcelParsingService : IExcelParsingService
         {
             var header = worksheet.Cell(1, col).GetString().Trim();
             if (string.IsNullOrEmpty(header))
+            {
                 continue;
+            }
 
             if (ColumnAliases.TryGetValue(header, out var propertyName))
             {
@@ -138,7 +140,9 @@ public class ExcelParsingService : IExcelParsingService
     {
         // Пропускаем полностью пустые строки
         if (ws.Row(row).IsEmpty())
+        {
             return null;
+        }
 
         var dto = new SuspenseLineDto
         {
@@ -167,7 +171,9 @@ public class ExcelParsingService : IExcelParsingService
     private static string? GetString(IXLWorksheet ws, int row, Dictionary<string, int> map, string property)
     {
         if (!map.TryGetValue(property, out var col))
+        {
             return null;
+        }
 
         var value = ws.Cell(row, col).GetString().Trim();
         return string.IsNullOrEmpty(value) ? null : value;
@@ -176,7 +182,9 @@ public class ExcelParsingService : IExcelParsingService
     private static int GetInt(IXLWorksheet ws, int row, Dictionary<string, int> map, string property)
     {
         if (!map.TryGetValue(property, out var col))
+        {
             return 0;
+        }
 
         return ws.Cell(row, col).TryGetValue(out int value) ? value : 0;
     }
@@ -184,7 +192,9 @@ public class ExcelParsingService : IExcelParsingService
     private static double? GetDouble(IXLWorksheet ws, int row, Dictionary<string, int> map, string property)
     {
         if (!map.TryGetValue(property, out var col))
+        {
             return null;
+        }
 
         return ws.Cell(row, col).TryGetValue(out double value) ? value : null;
     }
@@ -192,11 +202,15 @@ public class ExcelParsingService : IExcelParsingService
     private static decimal GetDecimal(IXLWorksheet ws, int row, Dictionary<string, int> map, string property)
     {
         if (!map.TryGetValue(property, out var col))
+        {
             return 0;
+        }
 
         // ClosedXML не имеет TryGetValue<decimal>, поэтому через double
         if (ws.Cell(row, col).TryGetValue(out double value))
+        {
             return (decimal)value;
+        }
 
         return 0;
     }

@@ -39,7 +39,9 @@ public class UserService : IUserService
     {
         var exists = await _db.Users.AnyAsync(u => u.Email == dto.Email && u.ArchiveLevel == 0, ct);
         if (exists)
+        {
             throw new BusinessException("Пользователь с таким email уже существует", "USER_EXISTS", 409);
+        }
 
         var user = new User
         {
@@ -64,18 +66,40 @@ public class UserService : IUserService
             .FirstOrDefaultAsync(u => u.Id == id && u.ArchiveLevel == 0, ct)
             ?? throw new KeyNotFoundException($"Пользователь с ID {id} не найден");
 
-        if (dto.Name != null) user.Name = dto.Name;
-        if (dto.Surname != null) user.Surname = dto.Surname;
-        if (dto.MiddleName != null) user.MiddleName = dto.MiddleName;
+        if (dto.Name != null)
+        {
+            user.Name = dto.Name;
+        }
+
+        if (dto.Surname != null)
+        {
+            user.Surname = dto.Surname;
+        }
+
+        if (dto.MiddleName != null)
+        {
+            user.MiddleName = dto.MiddleName;
+        }
+
         if (dto.Email != null)
         {
             var exists = await _db.Users.AnyAsync(u => u.Email == dto.Email && u.Id != id && u.ArchiveLevel == 0, ct);
             if (exists)
+            {
                 throw new BusinessException("Пользователь с таким email уже существует", "USER_EXISTS", 409);
+            }
+
             user.Email = dto.Email;
         }
-        if (dto.PhoneNumber != null) user.PhoneNumber = dto.PhoneNumber;
-        if (dto.Position != null) user.Position = dto.Position;
+        if (dto.PhoneNumber != null)
+        {
+            user.PhoneNumber = dto.PhoneNumber;
+        }
+
+        if (dto.Position != null)
+        {
+            user.Position = dto.Position;
+        }
 
         user.ChangeTime = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);

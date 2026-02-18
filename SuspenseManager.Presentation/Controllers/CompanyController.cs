@@ -36,7 +36,9 @@ public class CompanyController : ControllerBase
     {
         var company = await _companyService.GetByIdAsync(id, ct);
         if (company == null)
+        {
             return NotFound(ApiResponse<object>.Fail(404, $"Компания с ID {id} не найдена", "NOT_FOUND"));
+        }
 
         return Ok(ApiResponse<Models.Company>.Success(company));
     }

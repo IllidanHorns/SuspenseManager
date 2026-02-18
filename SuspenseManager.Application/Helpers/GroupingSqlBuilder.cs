@@ -63,26 +63,34 @@ public static class GroupingSqlBuilder
     public static void ValidateRequest(int businessStatus, List<string> groupByColumns)
     {
         if (businessStatus is not (0 or 1))
+        {
             throw new BusinessException("BusinessStatus должен быть 0 или 1", "INVALID_STATUS");
+        }
 
         if (groupByColumns.Count == 0)
+        {
             throw new BusinessException("Необходимо указать хотя бы один столбец для группировки", "NO_COLUMNS");
+        }
 
         var allowed = GetAllowedColumns(businessStatus);
 
         foreach (var col in groupByColumns)
         {
             if (!allowed.ContainsKey(col))
+            {
                 throw new BusinessException(
                     $"Столбец '{col}' не допустим для группировки при статусе {businessStatus}. " +
                     $"Допустимые: {string.Join(", ", allowed.Keys)}",
                     "INVALID_COLUMN");
+            }
         }
 
         if (businessStatus == 1 && !groupByColumns.Any(c => c.Equals("ProductId", StringComparison.OrdinalIgnoreCase)))
+        {
             throw new BusinessException(
                 "Для статуса 1 (нет прав) группировка по ProductId обязательна",
                 "PRODUCT_ID_REQUIRED");
+        }
     }
 
     /// <summary>
@@ -130,18 +138,24 @@ public static class GroupingSqlBuilder
             foreach (var filter in filters)
             {
                 if (string.IsNullOrWhiteSpace(filter.Value))
+                {
                     continue;
+                }
 
                 var (propName, op) = ParseFilterKey(filter.Key);
                 if (!allowed.ContainsKey(propName))
+                {
                     continue;
+                }
 
                 var sqlCol = allowed[propName];
                 var paramName = $"@p{paramIndex}";
 
                 var condition = BuildFilterCondition(sqlCol, paramName, op, filter.Value, parameters, ref paramIndex);
                 if (condition != null)
+                {
                     whereConditions.Add(condition);
+                }
             }
         }
 
@@ -220,9 +234,11 @@ public static class GroupingSqlBuilder
         foreach (var col in groupByColumns)
         {
             if (!keyValues.TryGetValue(col, out var value))
+            {
                 throw new BusinessException(
                     $"Значение для столбца '{col}' не указано в KeyValues",
                     "MISSING_KEY_VALUE");
+            }
 
             var sqlCol = allowed[col];
             var paramName = $"@p{paramIndex}";
@@ -246,19 +262,39 @@ public static class GroupingSqlBuilder
     private static (string propertyName, string operation) ParseFilterKey(string key)
     {
         if (key.EndsWith("_contains", StringComparison.OrdinalIgnoreCase))
+        {
             return (key[..^9], "contains");
+        }
+
         if (key.EndsWith("_gte", StringComparison.OrdinalIgnoreCase))
+        {
             return (key[..^4], "gte");
+        }
+
         if (key.EndsWith("_gt", StringComparison.OrdinalIgnoreCase))
+        {
             return (key[..^3], "gt");
+        }
+
         if (key.EndsWith("_lte", StringComparison.OrdinalIgnoreCase))
+        {
             return (key[..^4], "lte");
+        }
+
         if (key.EndsWith("_lt", StringComparison.OrdinalIgnoreCase))
+        {
             return (key[..^3], "lt");
+        }
+
         if (key.EndsWith("_from", StringComparison.OrdinalIgnoreCase))
+        {
             return (key[..^5], "gte");
+        }
+
         if (key.EndsWith("_to", StringComparison.OrdinalIgnoreCase))
+        {
             return (key[..^3], "lte");
+        }
 
         return (key, "eq");
     }

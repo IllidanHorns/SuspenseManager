@@ -31,7 +31,9 @@ public class AccountController : ControllerBase
     {
         var account = await _accountService.GetByIdAsync(id, ct);
         if (account == null)
+        {
             return NotFound(ApiResponse<object>.Fail(404, $"Аккаунт с ID {id} не найден", "NOT_FOUND"));
+        }
 
         return Ok(ApiResponse<Models.Account>.Success(account));
     }

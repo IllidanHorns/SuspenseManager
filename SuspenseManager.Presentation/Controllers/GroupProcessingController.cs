@@ -33,7 +33,9 @@ public class GroupProcessingController : ControllerBase
     {
         var meta = await _processingService.GetMetadataAsync(groupId, ct);
         if (meta == null)
+        {
             return Ok(ApiResponse<object>.Success(null!, "Метаданные не заданы"));
+        }
 
         return Ok(ApiResponse<Models.GroupMetadata>.Success(meta));
     }
@@ -45,7 +47,9 @@ public class GroupProcessingController : ControllerBase
     {
         var metaRights = await _processingService.GetMetaRightsAsync(groupId, ct);
         if (metaRights == null)
+        {
             return Ok(ApiResponse<object>.Success(null!, "Метаправа не заданы"));
+        }
 
         return Ok(ApiResponse<Models.GroupMetaRights>.Success(metaRights));
     }

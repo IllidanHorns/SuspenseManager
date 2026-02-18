@@ -1,10 +1,10 @@
 using Application.Interfaces;
 using Common.DTOs;
+using Common.Exceptions;
 using Common.Extensions;
 using Data;
 using Microsoft.EntityFrameworkCore;
 using Models;
-using Common.Exceptions;
 
 namespace Application.Services;
 
@@ -66,7 +66,9 @@ public class SuspenseService : ISuspenseService
     public async Task<PagedResponse<SuspenseLine>> GetUngroupedAsync(int businessStatus, PagedRequest request, CancellationToken ct = default)
     {
         if (businessStatus != 0 && businessStatus != 1)
+        {
             throw new BusinessException("Допустимые статусы: 0 (нет продукта) или 1 (нет прав)", "INVALID_STATUS");
+        }
 
         var query = _db.SuspenseLines
             .AsNoTracking()

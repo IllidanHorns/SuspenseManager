@@ -31,7 +31,9 @@ public class UserController : ControllerBase
     {
         var user = await _userService.GetByIdAsync(id, ct);
         if (user == null)
+        {
             return NotFound(ApiResponse<object>.Fail(404, $"Пользователь с ID {id} не найден", "NOT_FOUND"));
+        }
 
         return Ok(ApiResponse<Models.User>.Success(user));
     }

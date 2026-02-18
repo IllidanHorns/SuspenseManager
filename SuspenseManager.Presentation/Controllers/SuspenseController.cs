@@ -47,7 +47,9 @@ public class SuspenseController : ControllerBase
     {
         var entity = await _suspenseService.GetByIdAsync(id, ct);
         if (entity == null)
+        {
             return NotFound(ApiResponse<object>.Fail(404, $"Суспенс с ID {id} не найден", "NOT_FOUND"));
+        }
 
         return Ok(ApiResponse<Models.SuspenseLine>.Success(entity));
     }

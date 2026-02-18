@@ -79,7 +79,9 @@ public class GroupProcessingService : IGroupProcessingService
         var group = await GetGroupOrThrowAsync(groupId, ct);
 
         if (group.BusinessStatus != (int)BusinessStatus.InGroupNoRights)
+        {
             throw new BusinessException("Обновление метаправ доступно только для групп со статусом 'нет прав' (16)", "INVALID_STATUS");
+        }
 
         var metaRights = await _db.GroupMetaRights.FirstOrDefaultAsync(m => m.GroupId == groupId, ct);
         if (metaRights == null)
@@ -124,14 +126,18 @@ public class GroupProcessingService : IGroupProcessingService
             ?? throw new KeyNotFoundException($"Группа с ID {groupId} не найдена");
 
         if (group.BusinessStatus != (int)BusinessStatus.InGroupNoProduct)
+        {
             throw new BusinessException("Быстрая каталогизация доступна только для групп со статусом 'нет продукта' (15)", "INVALID_STATUS");
+        }
 
         // Собираем данные: приоритет метаданные > первый суспенс
         var meta = group.GroupMetaData;
         var firstSuspense = group.SuspenseLines.FirstOrDefault();
 
         if (meta == null && firstSuspense == null)
+        {
             throw new BusinessException("В группе нет данных для создания продукта (ни метаданных, ни суспенсов)", "NO_DATA_FOR_CATALOG");
+        }
 
         var isrc = meta?.Isrc ?? firstSuspense?.Isrc ?? string.Empty;
         var barcode = meta?.Barcode ?? firstSuspense?.Barcode ?? string.Empty;
@@ -331,7 +337,9 @@ public class GroupProcessingService : IGroupProcessingService
         var group = await GetGroupOrThrowAsync(groupId, ct);
 
         if (group.BusinessStatus != (int)BusinessStatus.InGroupNoProduct)
+        {
             throw new BusinessException("Привязка продукта доступна только для групп со статусом 'нет продукта' (15)", "INVALID_STATUS");
+        }
 
         var product = await _db.CatalogProducts
             .FirstOrDefaultAsync(p => p.Id == dto.ProductId && p.ArchiveLevel == 0, ct)
@@ -412,7 +420,9 @@ public class GroupProcessingService : IGroupProcessingService
             s.BusinessStatus = newStatus;
             s.ChangeTime = DateTime.UtcNow;
             if (productId.HasValue)
+            {
                 s.ProductId = productId.Value;
+            }
         }
     }
 }

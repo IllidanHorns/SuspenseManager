@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using ClosedXML.Excel;
 
@@ -21,7 +21,9 @@ var headers = new[]
 };
 
 for (var i = 0; i < headers.Length; i++)
+{
     ws.Cell(1, i + 1).Value = headers[i];
+}
 
 // Строка 1: "Летний вечер" — полное совпадение продукта + прав → статус 88
 AddRow(ws, 2,

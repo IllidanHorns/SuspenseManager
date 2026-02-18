@@ -36,7 +36,9 @@ public class ExcelExportService : IExcelExportService
         };
 
         for (int i = 0; i < headers.Length; i++)
+        {
             ws.Cell(1, i + 1).Value = headers[i];
+        }
 
         // Данные
         for (int row = 0; row < suspenses.Count; row++)
@@ -99,7 +101,9 @@ public class ExcelExportService : IExcelExportService
         };
 
         for (int i = 0; i < headers.Length; i++)
+        {
             ws.Cell(1, i + 1).Value = headers[i];
+        }
 
         for (int row = 0; row < groups.Count; row++)
         {

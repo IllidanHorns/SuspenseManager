@@ -1,36 +1,35 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Data.Migrations
+namespace Data.Migrations;
+
+/// <inheritdoc />
+public partial class MakeGroupMetadataCatalogProductIdNullable : Migration
 {
     /// <inheritdoc />
-    public partial class MakeGroupMetadataCatalogProductIdNullable : Migration
+    protected override void Up(MigrationBuilder migrationBuilder)
     {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.AlterColumn<int>(
-                name: "CatalogProductId",
-                table: "GroupMetadata",
-                type: "int",
-                nullable: true,
-                oldClrType: typeof(int),
-                oldType: "int");
-        }
+        migrationBuilder.AlterColumn<int>(
+            name: "CatalogProductId",
+            table: "GroupMetadata",
+            type: "int",
+            nullable: true,
+            oldClrType: typeof(int),
+            oldType: "int");
+    }
 
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.AlterColumn<int>(
-                name: "CatalogProductId",
-                table: "GroupMetadata",
-                type: "int",
-                nullable: false,
-                defaultValue: 0,
-                oldClrType: typeof(int),
-                oldType: "int",
-                oldNullable: true);
-        }
+    /// <inheritdoc />
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.AlterColumn<int>(
+            name: "CatalogProductId",
+            table: "GroupMetadata",
+            type: "int",
+            nullable: false,
+            defaultValue: 0,
+            oldClrType: typeof(int),
+            oldType: "int",
+            oldNullable: true);
     }
 }
