@@ -1,0 +1,88 @@
+stages:
+  - build
+  - lint
+  - security
+  - docker
+
+variables:
+  CONTAINER_NAME: suspense-manager
+  APP_PORT: "8888"
+  APP_SWAGGER_URL: "http://localhost:8888/swagger"
+
+# Stage 1: Build — compile the solution
+build:
+  stage: build
+  image: mcr.microsoft.com/dotnet/sdk:9.0
+  tags:
+    - docker
+  script:
+    - dotnet restore SuspenseManager.sln
+    - dotnet build SuspenseManager.sln --configuration Release --no-restore --verbosity minimal
+  artifacts:
+    paths:
+      - "**/bin/Release/"
+    expire_in: 1 hour
+
+# Stage 2: Lint — check code formatting
+lint:
+  stage: lint
+  image: mcr.microsoft.com/dotnet/sdk:9.0
+  tags:
+    - docker
+  needs:
+    - job: build
+      artifacts: false
+  script:
+    - dotnet format SuspenseManager.sln --verify-no-changes --verbosity diagnostic
+
+# Stage 3: Security — scan NuGet packages for CVEs (functional task 1)
+security:
+  stage: security
+  image: mcr.microsoft.com/dotnet/sdk:9.0
+  tags:
+    - docker
+  needs:
+    - job: build
+      artifacts: false
+  script:
+    - dotnet restore SuspenseManager.sln
+    - dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerability-report.txt
+    - |
+      if grep -q "has the following vulnerable packages" vulnerability-report.txt; then
+        echo "SECURITY: Vulnerable NuGet packages detected!"
+        exit 1
+      fi
+      echo "Security check passed — no vulnerable packages found."
+  artifacts:
+    paths:
+      - vulnerability-report.txt
+    when: always
+    expire_in: 4 weeks
+
+# Stage 4: Docker — build image and deploy container (functional task 2)
+# environment.url ensures GitLab shows a proper URL instead of container ID
+docker:
+  stage: docker
+  image: docker:latest
+  tags:
+    - docker
+  needs:
+    - job: lint
+      artifacts: false
+    - job: security
+      artifacts: false
+  before_script:
+    - docker info
+  script:
+    - docker build --file SuspenseManager.Presentation/Dockerfile --tag "$CONTAINER_NAME:$CI_COMMIT_SHORT_SHA" --tag "$CONTAINER_NAME:latest" .
+    - docker stop "$CONTAINER_NAME" 2>/dev/null || true
+    - docker rm "$CONTAINER_NAME" 2>/dev/null || true
+    - docker run --detach --name "$CONTAINER_NAME" --restart unless-stopped --publish "${APP_PORT}:8080" --env ASPNETCORE_ENVIRONMENT=Development --env ASPNETCORE_URLS=http://+:8080 "$CONTAINER_NAME:$CI_COMMIT_SHORT_SHA"
+    - docker ps --filter "name=$CONTAINER_NAME"
+    - echo "Application available at $APP_SWAGGER_URL"
+  environment:
+    name: production
+    url: $APP_SWAGGER_URL
+  only:
+    - master
+    - main

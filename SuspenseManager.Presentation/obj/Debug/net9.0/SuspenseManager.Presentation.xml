@@ -1,0 +1,209 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SuspenseManager.Presentation</name>
+    </assembly>
+    <members>
+        <member name="M:SuspenseManager.Controllers.AnalyticsController.GetDashboard(System.Threading.CancellationToken)">
+            <summary>
+            Дашборд аналитики: общая статистика, топ операторов, распределение по статусам
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.AuthController.Login(Common.DTOs.LoginDto,System.Threading.CancellationToken)">
+            <summary>
+            Авторизация по логину/паролю. Возвращает access + refresh токены.
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.AuthController.Refresh(Common.DTOs.RefreshTokenDto,System.Threading.CancellationToken)">
+            <summary>
+            Обновление access токена по refresh токену. Возвращает новую пару токенов (rotation).
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.AuthController.Revoke(Common.DTOs.RefreshTokenDto,System.Threading.CancellationToken)">
+            <summary>
+            Отзыв refresh токена (logout).
+            </summary>
+        </member>
+        <member name="T:SuspenseManager.Controllers.CompanyController">
+            <summary>
+            Контроллер компаний: отправители и получатели
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.CompanyController.GetAll(Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
+            <summary>
+            Список компаний с пагинацией, фильтрацией, сортировкой — п.11, п.12
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.CompanyController.GetById(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Компания по ID
+            </summary>
+        </member>
+        <member name="T:SuspenseManager.Controllers.GroupController">
+            <summary>
+            Контроллер групп: просмотр сохранённых групп, нет продукта, нет прав, суспенсы группы
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.GroupController.GetNoProduct(Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
+            <summary>
+            Группы "нет продукта" (статус 15) — п.8
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.GroupController.GetNoRights(Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
+            <summary>
+            Группы "нет прав" (статус 16) — п.8
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.GroupController.GetSaved(Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
+            <summary>
+            Все сохранённые группы (статус 15 и 16) — п.10
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.GroupController.GetById(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Группа по ID с метаданными
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.GroupController.GetGroupSuspenses(System.Int32,Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
+            <summary>
+            Суспенсы конкретной группы с пагинацией
+            </summary>
+        </member>
+        <member name="T:SuspenseManager.Controllers.GroupingController">
+            <summary>
+            Динамическая группировка суспенсов: предпросмотр и фиксация групп.
+            Позволяет сгруппировать суспенсы по произвольному набору столбцов,
+            просмотреть результат и зафиксировать выбранную группу.
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.GroupingController.Preview(Common.DTOs.GroupingPreviewRequest,System.Threading.CancellationToken)">
+             <summary>
+             Предпросмотр динамической группировки суспенсов.
+             </summary>
+             <remarks>
+             Выполняет GROUP BY по выбранным столбцам с поддержкой фильтрации, сортировки и пагинации.
+            
+             **Статус 0 (нет продукта):** все столбцы берутся из SuspenseLine.
+             Допустимые: Isrc, Barcode, CatalogNumber, Artist, TrackTitle, Genre,
+             SenderCompany, RecipientCompany, Operator, AgreementType, AgreementNumber, TerritoryCode.
+            
+             **Статус 1 (нет прав):** продуктовые поля берутся из CatalogProduct, остальные из SuspenseLine.
+             ProductId — **обязателен**.
+             Допустимые: ProductId, Isrc, Barcode, CatalogNumber, ProductName, Artist,
+             SenderCompany, RecipientCompany, Operator, AgreementType, AgreementNumber, TerritoryCode.
+            
+             **Фильтрация:** через Filters — поддерживает суффиксы _contains, _gt, _lt, _gte, _lte, _from, _to.
+            
+             **Сортировка:** SortBy = имя столбца или "Count", SortDirection = asc/desc.
+            
+             Пример запроса:
+             `GET /api/grouping/preview?BusinessStatus=0&amp;GroupByColumns=Isrc&amp;GroupByColumns=Artist&amp;SortBy=Count&amp;SortDirection=desc`
+             </remarks>
+             <param name="request">Параметры группировки, фильтрации, сортировки и пагинации</param>
+             <param name="ct">Токен отмены</param>
+             <returns>Страница сгруппированных записей с количеством в каждой группе</returns>
+             <response code="200">Группировка выполнена успешно</response>
+             <response code="400">Невалидный запрос (неверный статус, столбец, отсутствует ProductId для статуса 1)</response>
+        </member>
+        <member name="M:SuspenseManager.Controllers.GroupingController.Commit(Common.DTOs.GroupingCommitRequest,System.Threading.CancellationToken)">
+             <summary>
+             Фиксация (сохранение) динамической группы.
+             </summary>
+             <remarks>
+             Находит все суспенсы, соответствующие критериям группировки (те же столбцы и значения),
+             и создаёт из них постоянную группу (SuspenseGroup).
+            
+             **Что происходит при фиксации:**
+             - Создаётся SuspenseGroup со статусом 15 (нет продукта) или 16 (нет прав)
+             - Все подходящие SuspenseLine обновляются: GroupId, BusinessStatus (0→15 или 1→16)
+             - Для каждой строки создаётся SuspenseGroupLink (аудит)
+             - Для статуса 1: CatalogProductId из строк переносится на группу
+            
+             **Пример запроса:**
+             ```json
+             {
+               "businessStatus": 0,
+               "groupByColumns": ["Isrc", "Artist"],
+               "keyValues": { "Isrc": "RU1234567890", "Artist": "Артист" },
+               "accountId": 1
+             }
+             ```
+             </remarks>
+             <param name="request">Критерии группировки и значения ключей для фиксации</param>
+             <param name="ct">Токен отмены</param>
+             <returns>Информация о созданной группе</returns>
+             <response code="200">Группа успешно зафиксирована</response>
+             <response code="400">Невалидный запрос или не найдено суспенсов</response>
+        </member>
+        <member name="T:SuspenseManager.Controllers.GroupProcessingController">
+            <summary>
+            Контроллер обработки групп: метаданные, каталогизация, привязка продукта,
+            бэк-офис, откладывание, разгруппировка, экспорт, отложенные
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.GroupProcessingController.QuickCatalog(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Быстрая каталогизация — создаёт продукт из данных группы (метаданные > первый суспенс).
+            Группа переводится в статус 16 (нет прав). Body не требуется.
+            </summary>
+        </member>
+        <member name="T:SuspenseManager.Controllers.SuspenseController">
+            <summary>
+            Контроллер суспенсов: ручной ввод, просмотр списка, обновление
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.SuspenseController.GetAll(Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
+            <summary>
+            Список суспенсов с пагинацией, фильтрацией, сортировкой
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.SuspenseController.GetById(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Суспенс по ID
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.SuspenseController.GetUngrouped(System.Int32,Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
+            <summary>
+            Несгруппированные суспенсы (статус 0 — нет продукта, статус 1 — нет прав)
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.SuspenseController.Create(Common.DTOs.SuspenseLineDto)">
+            <summary>
+            Ручной ввод суспенса через форму
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.SuspenseController.Update(System.Int32,Common.DTOs.SuspenseLineDto)">
+            <summary>
+            Обновление суспенса (п.26)
+            </summary>
+        </member>
+        <member name="T:SuspenseManager.Controllers.TerritoryController">
+            <summary>
+            Контроллер территорий — п.13
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.TerritoryController.GetAll(Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
+            <summary>
+            Список территорий с пагинацией
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.UploadController.Upload(Microsoft.AspNetCore.Http.IFormFile)">
+            <summary>
+            Загрузка Excel-файла с отчётом стриминговой платформы.
+            Парсит файл, проводит валидацию каждой строки, сохраняет в БД.
+            </summary>
+        </member>
+        <member name="T:SuspenseManager.Middleware.ExceptionHandlingMiddleware">
+            <summary>
+            Глобальная обработка исключений. Перехватывает все необработанные исключения,
+            логирует их и возвращает клиенту стандартизированный ApiResponse.
+            </summary>
+        </member>
+        <member name="T:SuspenseManager.Middleware.RequirePermissionAttribute">
+            <summary>
+            Атрибут для проверки наличия права доступа у текущего пользователя.
+            Используется на контроллерах и действиях: [RequirePermission("groups.no_product.catalog_fast")]
+            </summary>
+        </member>
+    </members>
+</doc>

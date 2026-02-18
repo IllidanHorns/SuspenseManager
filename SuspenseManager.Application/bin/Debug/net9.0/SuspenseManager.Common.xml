@@ -1,0 +1,397 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SuspenseManager.Common</name>
+    </assembly>
+    <members>
+        <member name="T:Common.DTOs.ApiResponse`1">
+            <summary>
+            Универсальный ответ API. Оборачивает все ответы в единый формат.
+            </summary>
+            <typeparam name="T">Тип данных в теле ответа</typeparam>
+        </member>
+        <member name="P:Common.DTOs.ApiResponse`1.StatusCode">
+            <summary>
+            HTTP статус-код
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.ApiResponse`1.BusinessCode">
+            <summary>
+            Бизнес-код операции (для программной обработки на клиенте).
+            Например: "SUSPENSE_CREATED", "VALIDATION_ERROR", "NOT_FOUND"
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.ApiResponse`1.Message">
+            <summary>
+            Сообщение для отображения пользователю
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.ApiResponse`1.Data">
+            <summary>
+            Тело ответа (объект или массив)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.ApiResponse`1.Errors">
+            <summary>
+            Список ошибок (валидация, бизнес-ошибки и т.д.)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.ApiResponse`1.Timestamp">
+            <summary>
+            Временная метка ответа
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.ApiError">
+            <summary>
+            Описание одной ошибки
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.ApiError.Field">
+            <summary>
+            Поле, к которому относится ошибка (null если общая ошибка)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.ApiError.Message">
+            <summary>
+            Текст ошибки
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.GroupingPreviewRequest">
+            <summary>
+            Запрос на предпросмотр динамической группировки суспенсов
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.GroupingPreviewRequest.BusinessStatus">
+            <summary>
+            Бизнес-статус суспенсов для группировки (0 — нет продукта, 1 — нет прав)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.GroupingPreviewRequest.GroupByColumns">
+            <summary>
+            Набор столбцов для группировки.
+            Для статуса 1 обязательно должен содержать "ProductId".
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.GroupingPreviewItem">
+            <summary>
+            Одна строка результата динамической группировки
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.GroupingPreviewItem.Key">
+            <summary>
+            Значения столбцов группировки (ключ — имя столбца, значение — значение)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.GroupingPreviewItem.Count">
+            <summary>
+            Количество суспенсов в группе
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.GroupingCommitRequest">
+            <summary>
+            Запрос на фиксацию (сохранение) динамической группы
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.GroupingCommitRequest.BusinessStatus">
+            <summary>
+            Бизнес-статус (0 — нет продукта, 1 — нет прав)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.GroupingCommitRequest.GroupByColumns">
+            <summary>
+            Столбцы группировки (для формирования WHERE-условия поиска строк)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.GroupingCommitRequest.KeyValues">
+            <summary>
+            Значения столбцов группировки — определяют конкретную группу для фиксации
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.GroupingCommitRequest.AccountId">
+            <summary>
+            ID аккаунта пользователя, создающего группу
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.UpdateGroupMetadataDto">
+            <summary>
+            DTO для обновления метаданных продукта группы (п.14)
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.UpdateGroupMetaRightsDto">
+            <summary>
+            DTO для обновления метаданных прав группы (п.15)
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.QuickCatalogDto">
+            <summary>
+            DTO для быстрой каталогизации (п.16)
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.SendToBackOfficeDto">
+            <summary>
+            DTO для отправки в бэк-офис (п.20)
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.PostponeGroupDto">
+            <summary>
+            DTO для откладывания группы (п.21)
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.LinkProductDto">
+            <summary>
+            DTO для привязки группы к продукту (п.25)
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.PagedRequest">
+            <summary>
+            Базовый запрос с пагинацией, сортировкой и динамическими фильтрами.
+            Используется как query-параметры для всех GET-списков.
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.PagedRequest.PageNumber">
+            <summary>
+            Номер страницы (начиная с 1)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.PagedRequest.PageSize">
+            <summary>
+            Размер страницы (20, 50, 100)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.PagedRequest.SortBy">
+            <summary>
+            Поле для сортировки (название свойства)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.PagedRequest.SortDirection">
+            <summary>
+            Направление сортировки: asc / desc
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.PagedRequest.Filters">
+            <summary>
+            Динамические фильтры: ключ = имя поля, значение = значение фильтра.
+            Поддерживает суффиксы: _gt, _lt, _gte, _lte, _contains, _from, _to
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.PagedResponse`1">
+            <summary>
+            Стандартный ответ с пагинацией
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.PagedResponse`1.Items">
+            <summary>
+            Элементы текущей страницы
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.PagedResponse`1.TotalCount">
+            <summary>
+            Общее количество записей (без пагинации)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.PagedResponse`1.PageNumber">
+            <summary>
+            Текущая страница
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.PagedResponse`1.PageSize">
+            <summary>
+            Размер страницы
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.PagedResponse`1.TotalPages">
+            <summary>
+            Общее количество страниц
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.SuspenseLineDto">
+            <summary>
+            DTO для входящей строки суспенса (из Excel-отчёта или формы ручного ввода)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.SuspenseLineDto.Isrc">
+            <summary>
+            Идентификатор фонограммы (ISRC)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.SuspenseLineDto.Barcode">
+            <summary>
+            Баркод продукта
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.SuspenseLineDto.CatalogNumber">
+            <summary>
+            Каталожный номер
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.SuspenseLineDto.ProductFormatCode">
+            <summary>
+            Код формата продукта (TTkey)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.SuspenseLineDto.SenderCompany">
+            <summary>
+            Компания отправитель (название из отчёта)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.SuspenseLineDto.RecipientCompany">
+            <summary>
+            Компания получатель (название из отчёта)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.SuspenseLineDto.Operator">
+            <summary>
+            Оператор (стриминговая площадка)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.SuspenseLineDto.Artist">
+            <summary>
+            Артист
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.SuspenseLineDto.TrackTitle">
+            <summary>
+            Название трека
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.SuspenseLineDto.AgreementType">
+            <summary>
+            Тип договора
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.SuspenseLineDto.AgreementNumber">
+            <summary>
+            Номер договора
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.SuspenseLineDto.TerritoryCode">
+            <summary>
+            Код территории
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.SuspenseLineDto.Qty">
+            <summary>
+            Кол-во прослушиваний
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.SuspenseLineDto.Ppd">
+            <summary>
+            Цена за одно прослушивание
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.SuspenseLineDto.ExchangeCurrency">
+            <summary>
+            Валюта
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.SuspenseLineDto.ExchangeRate">
+            <summary>
+            Курс обмена
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.SuspenseLineDto.Genre">
+            <summary>
+            Жанр
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.SuspenseLineDto.SenderCompanyId">
+            <summary>
+            FK компании отправителя (если известен)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.SuspenseLineDto.RecipientCompanyId">
+            <summary>
+            FK компании получателя (если известен)
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.ValidationResultDto">
+            <summary>
+            Результат валидации пакета строк
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.ValidationResultDto.TotalRows">
+            <summary>
+            Общее количество обработанных строк
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.ValidationResultDto.ValidatedCount">
+            <summary>
+            Количество строк со статусом "валидация пройдена" (88)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.ValidationResultDto.NoProductCount">
+            <summary>
+            Количество строк со статусом "нет продукта" (0)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.ValidationResultDto.NoRightsCount">
+            <summary>
+            Количество строк со статусом "нет прав" (1)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.ValidationResultDto.Lines">
+            <summary>
+            Детали по каждой строке
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.ValidationLineResultDto">
+            <summary>
+            Результат валидации одной строки
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.ValidationLineResultDto.SuspenseLineId">
+            <summary>
+            ID созданного суспенса
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.ValidationLineResultDto.BusinessStatus">
+            <summary>
+            Присвоенный статус
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.ValidationLineResultDto.CauseSuspense">
+            <summary>
+            Причина попадания в суспенс
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.ValidationLineResultDto.ProductId">
+            <summary>
+            ID найденного продукта (если найден)
+            </summary>
+        </member>
+        <member name="T:Common.Exceptions.BusinessException">
+            <summary>
+            Бизнес-исключение с кодом и статусом. Используется когда нужно вернуть
+            конкретный бизнес-код и HTTP-статус из сервисного слоя.
+            </summary>
+        </member>
+        <member name="T:Common.Exceptions.ValidationException">
+            <summary>
+            Исключение валидации. Содержит список ошибок по полям.
+            </summary>
+        </member>
+        <member name="T:Common.Extensions.QueryableExtensions">
+            <summary>
+            Extension-методы для IQueryable: динамическая фильтрация, сортировка, пагинация.
+            </summary>
+        </member>
+        <member name="M:Common.Extensions.QueryableExtensions.ToPagedResponseAsync``1(System.Linq.IQueryable{``0},Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
+            <summary>
+            Применяет пагинацию, сортировку и фильтрацию из PagedRequest.
+            Возвращает PagedResponse с данными.
+            </summary>
+        </member>
+        <member name="M:Common.Extensions.QueryableExtensions.ApplySorting``1(System.Linq.IQueryable{``0},System.String,System.String)">
+            <summary>
+            Динамическая сортировка по имени свойства
+            </summary>
+        </member>
+        <member name="M:Common.Extensions.QueryableExtensions.ApplyFilters``1(System.Linq.IQueryable{``0},System.Collections.Generic.Dictionary{System.String,System.String})">
+            <summary>
+            Динамическая фильтрация по словарю фильтров.
+            Поддерживает суффиксы: _contains, _gt, _lt, _gte, _lte, _from, _to
+            Без суффикса — точное совпадение (для строк — contains по умолчанию)
+            </summary>
+        </member>
+    </members>
+</doc>

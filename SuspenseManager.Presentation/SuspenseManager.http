@@ -1,0 +1,6 @@
+@SuspenseManager_HostAddress = http://localhost:5092
+
+GET {{SuspenseManager_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

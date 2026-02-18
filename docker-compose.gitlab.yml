@@ -1,0 +1,47 @@
+services:
+  gitlab:
+    image: gitlab/gitlab-ce:latest
+    container_name: gitlab
+    hostname: gitlab
+    restart: unless-stopped
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://127.0.0.1:8999'
+        gitlab_rails['initial_root_password'] = 'P@ssw0rd123!'
+        puma['workers'] = 2
+        sidekiq['concurrency'] = 5
+        postgresql['shared_buffers'] = '128MB'
+        prometheus_monitoring['enable'] = false
+    ports:
+      - "8999:8999"  # external_url port must match container port
+      - "8443:443"
+      - "2222:22"
+    volumes:
+      - gitlab_config:/etc/gitlab
+      - gitlab_logs:/var/log/gitlab
+      - gitlab_data:/var/opt/gitlab
+    shm_size: "256m"
+    networks:
+      - gitlab-net
+
+  gitlab-runner:
+    image: gitlab/gitlab-runner:latest
+    container_name: gitlab-runner
+    restart: unless-stopped
+    volumes:
+      - runner_config:/etc/gitlab-runner
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - gitlab-net
+    depends_on:
+      - gitlab
+
+volumes:
+  gitlab_config:
+  gitlab_logs:
+  gitlab_data:
+  runner_config:
+
+networks:
+  gitlab-net:
+    driver: bridge
