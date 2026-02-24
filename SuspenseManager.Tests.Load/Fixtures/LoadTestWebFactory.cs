@@ -27,7 +27,10 @@ public class LoadTestWebFactory : WebApplicationFactory<Program>, IAsyncDisposab
         {
             var desc = services.SingleOrDefault(d =>
                 d.ServiceType == typeof(DbContextOptions<SuspenseManagerDbContext>));
-            if (desc != null) services.Remove(desc);
+            if (desc != null)
+            {
+                services.Remove(desc);
+            }
 
             services.AddDbContext<SuspenseManagerDbContext>(options =>
                 options.UseInMemoryDatabase(_dbName));

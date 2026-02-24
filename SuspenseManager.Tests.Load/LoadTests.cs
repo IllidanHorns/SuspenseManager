@@ -1,7 +1,7 @@
+using System.Net.Http.Headers;
 using FluentAssertions;
 using NBomber.CSharp;
 using SuspenseManager.Tests.Load.Fixtures;
-using System.Net.Http.Headers;
 
 namespace SuspenseManager.Tests.Load;
 
@@ -256,7 +256,7 @@ public class LoadTests : IAsyncLifetime
         })
         .WithWarmUpDuration(TimeSpan.FromSeconds(2))
         .WithLoadSimulations(
-            Simulation.RampingConstant(copies: 5,  during: TimeSpan.FromSeconds(5)),
+            Simulation.RampingConstant(copies: 5, during: TimeSpan.FromSeconds(5)),
             Simulation.RampingConstant(copies: 20, during: TimeSpan.FromSeconds(5)),
             Simulation.RampingConstant(copies: 50, during: TimeSpan.FromSeconds(10)),
             Simulation.RampingConstant(copies: 10, during: TimeSpan.FromSeconds(3))

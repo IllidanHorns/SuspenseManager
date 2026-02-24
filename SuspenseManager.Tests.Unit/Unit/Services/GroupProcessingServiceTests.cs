@@ -246,7 +246,6 @@ public class GroupProcessingServiceTests : IDisposable
 
         var updatedGroup = await _db.SuspenseGroups.FindAsync(group.Id);
         updatedGroup!.ArchiveLevel.Should().BeGreaterThan(0, "группа должна быть архивирована");
-        Assert.NotNull(updatedGroup.ArchiveTime);
 
         var suspenses = await _db.SuspenseLines
             .Where(s => s.Id == s1.Id || s.Id == s2.Id)

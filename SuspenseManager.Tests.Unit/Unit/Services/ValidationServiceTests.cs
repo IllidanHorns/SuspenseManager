@@ -39,56 +39,56 @@ public class ValidationServiceTests : IDisposable
         string territoryCode = "RU",
         string senderCompany = "Sender LLC",
         string recipientCompany = "Recipient LLC") => new()
-    {
-        Isrc = isrc,
-        Barcode = barcode,
-        CatalogNumber = catalogNumber,
-        ProductFormatCode = productFormatCode,
-        AgreementNumber = agreementNumber,
-        TerritoryCode = territoryCode,
-        SenderCompany = senderCompany,
-        RecipientCompany = recipientCompany,
-        Artist = "Test Artist",
-        TrackTitle = "Test Track",
-        Qty = 100,
-        ExchangeCurrency = 1m,
-        ExchangeRate = 1.0m
-    };
+        {
+            Isrc = isrc,
+            Barcode = barcode,
+            CatalogNumber = catalogNumber,
+            ProductFormatCode = productFormatCode,
+            AgreementNumber = agreementNumber,
+            TerritoryCode = territoryCode,
+            SenderCompany = senderCompany,
+            RecipientCompany = recipientCompany,
+            Artist = "Test Artist",
+            TrackTitle = "Test Track",
+            Qty = 100,
+            ExchangeCurrency = 1m,
+            ExchangeRate = 1.0m
+        };
 
     private CatalogProduct MakeProduct(
         string isrc = "ISRC001",
         string barcode = "1234567890",
         string catalogNumber = "CAT-001",
         string formatCode = "DIGI") => new()
-    {
-        Isrc = isrc,
-        Barcode = barcode,
-        CatalogNumber = catalogNumber,
-        ProductFormatCode = formatCode,
-        ProductName = "Test Product",
-        Artist = "Test Artist",
-        ProductTypeId = 1,
-        CreateTime = DateTime.UtcNow,
-        ArchiveLevel = 0
-    };
+        {
+            Isrc = isrc,
+            Barcode = barcode,
+            CatalogNumber = catalogNumber,
+            ProductFormatCode = formatCode,
+            ProductName = "Test Product",
+            Artist = "Test Artist",
+            ProductTypeId = 1,
+            CreateTime = DateTime.UtcNow,
+            ArchiveLevel = 0
+        };
 
     private CatalogProductRights MakeRights(int productId,
         string docNumber = "AGR-001",
         string territory = "RU",
         string sender = "Sender LLC",
         string receiver = "Recipient LLC") => new()
-    {
-        CatalogProductId = productId,
-        DocNumber = docNumber,
-        TerritoryCode = territory,
-        TerritoryDesc = territory,
-        CompanySender = sender,
-        CompanyReceiver = receiver,
-        DocStart = DateOnly.FromDateTime(DateTime.UtcNow.AddYears(-1)),
-        DocEnd = DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
-        CreateTime = DateTime.UtcNow,
-        ArchiveLevel = 0
-    };
+        {
+            CatalogProductId = productId,
+            DocNumber = docNumber,
+            TerritoryCode = territory,
+            TerritoryDesc = territory,
+            CompanySender = sender,
+            CompanyReceiver = receiver,
+            DocStart = DateOnly.FromDateTime(DateTime.UtcNow.AddYears(-1)),
+            DocEnd = DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
+            CreateTime = DateTime.UtcNow,
+            ArchiveLevel = 0
+        };
 
     // ──────────────── Тесты: статус 0 (нет продукта) ─────────────────────────
 

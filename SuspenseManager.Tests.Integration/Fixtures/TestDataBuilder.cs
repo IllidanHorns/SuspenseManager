@@ -164,7 +164,10 @@ public class TestDataBuilder
     private async Task<CatalogProductType> GetOrCreateProductTypeAsync(string code)
     {
         var existing = _db.CatalogProductTypes.FirstOrDefault(t => t.Code == code);
-        if (existing != null) return existing;
+        if (existing != null)
+        {
+            return existing;
+        }
 
         var type = new CatalogProductType
         {

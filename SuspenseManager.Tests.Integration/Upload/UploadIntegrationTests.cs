@@ -47,15 +47,15 @@ public class UploadIntegrationTests : IClassFixture<CustomWebApplicationFactory>
         var ws = wb.AddWorksheet("Report");
 
         // Заголовки — строка 1
-        ws.Cell(1, 1).Value  = "ISRC";
-        ws.Cell(1, 2).Value  = "Barcode";
-        ws.Cell(1, 3).Value  = "CatalogNumber";
-        ws.Cell(1, 4).Value  = "ProductFormatCode";
-        ws.Cell(1, 5).Value  = "Artist";
-        ws.Cell(1, 6).Value  = "TrackTitle";
-        ws.Cell(1, 7).Value  = "AgreementNumber";
-        ws.Cell(1, 8).Value  = "TerritoryCode";
-        ws.Cell(1, 9).Value  = "SenderCompany";
+        ws.Cell(1, 1).Value = "ISRC";
+        ws.Cell(1, 2).Value = "Barcode";
+        ws.Cell(1, 3).Value = "CatalogNumber";
+        ws.Cell(1, 4).Value = "ProductFormatCode";
+        ws.Cell(1, 5).Value = "Artist";
+        ws.Cell(1, 6).Value = "TrackTitle";
+        ws.Cell(1, 7).Value = "AgreementNumber";
+        ws.Cell(1, 8).Value = "TerritoryCode";
+        ws.Cell(1, 9).Value = "SenderCompany";
         ws.Cell(1, 10).Value = "RecipientCompany";
         ws.Cell(1, 11).Value = "Qty";
         ws.Cell(1, 12).Value = "ExchangeCurrency";
@@ -64,15 +64,15 @@ public class UploadIntegrationTests : IClassFixture<CustomWebApplicationFactory>
         for (var i = 0; i < rowCount; i++)
         {
             var row = i + 2;
-            ws.Cell(row, 1).Value  = $"ISRC{i:D3}";
-            ws.Cell(row, 2).Value  = $"BC{i:D10}";
-            ws.Cell(row, 3).Value  = $"CAT-{i:D3}";
-            ws.Cell(row, 4).Value  = "DIGI";
-            ws.Cell(row, 5).Value  = "Test Artist";
-            ws.Cell(row, 6).Value  = $"Track {i}";
-            ws.Cell(row, 7).Value  = $"AGR-{i:D3}";
-            ws.Cell(row, 8).Value  = "RU";
-            ws.Cell(row, 9).Value  = "Sender LLC";
+            ws.Cell(row, 1).Value = $"ISRC{i:D3}";
+            ws.Cell(row, 2).Value = $"BC{i:D10}";
+            ws.Cell(row, 3).Value = $"CAT-{i:D3}";
+            ws.Cell(row, 4).Value = "DIGI";
+            ws.Cell(row, 5).Value = "Test Artist";
+            ws.Cell(row, 6).Value = $"Track {i}";
+            ws.Cell(row, 7).Value = $"AGR-{i:D3}";
+            ws.Cell(row, 8).Value = "RU";
+            ws.Cell(row, 9).Value = "Sender LLC";
             ws.Cell(row, 10).Value = "Recipient LLC";
             ws.Cell(row, 11).Value = 100;
             ws.Cell(row, 12).Value = "RUB";

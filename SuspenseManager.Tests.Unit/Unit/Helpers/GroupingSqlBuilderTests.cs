@@ -231,12 +231,12 @@ public class GroupingSqlBuilderTests
     }
 
     [Theory]
-    [InlineData("Artist_gt",  ">")]
+    [InlineData("Artist_gt", ">")]
     [InlineData("Artist_gte", ">=")]
-    [InlineData("Artist_lt",  "<")]
+    [InlineData("Artist_lt", "<")]
     [InlineData("Artist_lte", "<=")]
     [InlineData("Artist_from", ">=")]
-    [InlineData("Artist_to",   "<=")]
+    [InlineData("Artist_to", "<=")]
     public void BuildPreviewSql_FilterOperator_GeneratesCorrectSqlOperator(string filterKey, string expectedOp)
     {
         var (sql, _, _) = BuildWithFilters(
