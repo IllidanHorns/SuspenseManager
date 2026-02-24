@@ -1,6 +1,7 @@
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Common\bin\Debug\net9.0\SuspenseManager.Common.deps.json
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Common\bin\Debug\net9.0\SuspenseManager.Common.dll
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Common\bin\Debug\net9.0\SuspenseManager.Common.pdb
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Common\bin\Debug\net9.0\SuspenseManager.Common.xml
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Common\bin\Debug\net9.0\SuspenseManager.Models.dll
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Common\bin\Debug\net9.0\SuspenseManager.Models.pdb
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Common\obj\Debug\net9.0\SuspenseManager.Common.csproj.AssemblyReference.cache
@@ -11,7 +12,6 @@ C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Common\obj\Debu
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Common\obj\Debug\net9.0\Suspense.2900B5AC.Up2Date
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Common\obj\Debug\net9.0\SuspenseManager.Common.dll
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Common\obj\Debug\net9.0\refint\SuspenseManager.Common.dll
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Common\obj\Debug\net9.0\SuspenseManager.Common.xml
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Common\obj\Debug\net9.0\SuspenseManager.Common.pdb
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Common\obj\Debug\net9.0\ref\SuspenseManager.Common.dll
-C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Common\bin\Debug\net9.0\SuspenseManager.Common.xml
-C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Common\obj\Debug\net9.0\SuspenseManager.Common.xml

@@ -1,0 +1,116 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+env:
+  CONTAINER_NAME: suspense-manager
+  APP_PORT: "8888"
+  APP_SWAGGER_URL: "http://localhost:8888/swagger"
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/dotnet/sdk:9.0
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Restore dependencies
+        run: dotnet restore SuspenseManager.sln
+
+      - name: Build solution
+        run: dotnet build SuspenseManager.sln --configuration Release --no-restore --verbosity minimal
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: "**/bin/Release/"
+          retention-days: 1
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/dotnet/sdk:9.0
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run dotnet format check
+        run: dotnet format SuspenseManager.sln --verify-no-changes --verbosity diagnostic
+
+  security:
+    name: security
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/dotnet/sdk:9.0
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Restore dependencies
+        run: dotnet restore SuspenseManager.sln
+
+      - name: Check for vulnerable packages
+        run: |
+          dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerability-report.txt
+          if grep -q "has the following vulnerable packages" vulnerability-report.txt; then
+            echo "SECURITY: Vulnerable NuGet packages detected!"
+            exit 1
+          fi
+          echo "Security check passed — no vulnerable packages found."
+
+      - name: Upload vulnerability report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vulnerability-report
+          path: vulnerability-report.txt
+          retention-days: 28
+
+  docker:
+    name: docker
+    runs-on: ubuntu-latest
+    needs: [ lint, security ]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    environment:
+      name: production
+      url: ${{ env.APP_SWAGGER_URL }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Docker info
+        run: docker info
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --file SuspenseManager.Presentation/Dockerfile \
+            --tag "$CONTAINER_NAME:${{ github.sha }}" \
+            --tag "$CONTAINER_NAME:latest" \
+            .
+
+      - name: Deploy container
+        run: |
+          docker stop "$CONTAINER_NAME" 2>/dev/null || true
+          docker rm "$CONTAINER_NAME" 2>/dev/null || true
+          docker run \
+            --detach \
+            --name "$CONTAINER_NAME" \
+            --restart unless-stopped \
+            --publish "${APP_PORT}:8080" \
+            --env ASPNETCORE_ENVIRONMENT=Development \
+            --env ASPNETCORE_URLS=http://+:8080 \
+            "$CONTAINER_NAME:${{ github.sha }}"
+          docker ps --filter "name=$CONTAINER_NAME"
+          echo "Application available at $APP_SWAGGER_URL"

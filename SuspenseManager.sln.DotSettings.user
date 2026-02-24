@@ -1,0 +1,15 @@
+﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=b11b1e06_002Dc8dc_002D4e4b_002D9fbf_002D666153bd40dc/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="GetNoProduct_Returns200" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+  &lt;Or&gt;&#xD;
+    &lt;TestAncestor&gt;&#xD;
+      &lt;TestId&gt;xUnit::FB3FA9E0-F4D1-47A2-B29D-49726B7B3F9A::net9.0::SuspenseManager.Tests.Integration.Group.GroupProcessingIntegrationTests.GetNoProduct_Returns200&lt;/TestId&gt;&#xD;
+      &lt;TestId&gt;xUnit::FB3FA9E0-F4D1-47A2-B29D-49726B7B3F9A::net9.0::SuspenseManager.Tests.Integration.Group.GroupProcessingIntegrationTests.GetNoProduct_ContainsOnlyStatus15Groups&lt;/TestId&gt;&#xD;
+      &lt;TestId&gt;xUnit::FB3FA9E0-F4D1-47A2-B29D-49726B7B3F9A::net9.0::SuspenseManager.Tests.Integration.Auth.AuthIntegrationTests.Login_ValidCredentials_Returns200WithTokens&lt;/TestId&gt;&#xD;
+      &lt;TestId&gt;xUnit::FB3FA9E0-F4D1-47A2-B29D-49726B7B3F9A::net9.0::SuspenseManager.Tests.Integration.Auth.AuthIntegrationTests.Login_WrongPassword_Returns401&lt;/TestId&gt;&#xD;
+      &lt;TestId&gt;xUnit::62E57E04-B72F-41F2-A571-85EFD4497366::net9.0::SuspenseManager.Tests.Unit.Unit.Helpers.GroupingSqlBuilderTests.GetAllowedColumns_Status0_ContainsAllNoProductColumns&lt;/TestId&gt;&#xD;
+      &lt;TestId&gt;xUnit::54F3710C-566C-40D8-B2A8-267B5BEC16C0::net9.0::SuspenseManager.Tests.Load.LoadTests.Load_GetGroupById_NotFound_HighVolume&lt;/TestId&gt;&#xD;
+      &lt;TestId&gt;xUnit::54F3710C-566C-40D8-B2A8-267B5BEC16C0::net9.0::SuspenseManager.Tests.Load.LoadTests.Load_MixedWorkload_Stable&lt;/TestId&gt;&#xD;
+    &lt;/TestAncestor&gt;&#xD;
+    &lt;ProjectFolder&gt;62E57E04-B72F-41F2-A571-85EFD4497366/d:Unit&lt;/ProjectFolder&gt;&#xD;
+  &lt;/Or&gt;&#xD;
+&lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

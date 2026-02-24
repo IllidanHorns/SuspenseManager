@@ -1,0 +1,200 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="Common.DTOs.CreateAccountDto">
+    <Position X="11" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAgAAAAAAAAAAgAAAAAAAACAAAQAAAAAAA=</HashCode>
+      <FileName>DTOs\AccountDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.UpdateAccountDto">
+    <Position X="9.25" Y="3.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAgAAAAAAAAAAgAAAAAAAACAAAQAAAAAAA=</HashCode>
+      <FileName>DTOs\AccountDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.CreateUserDto">
+    <Position X="2.25" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAACAAAAAgAAAQQAQABAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>DTOs\AccountDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.UpdateUserDto">
+    <Position X="2.25" Y="5.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAACAAAAAgAAAQQAQABAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>DTOs\AccountDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.AccountRightsDto">
+    <Position X="4" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>DTOs\AccountDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.LoginDto">
+    <Position X="11" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAQAAAAAAA=</HashCode>
+      <FileName>DTOs\AccountDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.TokenResponseDto">
+    <Position X="4" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAQAAAAAAAAgAAAAEAEAAAAAAAEAAQAABAAAA=</HashCode>
+      <FileName>DTOs\AccountDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.RefreshTokenDto">
+    <Position X="9.25" Y="7.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>DTOs\AccountDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.ApiResponse&lt;T&gt;">
+    <Position X="7.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAQAAAAACAAgAAgAAABQAIAAAIAIAAAA=</HashCode>
+      <FileName>DTOs\ApiResponse.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.ApiError">
+    <Position X="4" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAgAA=</HashCode>
+      <FileName>DTOs\ApiResponse.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.GroupingPreviewRequest">
+    <Position X="0.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAABAAAAAAAA=</HashCode>
+      <FileName>DTOs\GroupingDtos.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.GroupingPreviewItem">
+    <Position X="0.5" Y="8.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAQAAAAAAAQAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>DTOs\GroupingDtos.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.GroupingCommitRequest">
+    <Position X="7.5" Y="7.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAACAAAAAgAAAAACAAAAAAAAAABAAAAAAAA=</HashCode>
+      <FileName>DTOs\GroupingDtos.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.UpdateGroupMetadataDto">
+    <Position X="11" Y="3.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAIAAAAAQEqAEgAAAIAAAgAAYAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>DTOs\GroupMetadataDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.UpdateGroupMetaRightsDto">
+    <Position X="0.5" Y="5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAWAAAAAEAAAgAAAAAAEAEAAAAAAAABAgACAABAAAA=</HashCode>
+      <FileName>DTOs\GroupMetadataDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.QuickCatalogDto">
+    <Position X="9.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAIAAAAAQEoAEAAAAIAAAgAAIAAAAAAAAAAAEAABAA=</HashCode>
+      <FileName>DTOs\GroupMetadataDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.SendToBackOfficeDto">
+    <Position X="2.25" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>DTOs\GroupMetadataDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.PostponeGroupDto">
+    <Position X="4" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>DTOs\GroupMetadataDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.LinkProductDto">
+    <Position X="5.75" Y="8" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>DTOs\GroupMetadataDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.PagedRequest">
+    <Position X="0.5" Y="2.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AACAAAAEAAAAAQAAAIAAAAAAAAQAAAAAAAAQEAAAAAA=</HashCode>
+      <FileName>DTOs\PagedRequest.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.PagedResponse&lt;T&gt;">
+    <Position X="2.25" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AACAAgAAAAAADAAAAAAAAAAAAAAAAAAAAAAAEAAAAAA=</HashCode>
+      <FileName>DTOs\PagedResponse.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.SuspenseLineDto">
+    <Position X="5.75" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAMiEAAAEEAAAIAAgIAAAgAgIAAQAAIAAAAAAAAJEA=</HashCode>
+      <FileName>DTOs\SuspenseLineDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.ValidationResultDto">
+    <Position X="9.25" Y="5.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAUAAAAAAAQAAAAAAAAAAAAAAAAAAACgAAAAAAAAAA=</HashCode>
+      <FileName>DTOs\ValidationResultDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.DTOs.ValidationLineResultDto">
+    <Position X="7.5" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAAAAAAAAAAAAAAAABAAAAACAAAAAgAAAAAAAAAAAAA=</HashCode>
+      <FileName>DTOs\ValidationResultDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.Exceptions.BusinessException">
+    <Position X="7.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAIAAAA=</HashCode>
+      <FileName>Exceptions\BusinessException.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.Exceptions.ValidationException">
+    <Position X="4" Y="5.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Exceptions\BusinessException.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Common.Extensions.QueryableExtensions">
+    <Position X="5.75" Y="0.5" Width="1.5" />
+    <NestedTypes>
+      <Enum Name="Common.Extensions.QueryableExtensions.FilterOperation" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Extensions\QueryableExtensions.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAEAAEAAAAAACQAAAAAAAAAAAAAAKAAAAAEA=</HashCode>
+      <FileName>Extensions\QueryableExtensions.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

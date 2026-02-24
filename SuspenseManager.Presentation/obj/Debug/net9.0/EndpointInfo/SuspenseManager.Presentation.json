@@ -1,0 +1,2500 @@
+{
+  "openapi": "3.0.4",
+  "info": {
+    "title": "Suspense Manager API",
+    "description": "API для управления суспенсами — невалидными записями из отчётов стриминговых платформ",
+    "version": "v1"
+  },
+  "paths": {
+    "/api/Account": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "description": "Номер страницы (начиная с 1)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Размер страницы (20, 50, 100)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "SortBy",
+            "in": "query",
+            "description": "Поле для сортировки (название свойства)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SortDirection",
+            "in": "query",
+            "description": "Направление сортировки: asc / desc",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Filters",
+            "in": "query",
+            "description": "Динамические фильтры: ключ = имя поля, значение = значение фильтра.\r\nПоддерживает суффиксы: _gt, _lt, _gte, _lte, _contains, _from, _to",
+            "style": "deepObject",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Account"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccountDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccountDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Account/{id}": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAccountDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAccountDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Account/{id}/rights": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountRightsDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountRightsDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountRightsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountRightsDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountRightsDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountRightsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Analytics/dashboard": {
+      "get": {
+        "tags": [
+          "Analytics"
+        ],
+        "summary": "Дашборд аналитики: общая статистика, топ операторов, распределение по статусам",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Авторизация по логину/паролю. Возвращает access + refresh токены.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Auth/refresh": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Обновление access токена по refresh токену. Возвращает новую пару токенов (rotation).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Auth/revoke": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Отзыв refresh токена (logout).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Company": {
+      "get": {
+        "tags": [
+          "Company"
+        ],
+        "summary": "Список компаний с пагинацией, фильтрацией, сортировкой — п.11, п.12",
+        "parameters": [
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "description": "Номер страницы (начиная с 1)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Размер страницы (20, 50, 100)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "SortBy",
+            "in": "query",
+            "description": "Поле для сортировки (название свойства)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SortDirection",
+            "in": "query",
+            "description": "Направление сортировки: asc / desc",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Filters",
+            "in": "query",
+            "description": "Динамические фильтры: ключ = имя поля, значение = значение фильтра.\r\nПоддерживает суффиксы: _gt, _lt, _gte, _lte, _contains, _from, _to",
+            "style": "deepObject",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Company/{id}": {
+      "get": {
+        "tags": [
+          "Company"
+        ],
+        "summary": "Компания по ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Group/no-product": {
+      "get": {
+        "tags": [
+          "Group"
+        ],
+        "summary": "Группы \"нет продукта\" (статус 15) — п.8",
+        "parameters": [
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "description": "Номер страницы (начиная с 1)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Размер страницы (20, 50, 100)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "SortBy",
+            "in": "query",
+            "description": "Поле для сортировки (название свойства)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SortDirection",
+            "in": "query",
+            "description": "Направление сортировки: asc / desc",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Filters",
+            "in": "query",
+            "description": "Динамические фильтры: ключ = имя поля, значение = значение фильтра.\r\nПоддерживает суффиксы: _gt, _lt, _gte, _lte, _contains, _from, _to",
+            "style": "deepObject",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Group/no-rights": {
+      "get": {
+        "tags": [
+          "Group"
+        ],
+        "summary": "Группы \"нет прав\" (статус 16) — п.8",
+        "parameters": [
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "description": "Номер страницы (начиная с 1)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Размер страницы (20, 50, 100)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "SortBy",
+            "in": "query",
+            "description": "Поле для сортировки (название свойства)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SortDirection",
+            "in": "query",
+            "description": "Направление сортировки: asc / desc",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Filters",
+            "in": "query",
+            "description": "Динамические фильтры: ключ = имя поля, значение = значение фильтра.\r\nПоддерживает суффиксы: _gt, _lt, _gte, _lte, _contains, _from, _to",
+            "style": "deepObject",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Group/saved": {
+      "get": {
+        "tags": [
+          "Group"
+        ],
+        "summary": "Все сохранённые группы (статус 15 и 16) — п.10",
+        "parameters": [
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "description": "Номер страницы (начиная с 1)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Размер страницы (20, 50, 100)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "SortBy",
+            "in": "query",
+            "description": "Поле для сортировки (название свойства)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SortDirection",
+            "in": "query",
+            "description": "Направление сортировки: asc / desc",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Filters",
+            "in": "query",
+            "description": "Динамические фильтры: ключ = имя поля, значение = значение фильтра.\r\nПоддерживает суффиксы: _gt, _lt, _gte, _lte, _contains, _from, _to",
+            "style": "deepObject",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Group/{id}": {
+      "get": {
+        "tags": [
+          "Group"
+        ],
+        "summary": "Группа по ID с метаданными",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Group/{id}/suspenses": {
+      "get": {
+        "tags": [
+          "Group"
+        ],
+        "summary": "Суспенсы конкретной группы с пагинацией",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "description": "Номер страницы (начиная с 1)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Размер страницы (20, 50, 100)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "SortBy",
+            "in": "query",
+            "description": "Поле для сортировки (название свойства)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SortDirection",
+            "in": "query",
+            "description": "Направление сортировки: asc / desc",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Filters",
+            "in": "query",
+            "description": "Динамические фильтры: ключ = имя поля, значение = значение фильтра.\r\nПоддерживает суффиксы: _gt, _lt, _gte, _lte, _contains, _from, _to",
+            "style": "deepObject",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Grouping/preview": {
+      "get": {
+        "tags": [
+          "Grouping"
+        ],
+        "summary": "Предпросмотр динамической группировки суспенсов.",
+        "description": "Выполняет GROUP BY по выбранным столбцам с поддержкой фильтрации, сортировки и пагинации.\r\n            \r\n**Статус 0 (нет продукта):** все столбцы берутся из SuspenseLine.\r\nДопустимые: Isrc, Barcode, CatalogNumber, Artist, TrackTitle, Genre,\r\nSenderCompany, RecipientCompany, Operator, AgreementType, AgreementNumber, TerritoryCode.\r\n            \r\n**Статус 1 (нет прав):** продуктовые поля берутся из CatalogProduct, остальные из SuspenseLine.\r\nProductId — **обязателен**.\r\nДопустимые: ProductId, Isrc, Barcode, CatalogNumber, ProductName, Artist,\r\nSenderCompany, RecipientCompany, Operator, AgreementType, AgreementNumber, TerritoryCode.\r\n            \r\n**Фильтрация:** через Filters — поддерживает суффиксы _contains, _gt, _lt, _gte, _lte, _from, _to.\r\n            \r\n**Сортировка:** SortBy = имя столбца или \"Count\", SortDirection = asc/desc.\r\n            \r\nПример запроса:\r\n`GET /api/grouping/preview?BusinessStatus=0&GroupByColumns=Isrc&GroupByColumns=Artist&SortBy=Count&SortDirection=desc`",
+        "parameters": [
+          {
+            "name": "BusinessStatus",
+            "in": "query",
+            "description": "Бизнес-статус суспенсов для группировки (0 — нет продукта, 1 — нет прав)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "GroupByColumns",
+            "in": "query",
+            "description": "Набор столбцов для группировки.\r\nДля статуса 1 обязательно должен содержать \"ProductId\".",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "description": "Номер страницы (начиная с 1)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Размер страницы (20, 50, 100)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "SortBy",
+            "in": "query",
+            "description": "Поле для сортировки (название свойства)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SortDirection",
+            "in": "query",
+            "description": "Направление сортировки: asc / desc",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Filters",
+            "in": "query",
+            "description": "Динамические фильтры: ключ = имя поля, значение = значение фильтра.\r\nПоддерживает суффиксы: _gt, _lt, _gte, _lte, _contains, _from, _to",
+            "style": "deepObject",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Группировка выполнена успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupingPreviewItemPagedResponseApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Невалидный запрос (неверный статус, столбец, отсутствует ProductId для статуса 1)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Grouping/commit": {
+      "post": {
+        "tags": [
+          "Grouping"
+        ],
+        "summary": "Фиксация (сохранение) динамической группы.",
+        "description": "Находит все суспенсы, соответствующие критериям группировки (те же столбцы и значения),\r\nи создаёт из них постоянную группу (SuspenseGroup).\r\n            \r\n**Что происходит при фиксации:**\r\n- Создаётся SuspenseGroup со статусом 15 (нет продукта) или 16 (нет прав)\r\n- Все подходящие SuspenseLine обновляются: GroupId, BusinessStatus (0→15 или 1→16)\r\n- Для каждой строки создаётся SuspenseGroupLink (аудит)\r\n- Для статуса 1: CatalogProductId из строк переносится на группу\r\n            \r\n**Пример запроса:**\r\n```json\r\n{\r\n  \"businessStatus\": 0,\r\n  \"groupByColumns\": [\"Isrc\", \"Artist\"],\r\n  \"keyValues\": { \"Isrc\": \"RU1234567890\", \"Artist\": \"Артист\" },\r\n  \"accountId\": 1\r\n}\r\n```",
+        "requestBody": {
+          "description": "Критерии группировки и значения ключей для фиксации",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupingCommitRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupingCommitRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupingCommitRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Группа успешно зафиксирована",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Невалидный запрос или не найдено суспенсов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/groups/{groupId}/metadata": {
+      "get": {
+        "tags": [
+          "GroupProcessing"
+        ],
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "GroupProcessing"
+        ],
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGroupMetadataDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGroupMetadataDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGroupMetadataDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/groups/{groupId}/meta-rights": {
+      "get": {
+        "tags": [
+          "GroupProcessing"
+        ],
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "GroupProcessing"
+        ],
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGroupMetaRightsDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGroupMetaRightsDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGroupMetaRightsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/groups/{groupId}/catalog-fast": {
+      "post": {
+        "tags": [
+          "GroupProcessing"
+        ],
+        "summary": "Быстрая каталогизация — создаёт продукт из данных группы (метаданные > первый суспенс).\r\nГруппа переводится в статус 16 (нет прав). Body не требуется.",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/groups/{groupId}/possible-products": {
+      "get": {
+        "tags": [
+          "GroupProcessing"
+        ],
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "description": "Номер страницы (начиная с 1)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Размер страницы (20, 50, 100)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "SortBy",
+            "in": "query",
+            "description": "Поле для сортировки (название свойства)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SortDirection",
+            "in": "query",
+            "description": "Направление сортировки: asc / desc",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Filters",
+            "in": "query",
+            "description": "Динамические фильтры: ключ = имя поля, значение = значение фильтра.\r\nПоддерживает суффиксы: _gt, _lt, _gte, _lte, _contains, _from, _to",
+            "style": "deepObject",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/groups/{groupId}/link-product": {
+      "post": {
+        "tags": [
+          "GroupProcessing"
+        ],
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkProductDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkProductDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkProductDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/groups/{groupId}/send-to-backoffice": {
+      "post": {
+        "tags": [
+          "GroupProcessing"
+        ],
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendToBackOfficeDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendToBackOfficeDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendToBackOfficeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/groups/{groupId}/postpone": {
+      "post": {
+        "tags": [
+          "GroupProcessing"
+        ],
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostponeGroupDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostponeGroupDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostponeGroupDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/groups/{groupId}/ungroup": {
+      "post": {
+        "tags": [
+          "GroupProcessing"
+        ],
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/groups/{groupId}/export-suspenses": {
+      "get": {
+        "tags": [
+          "GroupProcessing"
+        ],
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/groups/export": {
+      "get": {
+        "tags": [
+          "GroupProcessing"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/postponed": {
+      "get": {
+        "tags": [
+          "GroupProcessing"
+        ],
+        "parameters": [
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "description": "Номер страницы (начиная с 1)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Размер страницы (20, 50, 100)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "SortBy",
+            "in": "query",
+            "description": "Поле для сортировки (название свойства)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SortDirection",
+            "in": "query",
+            "description": "Направление сортировки: asc / desc",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Filters",
+            "in": "query",
+            "description": "Динамические фильтры: ключ = имя поля, значение = значение фильтра.\r\nПоддерживает суффиксы: _gt, _lt, _gte, _lte, _contains, _from, _to",
+            "style": "deepObject",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/postponed/{groupId}/return": {
+      "post": {
+        "tags": [
+          "GroupProcessing"
+        ],
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Suspense": {
+      "get": {
+        "tags": [
+          "Suspense"
+        ],
+        "summary": "Список суспенсов с пагинацией, фильтрацией, сортировкой",
+        "parameters": [
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "description": "Номер страницы (начиная с 1)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Размер страницы (20, 50, 100)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "SortBy",
+            "in": "query",
+            "description": "Поле для сортировки (название свойства)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SortDirection",
+            "in": "query",
+            "description": "Направление сортировки: asc / desc",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Filters",
+            "in": "query",
+            "description": "Динамические фильтры: ключ = имя поля, значение = значение фильтра.\r\nПоддерживает суффиксы: _gt, _lt, _gte, _lte, _contains, _from, _to",
+            "style": "deepObject",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Suspense"
+        ],
+        "summary": "Ручной ввод суспенса через форму",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuspenseLineDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuspenseLineDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuspenseLineDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Suspense/{id}": {
+      "get": {
+        "tags": [
+          "Suspense"
+        ],
+        "summary": "Суспенс по ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Suspense"
+        ],
+        "summary": "Обновление суспенса (п.26)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuspenseLineDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuspenseLineDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuspenseLineDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Suspense/ungrouped": {
+      "get": {
+        "tags": [
+          "Suspense"
+        ],
+        "summary": "Несгруппированные суспенсы (статус 0 — нет продукта, статус 1 — нет прав)",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "description": "Номер страницы (начиная с 1)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Размер страницы (20, 50, 100)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "SortBy",
+            "in": "query",
+            "description": "Поле для сортировки (название свойства)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SortDirection",
+            "in": "query",
+            "description": "Направление сортировки: asc / desc",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Filters",
+            "in": "query",
+            "description": "Динамические фильтры: ключ = имя поля, значение = значение фильтра.\r\nПоддерживает суффиксы: _gt, _lt, _gte, _lte, _contains, _from, _to",
+            "style": "deepObject",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Territory": {
+      "get": {
+        "tags": [
+          "Territory"
+        ],
+        "summary": "Список территорий с пагинацией",
+        "parameters": [
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "description": "Номер страницы (начиная с 1)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Размер страницы (20, 50, 100)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "SortBy",
+            "in": "query",
+            "description": "Поле для сортировки (название свойства)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SortDirection",
+            "in": "query",
+            "description": "Направление сортировки: asc / desc",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Filters",
+            "in": "query",
+            "description": "Динамические фильтры: ключ = имя поля, значение = значение фильтра.\r\nПоддерживает суффиксы: _gt, _lt, _gte, _lte, _contains, _from, _to",
+            "style": "deepObject",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Upload": {
+      "post": {
+        "tags": [
+          "Upload"
+        ],
+        "summary": "Загрузка Excel-файла с отчётом стриминговой платформы.\r\nПарсит файл, проводит валидацию каждой строки, сохраняет в БД.",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              },
+              "encoding": {
+                "file": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/User": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "description": "Номер страницы (начиная с 1)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Размер страницы (20, 50, 100)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "SortBy",
+            "in": "query",
+            "description": "Поле для сортировки (название свойства)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SortDirection",
+            "in": "query",
+            "description": "Направление сортировки: asc / desc",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Filters",
+            "in": "query",
+            "description": "Динамические фильтры: ключ = имя поля, значение = значение фильтра.\r\nПоддерживает суффиксы: _gt, _lt, _gte, _lte, _contains, _from, _to",
+            "style": "deepObject",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "User"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/User/{id}": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AccountRightsDto": {
+        "type": "object",
+        "properties": {
+          "rightIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApiError": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "Поле, к которому относится ошибка (null если общая ошибка)",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "description": "Текст ошибки",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Описание одной ошибки"
+      },
+      "CreateAccountDto": {
+        "type": "object",
+        "properties": {
+          "login": {
+            "type": "string",
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateUserDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "surname": {
+            "type": "string",
+            "nullable": true
+          },
+          "middleName": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phoneNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "position": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GroupingCommitRequest": {
+        "type": "object",
+        "properties": {
+          "businessStatus": {
+            "type": "integer",
+            "description": "Бизнес-статус (0 — нет продукта, 1 — нет прав)",
+            "format": "int32"
+          },
+          "groupByColumns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Столбцы группировки (для формирования WHERE-условия поиска строк)",
+            "nullable": true
+          },
+          "keyValues": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "nullable": true
+            },
+            "description": "Значения столбцов группировки — определяют конкретную группу для фиксации",
+            "nullable": true
+          },
+          "accountId": {
+            "type": "integer",
+            "description": "ID аккаунта пользователя, создающего группу",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Запрос на фиксацию (сохранение) динамической группы"
+      },
+      "GroupingPreviewItem": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "nullable": true
+            },
+            "description": "Значения столбцов группировки (ключ — имя столбца, значение — значение)",
+            "nullable": true
+          },
+          "count": {
+            "type": "integer",
+            "description": "Количество суспенсов в группе",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Одна строка результата динамической группировки"
+      },
+      "GroupingPreviewItemPagedResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GroupingPreviewItem"
+            },
+            "description": "Элементы текущей страницы",
+            "nullable": true
+          },
+          "totalCount": {
+            "type": "integer",
+            "description": "Общее количество записей (без пагинации)",
+            "format": "int32"
+          },
+          "pageNumber": {
+            "type": "integer",
+            "description": "Текущая страница",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "Размер страницы",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "Общее количество страниц",
+            "format": "int32",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Стандартный ответ с пагинацией"
+      },
+      "GroupingPreviewItemPagedResponseApiResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "integer",
+            "description": "HTTP статус-код",
+            "format": "int32"
+          },
+          "businessCode": {
+            "type": "string",
+            "description": "Бизнес-код операции (для программной обработки на клиенте).\r\nНапример: \"SUSPENSE_CREATED\", \"VALIDATION_ERROR\", \"NOT_FOUND\"",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "description": "Сообщение для отображения пользователю",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/GroupingPreviewItemPagedResponse"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiError"
+            },
+            "description": "Список ошибок (валидация, бизнес-ошибки и т.д.)",
+            "nullable": true
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Временная метка ответа",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Универсальный ответ API. Оборачивает все ответы в единый формат."
+      },
+      "LinkProductDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO для привязки группы к продукту (п.25)"
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "login": {
+            "type": "string",
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ObjectApiResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "integer",
+            "description": "HTTP статус-код",
+            "format": "int32"
+          },
+          "businessCode": {
+            "type": "string",
+            "description": "Бизнес-код операции (для программной обработки на клиенте).\r\nНапример: \"SUSPENSE_CREATED\", \"VALIDATION_ERROR\", \"NOT_FOUND\"",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "description": "Сообщение для отображения пользователю",
+            "nullable": true
+          },
+          "data": {
+            "description": "Тело ответа (объект или массив)",
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiError"
+            },
+            "description": "Список ошибок (валидация, бизнес-ошибки и т.д.)",
+            "nullable": true
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Временная метка ответа",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Универсальный ответ API. Оборачивает все ответы в единый формат."
+      },
+      "PostponeGroupDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO для откладывания группы (п.21)"
+      },
+      "RefreshTokenDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SendToBackOfficeDto": {
+        "type": "object",
+        "properties": {
+          "comment": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO для отправки в бэк-офис (п.20)"
+      },
+      "SuspenseLineDto": {
+        "type": "object",
+        "properties": {
+          "isrc": {
+            "type": "string",
+            "description": "Идентификатор фонограммы (ISRC)",
+            "nullable": true
+          },
+          "barcode": {
+            "type": "string",
+            "description": "Баркод продукта",
+            "nullable": true
+          },
+          "catalogNumber": {
+            "type": "string",
+            "description": "Каталожный номер",
+            "nullable": true
+          },
+          "productFormatCode": {
+            "type": "string",
+            "description": "Код формата продукта (TTkey)",
+            "nullable": true
+          },
+          "senderCompany": {
+            "type": "string",
+            "description": "Компания отправитель (название из отчёта)",
+            "nullable": true
+          },
+          "recipientCompany": {
+            "type": "string",
+            "description": "Компания получатель (название из отчёта)",
+            "nullable": true
+          },
+          "operator": {
+            "type": "string",
+            "description": "Оператор (стриминговая площадка)",
+            "nullable": true
+          },
+          "artist": {
+            "type": "string",
+            "description": "Артист",
+            "nullable": true
+          },
+          "trackTitle": {
+            "type": "string",
+            "description": "Название трека",
+            "nullable": true
+          },
+          "agreementType": {
+            "type": "string",
+            "description": "Тип договора",
+            "nullable": true
+          },
+          "agreementNumber": {
+            "type": "string",
+            "description": "Номер договора",
+            "nullable": true
+          },
+          "territoryCode": {
+            "type": "string",
+            "description": "Код территории",
+            "nullable": true
+          },
+          "qty": {
+            "type": "integer",
+            "description": "Кол-во прослушиваний",
+            "format": "int32"
+          },
+          "ppd": {
+            "type": "number",
+            "description": "Цена за одно прослушивание",
+            "format": "double",
+            "nullable": true
+          },
+          "exchangeCurrency": {
+            "type": "number",
+            "description": "Валюта",
+            "format": "double"
+          },
+          "exchangeRate": {
+            "type": "number",
+            "description": "Курс обмена",
+            "format": "double"
+          },
+          "genre": {
+            "type": "string",
+            "description": "Жанр",
+            "nullable": true
+          },
+          "senderCompanyId": {
+            "type": "integer",
+            "description": "FK компании отправителя (если известен)",
+            "format": "int32",
+            "nullable": true
+          },
+          "recipientCompanyId": {
+            "type": "integer",
+            "description": "FK компании получателя (если известен)",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO для входящей строки суспенса (из Excel-отчёта или формы ручного ввода)"
+      },
+      "UpdateAccountDto": {
+        "type": "object",
+        "properties": {
+          "login": {
+            "type": "string",
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateGroupMetaRightsDto": {
+        "type": "object",
+        "properties": {
+          "docNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "docType": {
+            "type": "string",
+            "nullable": true
+          },
+          "docDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "docStart": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "docEnd": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "territoryId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "territoryCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "territoryDesc": {
+            "type": "string",
+            "nullable": true
+          },
+          "senderCompanyId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "receiverCompanyId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "share": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO для обновления метаданных прав группы (п.15)"
+      },
+      "UpdateGroupMetadataDto": {
+        "type": "object",
+        "properties": {
+          "catalogNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "barcode": {
+            "type": "string",
+            "nullable": true
+          },
+          "isrc": {
+            "type": "string",
+            "nullable": true
+          },
+          "artist": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "genre": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "productTypeCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "productTypeDesc": {
+            "type": "string",
+            "nullable": true
+          },
+          "duration": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "releaseDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "productTypeId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "catalogProductId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "DTO для обновления метаданных продукта группы (п.14)"
+      },
+      "UpdateUserDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "surname": {
+            "type": "string",
+            "nullable": true
+          },
+          "middleName": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phoneNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "position": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "description": "Вставьте JWT токен (без префикса Bearer — он добавится автоматически)",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "Bearer": [ ]
+    }
+  ]
+}

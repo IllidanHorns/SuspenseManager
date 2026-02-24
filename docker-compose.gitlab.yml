@@ -13,7 +13,7 @@ services:
         postgresql['shared_buffers'] = '128MB'
         prometheus_monitoring['enable'] = false
     ports:
-      - "8999:8999"  # external_url port must match container port
+      - "8999:8999"  
       - "8443:443"
       - "2222:22"
     volumes:

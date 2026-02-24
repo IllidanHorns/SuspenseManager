@@ -1,0 +1,17 @@
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\bin\Release\net9.0\SuspenseManager.Data.deps.json
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\bin\Release\net9.0\SuspenseManager.Data.runtimeconfig.json
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\bin\Release\net9.0\SuspenseManager.Data.dll
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\bin\Release\net9.0\SuspenseManager.Data.pdb
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\bin\Release\net9.0\SuspenseManager.Models.dll
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\bin\Release\net9.0\SuspenseManager.Models.pdb
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\obj\Release\net9.0\SuspenseManager.Data.csproj.AssemblyReference.cache
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\obj\Release\net9.0\SuspenseManager.Data.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\obj\Release\net9.0\SuspenseManager.Data.AssemblyInfoInputs.cache
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\obj\Release\net9.0\SuspenseManager.Data.AssemblyInfo.cs
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\obj\Release\net9.0\SuspenseManager.Data.csproj.CoreCompileInputs.cache
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\obj\Release\net9.0\Suspense.D737BC9F.Up2Date
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\obj\Release\net9.0\SuspenseManager.Data.dll
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\obj\Release\net9.0\refint\SuspenseManager.Data.dll
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\obj\Release\net9.0\SuspenseManager.Data.pdb
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\obj\Release\net9.0\SuspenseManager.Data.genruntimeconfig.cache
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\obj\Release\net9.0\ref\SuspenseManager.Data.dll

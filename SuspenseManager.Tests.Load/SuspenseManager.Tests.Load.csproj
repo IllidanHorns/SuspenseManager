@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>SuspenseManager.Tests.Load</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk"               Version="17.12.0" />
+    <PackageReference Include="xunit"                                Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio"            Version="3.0.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector"                   Version="6.0.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="NBomber"                              Version="6.0.0" />
+    <PackageReference Include="NBomber.Http"                         Version="6.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"     Version="9.0.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.4" />
+    <PackageReference Include="FluentAssertions"                     Version="7.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SuspenseManager.Presentation\SuspenseManager.Presentation.csproj" />
+    <ProjectReference Include="..\SuspenseManager.Data\SuspenseManager.Data.csproj" />
+    <ProjectReference Include="..\SuspenseManager.Models\SuspenseManager.Models.csproj" />
+    <ProjectReference Include="..\SuspenseManager.Common\SuspenseManager.Common.csproj" />
+  </ItemGroup>
+
+</Project>

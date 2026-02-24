@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="SuspenseManager.Controllers.AccountController">
+    <Position X="2.25" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAggAAAAAAAIAAAAAAAAAAIAEAAEAAAgAAAAAAAIA=</HashCode>
+      <FileName>Controllers\AccountController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SuspenseManager.Controllers.AnalyticsController">
+    <Position X="2.25" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAABA=</HashCode>
+      <FileName>Controllers\AnalyticsController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SuspenseManager.Controllers.AuthController">
+    <Position X="5.75" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAABAAAAAAAAAAAAgIAAAAAAAAAASAAAAAAA=</HashCode>
+      <FileName>Controllers\AuthController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SuspenseManager.Controllers.CompanyController">
+    <Position X="7.75" Y="1.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAggAAAAAAIA=</HashCode>
+      <FileName>Controllers\CompanyController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SuspenseManager.Controllers.GroupController">
+    <Position X="4" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ACAAEAAAAIAAAAAAAAAAAAABAAAAAAAAAAAABAAAAIA=</HashCode>
+      <FileName>Controllers\GroupController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SuspenseManager.Controllers.GroupingController">
+    <Position X="5.75" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAGAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAA=</HashCode>
+      <FileName>Controllers\GroupingController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SuspenseManager.Controllers.GroupProcessingController">
+    <Position X="7.75" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAEAEACAAAEBIAAAAgABAAAYAAAAEAAQAAAwAgAABA=</HashCode>
+      <FileName>Controllers\GroupProcessingController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SuspenseManager.Controllers.SuspenseController">
+    <Position X="4" Y="3.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAAAAAAAAAAACAAAAAIAAQAEAAAgIAAAAAIIA=</HashCode>
+      <FileName>Controllers\SuspenseController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SuspenseManager.Controllers.TerritoryController">
+    <Position X="5.75" Y="5.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAgAAAAAAAAA=</HashCode>
+      <FileName>Controllers\TerritoryController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SuspenseManager.Controllers.UploadController">
+    <Position X="2.25" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAABAAAAAAgAIAAAAAgAAAIABAAAAAA=</HashCode>
+      <FileName>Controllers\UploadController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SuspenseManager.Controllers.UserController">
+    <Position X="0.5" Y="5.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAAAAAAAAAAAAAAAAAIAEAAEAAAgAEAAAAAIA=</HashCode>
+      <FileName>Controllers\UserController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SuspenseManager.Middleware.ExceptionHandlingMiddleware">
+    <Position X="0.5" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAQAAAAAAAAAAAAAAAIAAAAAAwAAAAAAAAAAA=</HashCode>
+      <FileName>Middleware\ExceptionHandlingMiddleware.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SuspenseManager.Middleware.RequirePermissionAttribute" BaseTypeListCollapsed="true">
+    <Position X="0.5" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAA=</HashCode>
+      <FileName>Middleware\PermissionAttribute.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

@@ -1,0 +1,213 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="Application.Helpers.GroupingSqlBuilder">
+    <Position X="5.75" Y="9.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAAAAAEAAABAAAAAAAAAAAAAAAAAAAAAAAAIAAmAABA=</HashCode>
+      <FileName>Helpers\GroupingSqlBuilder.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Application.Services.AccountService" BaseTypeListCollapsed="true">
+    <Position X="4" Y="9" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAgAAACAAQAAAAAAAQAAAAAAAAEAgAAAAAAIAAIIA=</HashCode>
+      <FileName>Services\AccountService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="Application.Services.AnalyticsService" BaseTypeListCollapsed="true">
+    <Position X="4" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAA=</HashCode>
+      <FileName>Services\AnalyticsService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="Application.Services.AuthService" BaseTypeListCollapsed="true">
+    <Position X="4" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAIwAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAgAgAACAQ=</HashCode>
+      <FileName>Services\AuthService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="Application.Services.CompanyService" BaseTypeListCollapsed="true">
+    <Position X="2.25" Y="1" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAIAA=</HashCode>
+      <FileName>Services\CompanyService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="Application.Services.ExcelExportService" BaseTypeListCollapsed="true">
+    <Position X="2.25" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAAAAAAAAAAACQAAAAAAAAAAAIAAAA=</HashCode>
+      <FileName>Services\ExcelExportService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="Application.Services.ExcelParsingService" BaseTypeListCollapsed="true">
+    <Position X="4" Y="6" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAQAgAAAAAAAQAAAABAAAAABAAAAAAAAAAACCIAA=</HashCode>
+      <FileName>Services\ExcelParsingService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="Application.Services.GroupingService" BaseTypeListCollapsed="true">
+    <Position X="0.5" Y="9.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAEAQAAAAAAEABAAAAAAAAAAAAAAAAABCA=</HashCode>
+      <FileName>Services\GroupingService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="Application.Services.GroupProcessingService" BaseTypeListCollapsed="true">
+    <Position X="2.25" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>KAAAgABgAAIAAAAAAAAAAAAQAAIIAAIAASAAQAIIAAg=</HashCode>
+      <FileName>Services\GroupProcessingService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="Application.Services.GroupService" BaseTypeListCollapsed="true">
+    <Position X="0.5" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>QAAAgIAAAAAAAAAAAAAAAAAAAAAAACAAAAAAQAAAIAA=</HashCode>
+      <FileName>Services\GroupService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="Application.Services.SuspenseService" BaseTypeListCollapsed="true">
+    <Position X="0.5" Y="3.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAEAAAAAAAAAAAAAAAAAAAAgAAABAAAAAIAA=</HashCode>
+      <FileName>Services\SuspenseService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="Application.Services.TerritoryService" BaseTypeListCollapsed="true">
+    <Position X="2.25" Y="10.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Services\TerritoryService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="Application.Services.UserService" BaseTypeListCollapsed="true">
+    <Position X="5.75" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAIAAJIA=</HashCode>
+      <FileName>Services\UserService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="Application.Services.ValidationService" BaseTypeListCollapsed="true">
+    <Position X="5.75" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQgAAAAAAAAAAQEAAAAAAAAAgAAAAAgAAAAAAABAA=</HashCode>
+      <FileName>Services\ValidationService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="Application.Validators.SuspenseLineDtoValidator">
+    <Position X="0.5" Y="2.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Validators\SuspenseLineDtoValidator.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Interface Name="Application.Interfaces.IAccountService">
+    <Position X="11" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAACAAQAAAAAAAQAAAAAAAAEAgAAAAAAIAAIIA=</HashCode>
+      <FileName>Interfaces\IAccountService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Application.Interfaces.IUserService">
+    <Position X="12.75" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAIAAJIA=</HashCode>
+      <FileName>Interfaces\IAccountService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Application.Interfaces.IAuthService">
+    <Position X="12.75" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQ=</HashCode>
+      <FileName>Interfaces\IAccountService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Application.Interfaces.IAnalyticsService">
+    <Position X="7.5" Y="5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAA=</HashCode>
+      <FileName>Interfaces\IAnalyticsService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Application.Interfaces.ICompanyService">
+    <Position X="7.5" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAIAA=</HashCode>
+      <FileName>Interfaces\ICompanyService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Application.Interfaces.IExcelExportService">
+    <Position X="7.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAACQAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Interfaces\IExcelExportService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Application.Interfaces.IExcelParsingService">
+    <Position X="11" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Interfaces\IExcelParsingService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Application.Interfaces.IGroupingService">
+    <Position X="11" Y="5.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAACA=</HashCode>
+      <FileName>Interfaces\IGroupingService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Application.Interfaces.IGroupProcessingService">
+    <Position X="9.25" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>KAAAAABgAAIAAAAAAAAAAAAAAAIIAAIAASAAQAIAAAg=</HashCode>
+      <FileName>Interfaces\IGroupProcessingService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Application.Interfaces.IGroupService">
+    <Position X="9.25" Y="6" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>QAAAAIAAAAAAAAAAAAAAAAAAAAAAACAAAAAAQAAAIAA=</HashCode>
+      <FileName>Interfaces\IGroupService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Application.Interfaces.ISuspenseService">
+    <Position X="12.75" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAEAAAAAAAAAAAAAAAAAAAAgAAABAAAAAIAA=</HashCode>
+      <FileName>Interfaces\ISuspenseService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Application.Interfaces.ITerritoryService">
+    <Position X="12.75" Y="6.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Interfaces\ITerritoryService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Application.Interfaces.IValidationService">
+    <Position X="7.5" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAA=</HashCode>
+      <FileName>Interfaces\IValidationService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

@@ -205,5 +205,11 @@
             Используется на контроллерах и действиях: [RequirePermission("groups.no_product.catalog_fast")]
             </summary>
         </member>
+        <member name="T:Program">
+            <summary>
+            Этот файл делает класс Program публичным для использования в интеграционных тестах
+            через WebApplicationFactory&lt;Program&gt;.
+            </summary>
+        </member>
     </members>
 </doc>

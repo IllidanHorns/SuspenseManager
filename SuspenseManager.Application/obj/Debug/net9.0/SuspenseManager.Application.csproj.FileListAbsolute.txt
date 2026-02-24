@@ -6,6 +6,7 @@ C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Application\bin
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Application\bin\Debug\net9.0\SuspenseManager.Models.dll
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Application\bin\Debug\net9.0\SuspenseManager.Models.pdb
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Application\bin\Debug\net9.0\SuspenseManager.Common.pdb
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Application\bin\Debug\net9.0\SuspenseManager.Common.xml
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Application\bin\Debug\net9.0\SuspenseManager.Data.pdb
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Application\obj\Debug\net9.0\SuspenseManager.Application.csproj.AssemblyReference.cache
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Application\obj\Debug\net9.0\SuspenseManager.Application.GeneratedMSBuildEditorConfig.editorconfig
@@ -17,4 +18,3 @@ C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Application\obj
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Application\obj\Debug\net9.0\refint\SuspenseManager.Application.dll
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Application\obj\Debug\net9.0\SuspenseManager.Application.pdb
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Application\obj\Debug\net9.0\ref\SuspenseManager.Application.dll
-C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Application\bin\Debug\net9.0\SuspenseManager.Common.xml

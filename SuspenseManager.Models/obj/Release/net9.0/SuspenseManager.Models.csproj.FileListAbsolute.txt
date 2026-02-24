@@ -1,0 +1,11 @@
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Models\bin\Release\net9.0\SuspenseManager.Models.deps.json
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Models\bin\Release\net9.0\SuspenseManager.Models.dll
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Models\bin\Release\net9.0\SuspenseManager.Models.pdb
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Models\obj\Release\net9.0\SuspenseManager.Models.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Models\obj\Release\net9.0\SuspenseManager.Models.AssemblyInfoInputs.cache
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Models\obj\Release\net9.0\SuspenseManager.Models.AssemblyInfo.cs
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Models\obj\Release\net9.0\SuspenseManager.Models.csproj.CoreCompileInputs.cache
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Models\obj\Release\net9.0\SuspenseManager.Models.dll
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Models\obj\Release\net9.0\refint\SuspenseManager.Models.dll
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Models\obj\Release\net9.0\SuspenseManager.Models.pdb
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Models\obj\Release\net9.0\ref\SuspenseManager.Models.dll
