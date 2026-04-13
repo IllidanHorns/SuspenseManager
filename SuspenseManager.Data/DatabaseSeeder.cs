@@ -10,8 +10,44 @@ namespace Data;
 /// </summary>
 public static class DatabaseSeeder
 {
-    public static async Task SeedAsync(SuspenseManagerDbContext db)
+    /// <summary>
+    /// Исправляет placeholder-хэши паролей для уже засидированных аккаунтов.
+    /// Вызывать всегда (до основного Seed) — безопасно при любом состоянии БД.
+    /// </summary>
+    public static async Task EnsurePasswordsAsync(SuspenseManagerDbContext db, string adminPasswordHash)
     {
+        var account = await db.Accounts
+            .FirstOrDefaultAsync(a => a.Login == "admin" && a.PasswordHash == "placeholder_hash");
+
+        if (account is not null)
+        {
+            account.PasswordHash = adminPasswordHash;
+            account.ChangeTime = DateTime.UtcNow;
+            await db.SaveChangesAsync();
+        }
+    }
+
+    public static async Task SeedAsync(SuspenseManagerDbContext db, string adminPasswordHash)
+    {
+        // Справочник статусов — сидируем всегда (независимо от остальных данных)
+        if (!await db.StatusDictionary.AnyAsync())
+        {
+            var statuses = new[]
+            {
+                new StatusDictionary { Code = 0,   Name = "Нет продукта",                    Description = "Суспенс не в группе, продукт не найден в каталоге" },
+                new StatusDictionary { Code = 1,   Name = "Нет прав",                        Description = "Суспенс не в группе, продукт найден, права не определены" },
+                new StatusDictionary { Code = 15,  Name = "В группе — нет продукта",         Description = "Суспенс в группе, ожидает каталогизации" },
+                new StatusDictionary { Code = 16,  Name = "В группе — нет прав",             Description = "Суспенс в группе, продукт привязан, ожидает прав" },
+                new StatusDictionary { Code = 30,  Name = "Отложено — нет продукта",         Description = "Группа без продукта отложена для позднейшей обработки" },
+                new StatusDictionary { Code = 32,  Name = "Отложено — нет прав",             Description = "Группа без прав отложена для позднейшей обработки" },
+                new StatusDictionary { Code = 88,  Name = "Валидировано",                    Description = "Суспенс прошёл валидацию, отправлен в расчёт роялти" },
+                new StatusDictionary { Code = 120, Name = "Бэк-офис — нет продукта",         Description = "Группа без продукта передана в бэк-офис" },
+                new StatusDictionary { Code = 320, Name = "Бэк-офис — нет прав",             Description = "Группа без прав передана в бэк-офис" },
+            };
+            db.StatusDictionary.AddRange(statuses);
+            await db.SaveChangesAsync();
+        }
+
         if (await db.Companies.AnyAsync())
         {
             return; // уже засидено
@@ -185,7 +221,7 @@ public static class DatabaseSeeder
         var account = new Account
         {
             Login = "admin",
-            PasswordHash = "placeholder_hash", // будет заменён при реализации auth
+            PasswordHash = adminPasswordHash,
             Description = "Тестовый аккаунт администратора",
             UserId = user.Id,
             CreateTime = DateTime.UtcNow

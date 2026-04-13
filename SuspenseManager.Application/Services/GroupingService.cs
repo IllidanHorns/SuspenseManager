@@ -13,10 +13,12 @@ namespace Application.Services;
 public class GroupingService : IGroupingService
 {
     private readonly SuspenseManagerDbContext _db;
+    private readonly IAuditService _audit;
 
-    public GroupingService(SuspenseManagerDbContext db)
+    public GroupingService(SuspenseManagerDbContext db, IAuditService audit)
     {
         _db = db;
+        _audit = audit;
     }
 
     public async Task<PagedResponse<GroupingPreviewItem>> PreviewAsync(
@@ -117,6 +119,18 @@ public class GroupingService : IGroupingService
             if (request.BusinessStatus == 1)
             {
                 catalogProductId = suspenses[0].ProductId;
+
+                // Проверяем что продукт реально существует и не архивирован
+                var productExists = catalogProductId.HasValue &&
+                    await _db.CatalogProducts
+                        .AnyAsync(p => p.Id == catalogProductId.Value && p.ArchiveLevel == 0, ct);
+
+                if (!productExists)
+                {
+                    throw new BusinessException(
+                        "Продукт, связанный с суспенсами этой группы, не найден или архивирован",
+                        "PRODUCT_NOT_FOUND", 404);
+                }
             }
 
             // Создаём группу
@@ -155,6 +169,10 @@ public class GroupingService : IGroupingService
 
             await _db.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
+
+            // Логируем создание группы и начальный статус всех строк
+            await _audit.LogGroupAsync(group.Id, null, newStatus, ct);
+            await _audit.LogGroupLinesAsync(group.Id, null, newStatus, ct);
 
             return group;
         }

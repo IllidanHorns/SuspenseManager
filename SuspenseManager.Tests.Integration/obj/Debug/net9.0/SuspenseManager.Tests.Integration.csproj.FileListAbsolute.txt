@@ -502,3 +502,4 @@ C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Tests.Integrati
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Tests.Integration\obj\Debug\net9.0\SuspenseManager.Tests.Integration.pdb
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Tests.Integration\obj\Debug\net9.0\SuspenseManager.Tests.Integration.genruntimeconfig.cache
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Tests.Integration\obj\Debug\net9.0\ref\SuspenseManager.Tests.Integration.dll
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Tests.Integration\obj\Debug\net9.0\SuspenseManager.Tests.Integration.sourcelink.json

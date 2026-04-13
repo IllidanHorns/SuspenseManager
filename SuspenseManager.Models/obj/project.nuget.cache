@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "FpdZMz6aWOM=",
+  "dgSpecHash": "+F0O3nyzkwg=",
   "success": true,
   "projectFilePath": "C:\\Users\\apakhtusov\\source\\repos\\SuspenseManager\\SuspenseManager.Models\\SuspenseManager.Models.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\apakhtusov\\.nuget\\packages\\sonaranalyzer.csharp\\9.32.0.97167\\sonaranalyzer.csharp.9.32.0.97167.nupkg.sha512"
+  ],
   "logs": []
 }

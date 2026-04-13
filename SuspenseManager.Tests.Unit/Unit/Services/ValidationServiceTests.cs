@@ -1,3 +1,4 @@
+using Application.Interfaces;
 using Application.Services;
 using Common.DTOs;
 using Data;
@@ -5,6 +6,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Models;
 using Models.Enums;
+using Moq;
 
 namespace SuspenseManager.Tests.Unit.Unit.Services;
 
@@ -23,7 +25,8 @@ public class ValidationServiceTests : IDisposable
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         _db = new SuspenseManagerDbContext(options);
-        _service = new ValidationService(_db);
+        var auditMock = new Mock<IAuditService>();
+        _service = new ValidationService(_db, auditMock.Object);
     }
 
     public void Dispose() => _db.Dispose();

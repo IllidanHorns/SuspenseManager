@@ -1151,6 +1151,9 @@
           }
         }
       },
+      "SonarAnalyzer.CSharp/9.32.0.97167": {
+        "type": "package"
+      },
       "Swashbuckle.AspNetCore/9.0.6": {
         "type": "package",
         "dependencies": {
@@ -4179,6 +4182,27 @@
         "sixlabors.fonts.nuspec"
       ]
     },
+    "SonarAnalyzer.CSharp/9.32.0.97167": {
+      "sha512": "Yxk86RV+8ynJpUhku1Yw2hITFmnmXKkXJ73cIFSy85ol5SnWREQg9RuTyV8nI7V7+pyLKpCfRmD7P0widsgjkg==",
+      "type": "package",
+      "path": "sonaranalyzer.csharp/9.32.0.97167",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "analyzers/Google.Protobuf.dll",
+        "analyzers/SonarAnalyzer.CFG.dll",
+        "analyzers/SonarAnalyzer.CSharp.dll",
+        "analyzers/SonarAnalyzer.ShimLayer.dll",
+        "analyzers/SonarAnalyzer.dll",
+        "images/sonarsource_64.png",
+        "license/THIRD-PARTY-NOTICES.txt",
+        "sonaranalyzer.csharp.9.32.0.97167.nupkg.sha512",
+        "sonaranalyzer.csharp.nuspec",
+        "tools/install.ps1",
+        "tools/uninstall.ps1"
+      ]
+    },
     "Swashbuckle.AspNetCore/9.0.6": {
       "sha512": "q/UfEAgrk6qQyjHXgsW9ILw0YZLfmPtWUY4wYijliX6supozC+TkzU0G6FTnn/dPYxnChjM8g8lHjWHF6VKy+A==",
       "type": "package",
@@ -5327,6 +5351,7 @@
     "net9.0": [
       "Microsoft.AspNetCore.OpenApi >= 9.0.10",
       "Microsoft.EntityFrameworkCore.Design >= 9.0.12",
+      "SonarAnalyzer.CSharp >= 9.32.0.97167",
       "SuspenseManager.Application >= 1.0.0",
       "SuspenseManager.Common >= 1.0.0",
       "SuspenseManager.Data >= 1.0.0",
@@ -5402,6 +5427,12 @@
             "suppressParent": "All",
             "target": "Package",
             "version": "[9.0.12, )"
+          },
+          "SonarAnalyzer.CSharp": {
+            "include": "Runtime, Build, Native, ContentFiles, Analyzers",
+            "suppressParent": "All",
+            "target": "Package",
+            "version": "[9.32.0.97167, )"
           },
           "Swashbuckle.AspNetCore": {
             "target": "Package",

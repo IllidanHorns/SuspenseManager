@@ -56,6 +56,42 @@
             Текст ошибки
             </summary>
         </member>
+        <member name="P:Common.DTOs.AuditGroupsRequest.Status">
+            <summary>Фильтр по статусу группы</summary>
+        </member>
+        <member name="P:Common.DTOs.AuditGroupsRequest.CreatedByAccountId">
+            <summary>Фильтр по создателю группы (accountId)</summary>
+        </member>
+        <member name="P:Common.DTOs.AuditGroupsRequest.OnlyMine">
+            <summary>Показать только группы текущего пользователя</summary>
+        </member>
+        <member name="P:Common.DTOs.AuditGroupsRequest.CreatedFrom">
+            <summary>Дата создания от (UTC)</summary>
+        </member>
+        <member name="P:Common.DTOs.AuditGroupsRequest.CreatedTo">
+            <summary>Дата создания до (UTC)</summary>
+        </member>
+        <member name="P:Common.DTOs.AuditGroupsRequest.LastChangedFrom">
+            <summary>Дата последнего изменения от (UTC)</summary>
+        </member>
+        <member name="P:Common.DTOs.AuditGroupsRequest.LastChangedTo">
+            <summary>Дата последнего изменения до (UTC)</summary>
+        </member>
+        <member name="P:Common.DTOs.AuditLinesRequest.Status">
+            <summary>Фильтр по статусу строки</summary>
+        </member>
+        <member name="P:Common.DTOs.AuditLinesRequest.GroupId">
+            <summary>Фильтр по группе</summary>
+        </member>
+        <member name="P:Common.DTOs.AuditLinesRequest.OnlyMine">
+            <summary>Показать только строки из групп текущего пользователя</summary>
+        </member>
+        <member name="P:Common.DTOs.AuditLinesRequest.LastChangedFrom">
+            <summary>Дата последнего изменения от (UTC)</summary>
+        </member>
+        <member name="P:Common.DTOs.AuditLinesRequest.LastChangedTo">
+            <summary>Дата последнего изменения до (UTC)</summary>
+        </member>
         <member name="T:Common.DTOs.GroupingPreviewRequest">
             <summary>
             Запрос на предпросмотр динамической группировки суспенсов

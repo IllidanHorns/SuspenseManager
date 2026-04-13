@@ -546,3 +546,4 @@ C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Tests.Load\obj\
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Tests.Load\obj\Debug\net9.0\SuspenseManager.Tests.Load.pdb
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Tests.Load\obj\Debug\net9.0\SuspenseManager.Tests.Load.genruntimeconfig.cache
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Tests.Load\obj\Debug\net9.0\ref\SuspenseManager.Tests.Load.dll
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Tests.Load\obj\Debug\net9.0\SuspenseManager.Tests.Load.sourcelink.json

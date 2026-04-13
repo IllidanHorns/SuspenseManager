@@ -24,6 +24,6 @@ public class AnalyticsController : ControllerBase
     public async Task<IActionResult> GetDashboard(CancellationToken ct)
     {
         var result = await _analyticsService.GetDashboardAsync(ct);
-        return Ok(ApiResponse<object>.Success(result));
+        return Ok(ApiResponse<Common.DTOs.DashboardDto>.Success(result));
     }
 }

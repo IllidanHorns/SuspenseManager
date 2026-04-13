@@ -18,3 +18,4 @@ C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Application\obj
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Application\obj\Debug\net9.0\refint\SuspenseManager.Application.dll
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Application\obj\Debug\net9.0\SuspenseManager.Application.pdb
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Application\obj\Debug\net9.0\ref\SuspenseManager.Application.dll
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Application\obj\Debug\net9.0\SuspenseManager.Application.sourcelink.json

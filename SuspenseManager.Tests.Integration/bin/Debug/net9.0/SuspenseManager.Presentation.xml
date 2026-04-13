@@ -9,6 +9,35 @@
             Дашборд аналитики: общая статистика, топ операторов, распределение по статусам
             </summary>
         </member>
+        <member name="T:SuspenseManager.Controllers.AuditController">
+            <summary>
+            Аудит: история изменений статусов групп и строк суспенсов
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.AuditController.GetGroups(Common.DTOs.AuditGroupsRequest,System.Threading.CancellationToken)">
+            <summary>
+            Список активных групп с инфо о создателе и последнем изменении статуса.
+            Поддерживает фильтрацию по статусу, дате создания, "только мои".
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.AuditController.GetGroupLogs(System.Int32,Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
+            <summary>
+            История переходов статусов конкретной группы (от новых к старым).
+            Открывается по клику на группу в списке аудита.
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.AuditController.GetLines(Common.DTOs.AuditLinesRequest,System.Threading.CancellationToken)">
+            <summary>
+            Список строк суспенсов в активных группах с последним изменением статуса.
+            Поддерживает фильтрацию по статусу, группе, "только мои".
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.AuditController.GetLineLogs(System.Int32,Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
+            <summary>
+            История переходов статусов конкретной строки суспенса (от новых к старым).
+            Открывается по клику на строку в списке аудита.
+            </summary>
+        </member>
         <member name="M:SuspenseManager.Controllers.AuthController.Login(Common.DTOs.LoginDto,System.Threading.CancellationToken)">
             <summary>
             Авторизация по логину/паролю. Возвращает access + refresh токены.

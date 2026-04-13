@@ -1,3 +1,4 @@
+using Application.Interfaces;
 using Application.Services;
 using Common.DTOs;
 using Common.Exceptions;
@@ -6,6 +7,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Models;
 using Models.Enums;
+using Moq;
 
 namespace SuspenseManager.Tests.Unit.Unit.Services;
 
@@ -24,7 +26,8 @@ public class GroupProcessingServiceTests : IDisposable
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         _db = new SuspenseManagerDbContext(options);
-        _service = new GroupProcessingService(_db);
+        var auditMock = new Mock<IAuditService>();
+        _service = new GroupProcessingService(_db, auditMock.Object);
     }
 
     public void Dispose() => _db.Dispose();

@@ -10,6 +10,7 @@
         "dependencies": {
           "Microsoft.AspNetCore.OpenApi": "9.0.10",
           "Microsoft.EntityFrameworkCore.Design": "9.0.12",
+          "SonarAnalyzer.CSharp": "9.32.0.97167",
           "SuspenseManager.Application": "1.0.0",
           "SuspenseManager.Common": "1.0.0",
           "SuspenseManager.Data": "1.0.0",
@@ -855,6 +856,7 @@
           }
         }
       },
+      "SonarAnalyzer.CSharp/9.32.0.97167": {},
       "Swashbuckle.AspNetCore/9.0.6": {
         "dependencies": {
           "Microsoft.Extensions.ApiDescription.Server": "9.0.0",
@@ -1600,6 +1602,13 @@
       "sha512": "sha512-LFQsCZlV0xlUyXAOMUo5kkSl+8zAQXXbbdwWchtk0B4o7zotZhQsQOcJUELGHdfPfm/xDAsz6hONAuV25bJaAg==",
       "path": "sixlabors.fonts/1.0.0",
       "hashPath": "sixlabors.fonts.1.0.0.nupkg.sha512"
+    },
+    "SonarAnalyzer.CSharp/9.32.0.97167": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Yxk86RV+8ynJpUhku1Yw2hITFmnmXKkXJ73cIFSy85ol5SnWREQg9RuTyV8nI7V7+pyLKpCfRmD7P0widsgjkg==",
+      "path": "sonaranalyzer.csharp/9.32.0.97167",
+      "hashPath": "sonaranalyzer.csharp.9.32.0.97167.nupkg.sha512"
     },
     "Swashbuckle.AspNetCore/9.0.6": {
       "type": "package",

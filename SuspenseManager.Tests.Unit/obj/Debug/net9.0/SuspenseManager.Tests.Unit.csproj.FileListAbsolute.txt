@@ -177,3 +177,4 @@ C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Tests.Unit\obj\
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Tests.Unit\obj\Debug\net9.0\SuspenseManager.Tests.Unit.pdb
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Tests.Unit\obj\Debug\net9.0\SuspenseManager.Tests.Unit.genruntimeconfig.cache
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Tests.Unit\obj\Debug\net9.0\ref\SuspenseManager.Tests.Unit.dll
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Tests.Unit\obj\Debug\net9.0\SuspenseManager.Tests.Unit.sourcelink.json

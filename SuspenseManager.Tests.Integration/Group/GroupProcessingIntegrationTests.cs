@@ -79,7 +79,7 @@ public class GroupProcessingIntegrationTests : IClassFixture<CustomWebApplicatio
 
         var items = body.GetProperty("data").GetProperty("items");
         items.GetArrayLength().Should().BeGreaterThan(0);
-        // Все группы должны иметь статус 15
+
         foreach (var item in items.EnumerateArray())
         {
             item.GetProperty("businessStatus").GetInt32().Should().Be((int)BusinessStatus.InGroupNoProduct);
@@ -314,6 +314,83 @@ public class GroupProcessingIntegrationTests : IClassFixture<CustomWebApplicatio
             suspense!.ProductId.Should().Be(productId,
                 "ProductId должен сохраниться при разгруппировке 16 — бизнес-правило 5");
             suspense.BusinessStatus.Should().Be((int)BusinessStatus.NoRights);
+        });
+    }
+
+    [Fact]
+    public async Task Ungroup_Status30_Returns200_SuspensesRevertToStatus0()
+    {
+        var token = await AuthorizeAsync("ungroup30");
+        SetBearer(token);
+
+        int groupId = 0;
+        int suspenseId = 0;
+        await _factory.WithDbAsync(async db =>
+        {
+            var builder = new TestDataBuilder(db);
+            var account = await builder.CreateAccountAsync($"acc_{Guid.NewGuid():N}", "P123!");
+            var group = await builder.CreateGroupAsync(
+                (int)BusinessStatus.PostponedNoProduct, account.Id);
+            var suspense = await builder.CreateSuspenseLineAsync(
+                (int)BusinessStatus.PostponedNoProduct, groupId: group.Id);
+            groupId = group.Id;
+            suspenseId = suspense.Id;
+        });
+
+        var response = await _client.PostAsJsonAsync(
+            $"/api/groups/{groupId}/ungroup", new { });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        await _factory.WithDbAsync(async db =>
+        {
+            var group = await db.SuspenseGroups.FindAsync(groupId);
+            group!.ArchiveLevel.Should().BeGreaterThan(0, "группа должна быть архивирована");
+
+            var suspense = await db.SuspenseLines.FindAsync(suspenseId);
+            suspense!.GroupId.Should().BeNull();
+            suspense.BusinessStatus.Should().Be((int)BusinessStatus.NoProduct);
+        });
+    }
+
+    [Fact]
+    public async Task Ungroup_Status32_Returns200_SuspensesRevertToStatus1_PreservesProductId()
+    {
+        var token = await AuthorizeAsync("ungroup32");
+        SetBearer(token);
+
+        int groupId = 0;
+        int suspenseId = 0;
+        int productId = 0;
+
+        await _factory.WithDbAsync(async db =>
+        {
+            var builder = new TestDataBuilder(db);
+            var account = await builder.CreateAccountAsync($"acc_{Guid.NewGuid():N}", "P123!");
+            var product = await builder.CreateProductAsync();
+            var group = await builder.CreateGroupAsync(
+                (int)BusinessStatus.PostponedNoRights, account.Id, product.Id);
+            var suspense = await builder.CreateSuspenseLineAsync(
+                (int)BusinessStatus.PostponedNoRights,
+                groupId: group.Id,
+                productId: product.Id);
+            groupId = group.Id;
+            suspenseId = suspense.Id;
+            productId = product.Id;
+        });
+
+        var response = await _client.PostAsJsonAsync(
+            $"/api/groups/{groupId}/ungroup", new { });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        await _factory.WithDbAsync(async db =>
+        {
+            var suspense = await db.SuspenseLines.FindAsync(suspenseId);
+            suspense!.GroupId.Should().BeNull();
+            suspense.BusinessStatus.Should().Be((int)BusinessStatus.NoRights);
+            suspense.ProductId.Should().Be(productId,
+                "ProductId должен сохраниться при разгруппировке 32 — бизнес-правило 5");
         });
     }
 

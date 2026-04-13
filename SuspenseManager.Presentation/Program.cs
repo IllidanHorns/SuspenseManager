@@ -35,6 +35,8 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 builder.Services.AddScoped<IGroupingService, GroupingService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddHttpContextAccessor();
 
 // FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<SuspenseLineDtoValidator>();
@@ -113,7 +115,9 @@ if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<SuspenseManagerDbContext>();
-    await DatabaseSeeder.SeedAsync(db);
+    var adminPasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123!");
+    await DatabaseSeeder.EnsurePasswordsAsync(db, adminPasswordHash);
+    await DatabaseSeeder.SeedAsync(db, adminPasswordHash);
 }
 
 // Глобальная обработка ошибок — первый middleware в пайплайне

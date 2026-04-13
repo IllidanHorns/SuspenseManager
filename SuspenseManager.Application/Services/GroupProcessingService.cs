@@ -12,10 +12,12 @@ namespace Application.Services;
 public class GroupProcessingService : IGroupProcessingService
 {
     private readonly SuspenseManagerDbContext _db;
+    private readonly IAuditService _audit;
 
-    public GroupProcessingService(SuspenseManagerDbContext db)
+    public GroupProcessingService(SuspenseManagerDbContext db, IAuditService audit)
     {
         _db = db;
+        _audit = audit;
     }
 
     public async Task<GroupMetadata> UpdateMetadataAsync(int groupId, UpdateGroupMetadataDto dto, CancellationToken ct = default)
@@ -54,6 +56,7 @@ public class GroupProcessingService : IGroupProcessingService
                 .FirstOrDefaultAsync(p => p.Id == dto.CatalogProductId.Value && p.ArchiveLevel == 0, ct)
                 ?? throw new BusinessException("Продукт не найден", "PRODUCT_NOT_FOUND", 404);
 
+            var prevStatus = group.BusinessStatus;
             meta.CatalogProductId = dto.CatalogProductId.Value;
             group.CatalogProductId = dto.CatalogProductId.Value;
             group.BusinessStatus = (int)BusinessStatus.InGroupNoRights;
@@ -61,6 +64,10 @@ public class GroupProcessingService : IGroupProcessingService
 
             // Обновляем статус суспенсов группы
             await UpdateSuspenseStatusAsync(groupId, (int)BusinessStatus.InGroupNoRights, dto.CatalogProductId.Value, ct);
+
+            await _db.SaveChangesAsync(ct);
+            await _audit.LogGroupAsync(groupId, prevStatus, (int)BusinessStatus.InGroupNoRights, ct);
+            await _audit.LogGroupLinesAsync(groupId, prevStatus, (int)BusinessStatus.InGroupNoRights, ct);
         }
 
         // Связываем метаданные с группой
@@ -181,23 +188,8 @@ public class GroupProcessingService : IGroupProcessingService
         _db.CatalogProducts.Add(product);
         await _db.SaveChangesAsync(ct);
 
-        // Создаём пустую запись прав
-        var emptyRights = new CatalogProductRights
-        {
-            CatalogProductId = product.Id,
-            CompanySender = string.Empty,
-            CompanyReceiver = string.Empty,
-            CompanySenderId = 1,
-            CompanyReceiverId = 1,
-            TerritoryCode = string.Empty,
-            TerritoryDesc = string.Empty,
-            TerritoryId = 1,
-            DocStart = DateOnly.FromDateTime(DateTime.UtcNow),
-            DocEnd = DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
-            CreateTime = DateTime.UtcNow,
-            ArchiveLevel = 0
-        };
-        _db.CatalogProductRights.Add(emptyRights);
+        // Права не создаются — группа переходит в статус 16 (нет прав),
+        // оператор заполнит права через MetaRights.
 
         // Обновляем группу
         group.CatalogProductId = product.Id;
@@ -208,6 +200,8 @@ public class GroupProcessingService : IGroupProcessingService
         await UpdateSuspenseStatusAsync(groupId, (int)BusinessStatus.InGroupNoRights, product.Id, ct);
 
         await _db.SaveChangesAsync(ct);
+        await _audit.LogGroupAsync(groupId, (int)BusinessStatus.InGroupNoProduct, (int)BusinessStatus.InGroupNoRights, ct);
+        await _audit.LogGroupLinesAsync(groupId, (int)BusinessStatus.InGroupNoProduct, (int)BusinessStatus.InGroupNoRights, ct);
         return product;
     }
 
@@ -254,11 +248,14 @@ public class GroupProcessingService : IGroupProcessingService
             _ => throw new BusinessException("Отправка в бэк-офис доступна только для групп со статусом 15 или 16", "INVALID_STATUS")
         };
 
+        var prevStatus = group.BusinessStatus;
         group.BusinessStatus = newStatus;
         group.ChangeTime = DateTime.UtcNow;
 
         await UpdateSuspenseStatusAsync(groupId, newStatus, null, ct);
         await _db.SaveChangesAsync(ct);
+        await _audit.LogGroupAsync(groupId, prevStatus, newStatus, ct);
+        await _audit.LogGroupLinesAsync(groupId, prevStatus, newStatus, ct);
         return group;
     }
 
@@ -273,11 +270,14 @@ public class GroupProcessingService : IGroupProcessingService
             _ => throw new BusinessException("Откладывание доступно только для групп со статусом 15 или 16", "INVALID_STATUS")
         };
 
+        var prevStatus = group.BusinessStatus;
         group.BusinessStatus = newStatus;
         group.ChangeTime = DateTime.UtcNow;
 
         await UpdateSuspenseStatusAsync(groupId, newStatus, null, ct);
         await _db.SaveChangesAsync(ct);
+        await _audit.LogGroupAsync(groupId, prevStatus, newStatus, ct);
+        await _audit.LogGroupLinesAsync(groupId, prevStatus, newStatus, ct);
         return group;
     }
 
@@ -306,19 +306,28 @@ public class GroupProcessingService : IGroupProcessingService
 
         var revertStatus = group.BusinessStatus switch
         {
-            (int)BusinessStatus.InGroupNoProduct => (int)BusinessStatus.NoProduct,
-            (int)BusinessStatus.InGroupNoRights => (int)BusinessStatus.NoRights,
-            _ => throw new BusinessException("Разгруппировка доступна только для групп со статусом 15 или 16", "INVALID_STATUS")
+            (int)BusinessStatus.InGroupNoProduct    => (int)BusinessStatus.NoProduct,
+            (int)BusinessStatus.InGroupNoRights     => (int)BusinessStatus.NoRights,
+            (int)BusinessStatus.PostponedNoProduct  => (int)BusinessStatus.NoProduct,
+            (int)BusinessStatus.PostponedNoRights   => (int)BusinessStatus.NoRights,
+            _ => throw new BusinessException(
+                "Разгруппировка доступна только для групп со статусом 15, 16, 30 или 32",
+                "INVALID_STATUS")
         };
+
+        var prevStatus = group.BusinessStatus;
+
+        // Логируем строки ДО обнуления GroupId — иначе потеряем информацию о группе
+        await _audit.LogGroupLinesAsync(groupId, prevStatus, revertStatus, ct);
 
         // Архивируем группу (soft delete)
         group.ArchiveLevel = 1;
         group.ArchiveTime = DateTime.UtcNow;
         group.ChangeTime = DateTime.UtcNow;
 
-        // Возвращаем суспенсы в исходный статус
+        // Возвращаем только активные (не архивные) суспенсы в исходный статус
         var suspenses = await _db.SuspenseLines
-            .Where(s => s.GroupId == groupId)
+            .Where(s => s.GroupId == groupId && s.ArchiveLevel == 0)
             .ToListAsync(ct);
 
         foreach (var s in suspenses)
@@ -351,6 +360,8 @@ public class GroupProcessingService : IGroupProcessingService
 
         await UpdateSuspenseStatusAsync(groupId, (int)BusinessStatus.InGroupNoRights, product.Id, ct);
         await _db.SaveChangesAsync(ct);
+        await _audit.LogGroupAsync(groupId, (int)BusinessStatus.InGroupNoProduct, (int)BusinessStatus.InGroupNoRights, ct);
+        await _audit.LogGroupLinesAsync(groupId, (int)BusinessStatus.InGroupNoProduct, (int)BusinessStatus.InGroupNoRights, ct);
         return group;
     }
 
@@ -379,11 +390,14 @@ public class GroupProcessingService : IGroupProcessingService
             _ => throw new BusinessException("Возврат доступен только для отложенных групп", "INVALID_STATUS")
         };
 
+        var prevStatus = group.BusinessStatus;
         group.BusinessStatus = newStatus;
         group.ChangeTime = DateTime.UtcNow;
 
         await UpdateSuspenseStatusAsync(groupId, newStatus, null, ct);
         await _db.SaveChangesAsync(ct);
+        await _audit.LogGroupAsync(groupId, prevStatus, newStatus, ct);
+        await _audit.LogGroupLinesAsync(groupId, prevStatus, newStatus, ct);
         return group;
     }
 
@@ -400,11 +414,14 @@ public class GroupProcessingService : IGroupProcessingService
     {
         var group = await GetGroupOrThrowAsync(groupId, ct);
 
+        var prevStatus = group.BusinessStatus;
         group.BusinessStatus = (int)BusinessStatus.Validated;
         group.ChangeTime = DateTime.UtcNow;
 
         await UpdateSuspenseStatusAsync(groupId, (int)BusinessStatus.Validated, null, ct);
         await _db.SaveChangesAsync(ct);
+        await _audit.LogGroupAsync(groupId, prevStatus, (int)BusinessStatus.Validated, ct);
+        await _audit.LogGroupLinesAsync(groupId, prevStatus, (int)BusinessStatus.Validated, ct);
 
         return group;
     }
@@ -412,7 +429,7 @@ public class GroupProcessingService : IGroupProcessingService
     private async Task UpdateSuspenseStatusAsync(int groupId, int newStatus, int? productId, CancellationToken ct)
     {
         var suspenses = await _db.SuspenseLines
-            .Where(s => s.GroupId == groupId)
+            .Where(s => s.GroupId == groupId && s.ArchiveLevel == 0)
             .ToListAsync(ct);
 
         foreach (var s in suspenses)

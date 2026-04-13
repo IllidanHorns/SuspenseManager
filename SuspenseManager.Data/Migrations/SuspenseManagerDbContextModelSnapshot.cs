@@ -642,6 +642,37 @@ namespace Data.Migrations
                     b.ToTable("Rights", (string)null);
                 });
 
+            modelBuilder.Entity("Models.StatusDictionary", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ArchiveLevel")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Code")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("StatusDictionary", (string)null);
+                });
+
             modelBuilder.Entity("Models.SuspenseGroup", b =>
                 {
                     b.Property<int>("Id")
@@ -732,6 +763,49 @@ namespace Data.Migrations
                         .IsUnique();
 
                     b.ToTable("SuspenseGroupLinks", (string)null);
+                });
+
+            modelBuilder.Entity("Models.SuspenseGroupLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AccountId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AccountLogin")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("AccountName")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<DateTime>("OperationTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("StatusFrom")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StatusTo")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SuspenseGroupId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("OperationTime");
+
+                    b.HasIndex("SuspenseGroupId");
+
+                    b.ToTable("SuspenseGroupLogs", (string)null);
                 });
 
             modelBuilder.Entity("Models.SuspenseLine", b =>
@@ -855,6 +929,54 @@ namespace Data.Migrations
                     b.HasIndex("SenderCompanyId");
 
                     b.ToTable("SuspenseLines", (string)null);
+                });
+
+            modelBuilder.Entity("Models.SuspenseLineLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AccountId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AccountLogin")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("AccountName")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int?>("GroupId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("OperationTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("StatusFrom")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StatusTo")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SuspenseLineId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("GroupId");
+
+                    b.HasIndex("OperationTime");
+
+                    b.HasIndex("SuspenseLineId");
+
+                    b.ToTable("SuspenseLineLogs", (string)null);
                 });
 
             modelBuilder.Entity("Models.Territory", b =>
@@ -1147,6 +1269,17 @@ namespace Data.Migrations
                     b.Navigation("SuspenseLine");
                 });
 
+            modelBuilder.Entity("Models.SuspenseGroupLog", b =>
+                {
+                    b.HasOne("Models.SuspenseGroup", "SuspenseGroup")
+                        .WithMany()
+                        .HasForeignKey("SuspenseGroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("SuspenseGroup");
+                });
+
             modelBuilder.Entity("Models.SuspenseLine", b =>
                 {
                     b.HasOne("Models.SuspenseGroup", "Group")
@@ -1176,6 +1309,17 @@ namespace Data.Migrations
                     b.Navigation("RecipientCompanyR");
 
                     b.Navigation("SenderCompanyR");
+                });
+
+            modelBuilder.Entity("Models.SuspenseLineLog", b =>
+                {
+                    b.HasOne("Models.SuspenseLine", "SuspenseLine")
+                        .WithMany()
+                        .HasForeignKey("SuspenseLineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("SuspenseLine");
                 });
 
             modelBuilder.Entity("Models.Account", b =>

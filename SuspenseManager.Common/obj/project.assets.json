@@ -193,6 +193,9 @@
           "buildTransitive/net8.0/_._": {}
         }
       },
+      "SonarAnalyzer.CSharp/9.32.0.97167": {
+        "type": "package"
+      },
       "SuspenseManager.Models/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v9.0",
@@ -541,6 +544,27 @@
         "useSharedDesignerContext.txt"
       ]
     },
+    "SonarAnalyzer.CSharp/9.32.0.97167": {
+      "sha512": "Yxk86RV+8ynJpUhku1Yw2hITFmnmXKkXJ73cIFSy85ol5SnWREQg9RuTyV8nI7V7+pyLKpCfRmD7P0widsgjkg==",
+      "type": "package",
+      "path": "sonaranalyzer.csharp/9.32.0.97167",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "analyzers/Google.Protobuf.dll",
+        "analyzers/SonarAnalyzer.CFG.dll",
+        "analyzers/SonarAnalyzer.CSharp.dll",
+        "analyzers/SonarAnalyzer.ShimLayer.dll",
+        "analyzers/SonarAnalyzer.dll",
+        "images/sonarsource_64.png",
+        "license/THIRD-PARTY-NOTICES.txt",
+        "sonaranalyzer.csharp.9.32.0.97167.nupkg.sha512",
+        "sonaranalyzer.csharp.nuspec",
+        "tools/install.ps1",
+        "tools/uninstall.ps1"
+      ]
+    },
     "SuspenseManager.Models/1.0.0": {
       "type": "project",
       "path": "../SuspenseManager.Models/SuspenseManager.Models.csproj",
@@ -550,6 +574,7 @@
   "projectFileDependencyGroups": {
     "net9.0": [
       "Microsoft.EntityFrameworkCore >= 9.0.12",
+      "SonarAnalyzer.CSharp >= 9.32.0.97167",
       "SuspenseManager.Models >= 1.0.0"
     ]
   },
@@ -610,6 +635,12 @@
           "Microsoft.EntityFrameworkCore": {
             "target": "Package",
             "version": "[9.0.12, )"
+          },
+          "SonarAnalyzer.CSharp": {
+            "include": "Runtime, Build, Native, ContentFiles, Analyzers",
+            "suppressParent": "All",
+            "target": "Package",
+            "version": "[9.32.0.97167, )"
           }
         },
         "imports": [

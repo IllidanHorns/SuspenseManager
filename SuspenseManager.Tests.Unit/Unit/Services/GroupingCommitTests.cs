@@ -1,3 +1,4 @@
+using Application.Interfaces;
 using Application.Services;
 using Common.DTOs;
 using Common.Exceptions;
@@ -7,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Models;
 using Models.Enums;
+using Moq;
 
 namespace SuspenseManager.Tests.Unit.Unit.Services;
 
@@ -26,12 +28,12 @@ public class GroupingCommitTests : IDisposable
             .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
         _db = new SuspenseManagerDbContext(options);
-        _service = new GroupingService(_db);
+        var auditMock = new Mock<IAuditService>();
+        _service = new GroupingService(_db, auditMock.Object);
     }
 
     public void Dispose() => _db.Dispose();
-
-    // ──────────────────────── Helpers ────────────────────────────────────────
+    
 
     private async Task<SuspenseLine> AddNoProductSuspenseAsync(
         string artist = "Artist1",

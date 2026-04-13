@@ -9,3 +9,4 @@ C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Models\obj\Debu
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Models\obj\Debug\net9.0\refint\SuspenseManager.Models.dll
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Models\obj\Debug\net9.0\SuspenseManager.Models.pdb
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Models\obj\Debug\net9.0\ref\SuspenseManager.Models.dll
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Models\obj\Debug\net9.0\SuspenseManager.Models.sourcelink.json

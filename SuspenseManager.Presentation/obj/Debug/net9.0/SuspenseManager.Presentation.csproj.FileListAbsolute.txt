@@ -188,3 +188,4 @@ C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\ob
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\obj\Debug\net9.0\SuspenseManager.Presentation.pdb
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\obj\Debug\net9.0\SuspenseManager.Presentation.genruntimeconfig.cache
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\obj\Debug\net9.0\ref\SuspenseManager.Presentation.dll
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\obj\Debug\net9.0\SuspenseManager.Presentation.sourcelink.json

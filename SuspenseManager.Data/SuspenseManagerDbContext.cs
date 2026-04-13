@@ -25,6 +25,9 @@ public class SuspenseManagerDbContext : DbContext
     public DbSet<Rights> Rights { get; set; }
     public DbSet<AccountRightsLink> AccountRightsLinks { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
+    public DbSet<StatusDictionary> StatusDictionary { get; set; }
+    public DbSet<SuspenseGroupLog> SuspenseGroupLogs { get; set; }
+    public DbSet<SuspenseLineLog> SuspenseLineLogs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

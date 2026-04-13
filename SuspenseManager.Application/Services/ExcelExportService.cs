@@ -87,7 +87,13 @@ public class ExcelExportService : IExcelExportService
         var suspenseCounts = await _db.SuspenseLines
             .Where(s => s.GroupId != null && groupIds.Contains(s.GroupId.Value) && s.ArchiveLevel == 0)
             .GroupBy(s => s.GroupId)
-            .Select(g => new { GroupId = g.Key, Count = g.Count(), TotalRevenue = g.Sum(s => s.ExchangeCurrency) })
+            .Select(g => new
+            {
+                GroupId = g.Key,
+                Count = g.Count(),
+                // Выручка = Qty × PPD × ExchangeRate (сумма по всем строкам группы)
+                TotalRevenue = g.Sum(s => s.Qty * (decimal)(s.Ppd ?? 0) * s.ExchangeRate)
+            })
             .ToListAsync(ct);
 
         using var workbook = new XLWorkbook();

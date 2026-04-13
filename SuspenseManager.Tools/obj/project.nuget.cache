@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "L2kaZ+Ls138=",
+  "dgSpecHash": "9rnpDTpNl3c=",
   "success": true,
   "projectFilePath": "C:\\Users\\apakhtusov\\source\\repos\\SuspenseManager\\SuspenseManager.Tools\\SuspenseManager.Tools.csproj",
   "expectedPackageFiles": [
@@ -11,6 +11,7 @@
     "C:\\Users\\apakhtusov\\.nuget\\packages\\excelnumberformat\\1.1.0\\excelnumberformat.1.1.0.nupkg.sha512",
     "C:\\Users\\apakhtusov\\.nuget\\packages\\rbush.signed\\4.0.0\\rbush.signed.4.0.0.nupkg.sha512",
     "C:\\Users\\apakhtusov\\.nuget\\packages\\sixlabors.fonts\\1.0.0\\sixlabors.fonts.1.0.0.nupkg.sha512",
+    "C:\\Users\\apakhtusov\\.nuget\\packages\\sonaranalyzer.csharp\\9.32.0.97167\\sonaranalyzer.csharp.9.32.0.97167.nupkg.sha512",
     "C:\\Users\\apakhtusov\\.nuget\\packages\\system.io.packaging\\8.0.1\\system.io.packaging.8.0.1.nupkg.sha512"
   ],
   "logs": []

@@ -15,3 +15,4 @@ C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\obj\Debug\
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\obj\Debug\net9.0\SuspenseManager.Data.pdb
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\obj\Debug\net9.0\SuspenseManager.Data.genruntimeconfig.cache
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\obj\Debug\net9.0\ref\SuspenseManager.Data.dll
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Data\obj\Debug\net9.0\SuspenseManager.Data.sourcelink.json

@@ -19,10 +19,12 @@ namespace Application.Services;
 public class ValidationService : IValidationService
 {
     private readonly SuspenseManagerDbContext _db;
+    private readonly IAuditService _audit;
 
-    public ValidationService(SuspenseManagerDbContext db)
+    public ValidationService(SuspenseManagerDbContext db, IAuditService audit)
     {
         _db = db;
+        _audit = audit;
     }
 
     public async Task<ValidationResultDto> ValidateBatchAsync(List<SuspenseLineDto> lines)
@@ -32,10 +34,13 @@ public class ValidationService : IValidationService
             TotalRows = lines.Count
         };
 
+        var createdLines = new List<SuspenseLine>();
+
         foreach (var line in lines)
         {
-            var lineResult = await ProcessLineAsync(line);
+            var (lineResult, entity) = await ProcessLineAsync(line);
             result.Lines.Add(lineResult);
+            createdLines.Add(entity);
 
             switch ((BusinessStatus)lineResult.BusinessStatus)
             {
@@ -52,23 +57,26 @@ public class ValidationService : IValidationService
         }
 
         await _db.SaveChangesAsync();
+
+        // Логируем первичный статус каждой строки (после SaveChanges — IDs уже заполнены)
+        foreach (var entity in createdLines)
+        {
+            await _audit.LogLineAsync(entity.Id, null, null, entity.BusinessStatus);
+        }
+
         return result;
     }
 
     public async Task<ValidationLineResultDto> ValidateSingleAsync(SuspenseLineDto line)
     {
-        var lineResult = await ProcessLineAsync(line);
+        var (lineResult, entity) = await ProcessLineAsync(line);
         await _db.SaveChangesAsync();
+        await _audit.LogLineAsync(entity.Id, null, null, entity.BusinessStatus);
         return lineResult;
     }
 
-    /// <summary>
-    /// Обработка одной строки: поиск продукта → поиск прав → присвоение статуса → сохранение
-    /// </summary>
-    private async Task<ValidationLineResultDto> ProcessLineAsync(SuspenseLineDto dto)
+    private async Task<(ValidationLineResultDto Result, SuspenseLine Entity)> ProcessLineAsync(SuspenseLineDto dto)
     {
-        // Шаг 1: Поиск продукта в каталоге
-        // Все поля должны совпасть: ISRC + Barcode + CatalogNumber + ProductFormatCode
         var product = await FindProductAsync(dto);
 
         // Шаг 2: Определение статуса
@@ -106,38 +114,54 @@ public class ValidationService : IValidationService
         var suspenseLine = MapToEntity(dto, status, cause, productId);
         _db.SuspenseLines.Add(suspenseLine);
 
-        return new ValidationLineResultDto
+        return (new ValidationLineResultDto
         {
             SuspenseLineId = suspenseLine.Id,
             BusinessStatus = status,
             CauseSuspense = cause,
             ProductId = productId
-        };
+        }, suspenseLine);
     }
 
     /// <summary>
-    /// Поиск продукта в каталоге по полному совпадению всех идентификаторов
+    /// Поиск продукта в каталоге по приоритетной цепочке:
+    /// 1. ISRC → 2. Barcode → 3. Title + Artist → 4. CatalogNumber
+    /// Каждый следующий критерий пробуется только если предыдущий ничего не нашёл.
     /// </summary>
     private async Task<CatalogProduct?> FindProductAsync(SuspenseLineDto dto)
     {
-        // Если хотя бы одно ключевое поле пустое — продукт точно не найти по полному совпадению
-        if (string.IsNullOrWhiteSpace(dto.Isrc) ||
-            string.IsNullOrWhiteSpace(dto.Barcode) ||
-            string.IsNullOrWhiteSpace(dto.CatalogNumber) ||
-            string.IsNullOrWhiteSpace(dto.ProductFormatCode))
+        var baseQuery = _db.CatalogProducts.AsNoTracking().Where(p => p.ArchiveLevel == 0);
+
+        // Приоритет 1: ISRC
+        if (!string.IsNullOrWhiteSpace(dto.Isrc))
         {
-            return null;
+            var product = await baseQuery.FirstOrDefaultAsync(p => p.Isrc == dto.Isrc);
+            if (product != null) return product;
         }
 
-        return await _db.CatalogProducts
-            .AsNoTracking()
-            .Where(p => p.ArchiveLevel == 0)
-            .Where(p =>
-                p.Isrc == dto.Isrc &&
-                p.Barcode == dto.Barcode &&
-                p.CatalogNumber == dto.CatalogNumber &&
-                p.ProductFormatCode == dto.ProductFormatCode)
-            .FirstOrDefaultAsync();
+        // Приоритет 2: Barcode
+        if (!string.IsNullOrWhiteSpace(dto.Barcode))
+        {
+            var product = await baseQuery.FirstOrDefaultAsync(p => p.Barcode == dto.Barcode);
+            if (product != null) return product;
+        }
+
+        // Приоритет 3: Title + Artist (оба поля обязательны для этого критерия)
+        if (!string.IsNullOrWhiteSpace(dto.TrackTitle) && !string.IsNullOrWhiteSpace(dto.Artist))
+        {
+            var product = await baseQuery.FirstOrDefaultAsync(p =>
+                p.ProductName == dto.TrackTitle && p.Artist == dto.Artist);
+            if (product != null) return product;
+        }
+
+        // Приоритет 4: CatalogNumber
+        if (!string.IsNullOrWhiteSpace(dto.CatalogNumber))
+        {
+            var product = await baseQuery.FirstOrDefaultAsync(p => p.CatalogNumber == dto.CatalogNumber);
+            if (product != null) return product;
+        }
+
+        return null;
     }
 
     /// <summary>
