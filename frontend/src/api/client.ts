@@ -36,6 +36,11 @@ client.interceptors.response.use(
       clearTokens();
       window.location.href = '/login';
     }
+    // Extract business error message from API response body if available
+    const apiMessage = error.response?.data?.message;
+    if (apiMessage) {
+      return Promise.reject(new Error(apiMessage));
+    }
     return Promise.reject(error);
   }
 );

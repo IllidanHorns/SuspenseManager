@@ -1,6 +1,7 @@
 using Application.Interfaces;
 using Common.DTOs;
 using Microsoft.AspNetCore.Mvc;
+using Models;
 
 namespace SuspenseManager.Controllers;
 
@@ -155,6 +156,54 @@ public class GroupProcessingController : ControllerBase
         var bytes = await _excelExportService.ExportGroupsAsync(status, ct);
         var fileName = $"Groups_Status_{status}_{DateTime.UtcNow:yyyy-MM-dd}.xlsx";
         return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+    }
+
+    // --- Валидация группы (16 → 88) ---
+
+    /// <summary>
+    /// Валидирует группу со статусом 16:
+    /// 1. Если у продукта есть права в каталоге — переводит в 88.
+    /// 2. Если прав нет — создаёт права из GroupMetaRights и переводит в 88.
+    /// </summary>
+    [HttpPost("{groupId:int}/validate")]
+    public async Task<IActionResult> ValidateGroup(int groupId, CancellationToken ct)
+    {
+        var group = await _processingService.ValidateGroupAsync(groupId, ct);
+        _logger.LogInformation("Группа валидирована: GroupId={GroupId}", groupId);
+        return Ok(ApiResponse<Models.SuspenseGroup>.Success(group, "Группа переведена в статус 88 (валидирована)", "VALIDATED"));
+    }
+
+    // --- Поиск прав в каталоге для копирования ---
+
+    /// <summary>
+    /// Ищет записи прав (CatalogProductRights) у других продуктов каталога по заданным критериям.
+    /// Используется оператором для выбора прав с похожего продукта.
+    /// </summary>
+    [HttpGet("{groupId:int}/search-rights")]
+    public async Task<IActionResult> SearchRights(
+        int groupId,
+        [FromQuery] string? artist,
+        [FromQuery] string? isrc,
+        [FromQuery] string? productName,
+        [FromQuery] string? barcode,
+        CancellationToken ct)
+    {
+        var rights = await _processingService.SearchCatalogRightsAsync(groupId, artist, isrc, productName, barcode, ct);
+        return Ok(ApiResponse<List<Models.CatalogProductRights>>.Success(rights));
+    }
+
+    // --- Копирование прав в продукт группы ---
+
+    /// <summary>
+    /// Копирует выбранную запись прав в продукт, связанный с группой,
+    /// и переводит группу в статус 88 (валидирована).
+    /// </summary>
+    [HttpPost("{groupId:int}/copy-rights")]
+    public async Task<IActionResult> CopyRights(int groupId, [FromBody] CopyRightsDto dto, CancellationToken ct)
+    {
+        var group = await _processingService.CopyRightsToProductAsync(groupId, dto.RightsId, ct);
+        _logger.LogInformation("Права скопированы: GroupId={GroupId}, RightsId={RightsId}", groupId, dto.RightsId);
+        return Ok(ApiResponse<Models.SuspenseGroup>.Success(group, "Права добавлены в каталог, группа переведена в статус 88", "RIGHTS_COPIED"));
     }
 
     // --- Отложенные группы ---

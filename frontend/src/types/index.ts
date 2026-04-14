@@ -121,8 +121,8 @@ export interface SuspenseGroup {
   changeTime: string | null;
   archiveLevel: number;
   suspenseCount?: number;
-  metadata?: GroupMetadata | null;
-  metaRights?: GroupMetaRights | null;
+  groupMetaData?: GroupMetadata | null;
+  groupMetaRights?: GroupMetaRights | null;
   catalogProduct?: CatalogProduct | null;
 }
 
@@ -174,6 +174,9 @@ export interface GroupMetaRights {
   senderCompanyId: number | null;
   receiverCompanyId: number | null;
   share: number | null;
+  senderCompany?: Company | null;
+  receiverCompany?: Company | null;
+  territory?: Territory | null;
 }
 
 export interface UpdateGroupMetaRightsDto {
@@ -188,6 +191,27 @@ export interface UpdateGroupMetaRightsDto {
   senderCompanyId?: number | null;
   receiverCompanyId?: number | null;
   share?: number | null;
+}
+
+// ─── CatalogProductRights ─────────────────────────────────────────────────────
+
+export interface CatalogProductRights {
+  id: number;
+  catalogProductId: number;
+  catalogProduct?: CatalogProduct | null;
+  docNumber: string | null;
+  companySender: string;
+  companyReceiver: string;
+  companySenderId: number;
+  companyReceiverId: number;
+  share: number;
+  territoryCode: string;
+  territoryDesc: string;
+  territoryId: number;
+  docStart: string;
+  docEnd: string;
+  createTime: string;
+  archiveLevel: number;
 }
 
 // ─── Grouping ────────────────────────────────────────────────────────────────
@@ -225,8 +249,9 @@ export interface ValidationLineResultDto {
 
 export interface Company {
   id: number;
-  name: string;
-  code: string | null;
+  legalName: string;
+  shortName: string;
+  companyCode: string | null;
   createTime: string;
 }
 

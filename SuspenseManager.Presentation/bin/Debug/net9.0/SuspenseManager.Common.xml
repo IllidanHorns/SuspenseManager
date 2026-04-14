@@ -178,6 +178,11 @@
             DTO для привязки группы к продукту (п.25)
             </summary>
         </member>
+        <member name="T:Common.DTOs.CopyRightsDto">
+            <summary>
+            DTO для копирования прав из каталога в продукт группы
+            </summary>
+        </member>
         <member name="T:Common.DTOs.PagedRequest">
             <summary>
             Базовый запрос с пагинацией, сортировкой и динамическими фильтрами.

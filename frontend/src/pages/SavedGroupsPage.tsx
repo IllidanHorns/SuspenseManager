@@ -32,27 +32,111 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getNoProductGroups, getNoRightsGroups } from '../api/groups';
 import { exportGroupsByStatus } from '../api/processing';
-import { downloadBlob, fmtDateTime } from '../utils/format';
+import { downloadBlob, fmtDate, fmtDateTime } from '../utils/format';
 import { StatusBadge } from '../components/common/StatusBadge';
+import { PageSizeSelect } from '../components/common/PageSizeSelect';
 import { notifications } from '@mantine/notifications';
 import type { SuspenseGroup } from '../types';
 
+function val(v: string | null | undefined) {
+  return v ?? '—';
+}
+
+function NoProductRows({ groups, navigate }: { groups: SuspenseGroup[]; navigate: (p: string) => void }) {
+  return (
+    <>
+      {groups.map((g) => (
+        <Table.Tr key={g.id}>
+          <Table.Td><Text size="sm" fw={600} c="indigo">#{g.id}</Text></Table.Td>
+          <Table.Td><StatusBadge status={g.businessStatus} /></Table.Td>
+          <Table.Td>
+            <Badge variant="light" color="blue" size="sm">{g.suspenseCount ?? '—'}</Badge>
+          </Table.Td>
+          <Table.Td><Text size="sm">{val(g.groupMetaData?.artist)}</Text></Table.Td>
+          <Table.Td><Text size="sm">{val(g.groupMetaData?.title)}</Text></Table.Td>
+          <Table.Td><Text size="xs" ff="monospace">{val(g.groupMetaData?.isrc)}</Text></Table.Td>
+          <Table.Td><Text size="xs">{val(g.groupMetaData?.barcode)}</Text></Table.Td>
+          <Table.Td><Text size="xs" c="dimmed">{val(g.groupMetaData?.genre)}</Text></Table.Td>
+          <Table.Td><Text size="xs" c="dimmed">{fmtDateTime(g.createTime)}</Text></Table.Td>
+          <Table.Td>
+            <Group justify="center">
+              <Tooltip label="Открыть группу">
+                <ActionIcon variant="light" color="indigo" size="sm" onClick={() => navigate(`/groups/${g.id}`)}>
+                  <IconEye size={14} />
+                </ActionIcon>
+              </Tooltip>
+            </Group>
+          </Table.Td>
+        </Table.Tr>
+      ))}
+    </>
+  );
+}
+
+function NoRightsRows({ groups, navigate }: { groups: SuspenseGroup[]; navigate: (p: string) => void }) {
+  return (
+    <>
+      {groups.map((g) => {
+        const rights = g.groupMetaRights;
+        const period = rights?.docStart || rights?.docEnd
+          ? `${fmtDate(rights.docStart)} – ${fmtDate(rights.docEnd)}`
+          : '—';
+
+        return (
+          <Table.Tr key={g.id}>
+            <Table.Td><Text size="sm" fw={600} c="indigo">#{g.id}</Text></Table.Td>
+            <Table.Td><StatusBadge status={g.businessStatus} /></Table.Td>
+            <Table.Td>
+              <Badge variant="light" color="blue" size="sm">{g.suspenseCount ?? '—'}</Badge>
+            </Table.Td>
+            <Table.Td><Text size="sm">{val(g.catalogProduct?.productName ?? g.groupMetaData?.title)}</Text></Table.Td>
+            <Table.Td><Text size="sm">{val(g.catalogProduct?.artist ?? g.groupMetaData?.artist)}</Text></Table.Td>
+            <Table.Td><Text size="xs" ff="monospace">{val(g.catalogProduct?.isrc ?? g.groupMetaData?.isrc)}</Text></Table.Td>
+            <Table.Td><Text size="xs">{val(rights?.docNumber)}</Text></Table.Td>
+            <Table.Td><Text size="xs">{val(rights?.territoryCode)}</Text></Table.Td>
+            <Table.Td><Text size="xs" c="dimmed">{period}</Text></Table.Td>
+            <Table.Td>
+              <Text size="xs">{rights?.share != null ? `${rights.share}%` : '—'}</Text>
+            </Table.Td>
+            <Table.Td><Text size="xs" c="dimmed">{fmtDateTime(g.createTime)}</Text></Table.Td>
+            <Table.Td>
+              <Group justify="center">
+                <Tooltip label="Открыть группу">
+                  <ActionIcon variant="light" color="indigo" size="sm" onClick={() => navigate(`/groups/${g.id}`)}>
+                    <IconEye size={14} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
+            </Table.Td>
+          </Table.Tr>
+        );
+      })}
+    </>
+  );
+}
+
 function GroupTable({
   groups,
+  type,
   loading,
   error,
   page,
+  pageSize,
   totalPages,
   totalCount,
   onPageChange,
+  onPageSizeChange,
 }: {
   groups: SuspenseGroup[];
+  type: 'no-product' | 'no-rights';
   loading: boolean;
   error: string;
   page: number;
+  pageSize: number;
   totalPages: number;
   totalCount: number;
   onPageChange: (p: number) => void;
+  onPageSizeChange: (v: number) => void;
 }) {
   const navigate = useNavigate();
 
@@ -71,53 +155,41 @@ function GroupTable({
     <ScrollArea>
       <Table striped highlightOnHover>
         <Table.Thead>
-          <Table.Tr>
-            <Table.Th>ID</Table.Th>
-            <Table.Th>Статус</Table.Th>
-            <Table.Th>Строк</Table.Th>
-            <Table.Th>Продукт</Table.Th>
-            <Table.Th>Создана</Table.Th>
-            <Table.Th style={{ textAlign: 'center' }}>Действия</Table.Th>
-          </Table.Tr>
+          {type === 'no-product' ? (
+            <Table.Tr>
+              <Table.Th>ID</Table.Th>
+              <Table.Th>Статус</Table.Th>
+              <Table.Th>Строк</Table.Th>
+              <Table.Th>Исполнитель</Table.Th>
+              <Table.Th>Трек</Table.Th>
+              <Table.Th>ISRC</Table.Th>
+              <Table.Th>Баркод</Table.Th>
+              <Table.Th>Жанр</Table.Th>
+              <Table.Th>Создана</Table.Th>
+              <Table.Th style={{ textAlign: 'center' }}>Действия</Table.Th>
+            </Table.Tr>
+          ) : (
+            <Table.Tr>
+              <Table.Th>ID</Table.Th>
+              <Table.Th>Статус</Table.Th>
+              <Table.Th>Строк</Table.Th>
+              <Table.Th>Продукт</Table.Th>
+              <Table.Th>Исполнитель</Table.Th>
+              <Table.Th>ISRC</Table.Th>
+              <Table.Th>Договор</Table.Th>
+              <Table.Th>Территория</Table.Th>
+              <Table.Th>Период</Table.Th>
+              <Table.Th>Доля</Table.Th>
+              <Table.Th>Создана</Table.Th>
+              <Table.Th style={{ textAlign: 'center' }}>Действия</Table.Th>
+            </Table.Tr>
+          )}
         </Table.Thead>
         <Table.Tbody>
-          {groups.map((g) => (
-            <Table.Tr key={g.id}>
-              <Table.Td>
-                <Text size="sm" fw={600} c="indigo">#{g.id}</Text>
-              </Table.Td>
-              <Table.Td><StatusBadge status={g.businessStatus} /></Table.Td>
-              <Table.Td>
-                <Badge variant="light" color="blue" size="sm">
-                  {g.suspenseCount ?? '—'}
-                </Badge>
-              </Table.Td>
-              <Table.Td>
-                <Text size="sm" c="dimmed">
-                  {g.catalogProduct?.productName ??
-                    g.metadata?.title ??
-                    (g.catalogProductId ? `ID: ${g.catalogProductId}` : '—')}
-                </Text>
-              </Table.Td>
-              <Table.Td>
-                <Text size="sm" c="dimmed">{fmtDateTime(g.createTime)}</Text>
-              </Table.Td>
-              <Table.Td>
-                <Group justify="center" gap="xs">
-                  <Tooltip label="Открыть группу">
-                    <ActionIcon
-                      variant="light"
-                      color="indigo"
-                      size="sm"
-                      onClick={() => navigate(`/groups/${g.id}`)}
-                    >
-                      <IconEye size={14} />
-                    </ActionIcon>
-                  </Tooltip>
-                </Group>
-              </Table.Td>
-            </Table.Tr>
-          ))}
+          {type === 'no-product'
+            ? <NoProductRows groups={groups} navigate={navigate} />
+            : <NoRightsRows groups={groups} navigate={navigate} />
+          }
         </Table.Tbody>
       </Table>
     </ScrollArea>
@@ -129,7 +201,10 @@ function GroupTable({
       {!loading && !error && (
         <Group justify="space-between" px="md" py="xs" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
           <Text size="sm" c="dimmed">Всего: {totalCount.toLocaleString('ru-RU')}</Text>
-          <Pagination value={page} onChange={onPageChange} total={Math.max(1, totalPages)} size="sm" />
+          <Group gap="sm">
+            <PageSizeSelect value={pageSize} onChange={onPageSizeChange} />
+            <Pagination value={page} onChange={onPageChange} total={Math.max(1, totalPages)} size="sm" />
+          </Group>
         </Group>
       )}
     </>
@@ -138,7 +213,9 @@ function GroupTable({
 
 function TabContent({ type }: { type: 'no-product' | 'no-rights' }) {
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const status = type === 'no-product' ? 15 : 16;
+  const handlePageSizeChange = (v: number) => { setPageSize(v); setPage(1); };
 
   const [pendingId, setPendingId] = useState('');
   const [applied, setApplied] = useState<Record<string, string>>({});
@@ -158,10 +235,10 @@ function TabContent({ type }: { type: 'no-product' | 'no-rights' }) {
   };
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['groups', type, page, applied],
+    queryKey: ['groups', type, page, pageSize, applied],
     queryFn: () => type === 'no-product'
-      ? getNoProductGroups({ pageNumber: page, pageSize: 20, Filters: applied })
-      : getNoRightsGroups({ pageNumber: page, pageSize: 20, Filters: applied }),
+      ? getNoProductGroups({ pageNumber: page, pageSize, Filters: applied })
+      : getNoRightsGroups({ pageNumber: page, pageSize, Filters: applied }),
   });
 
   const handleExport = async () => {
@@ -224,12 +301,15 @@ function TabContent({ type }: { type: 'no-product' | 'no-rights' }) {
       <Paper withBorder radius="md">
         <GroupTable
           groups={data?.items ?? []}
+          type={type}
           loading={isLoading}
           error={error?.message ?? ''}
           page={page}
+          pageSize={pageSize}
           totalPages={data?.totalPages ?? 1}
           totalCount={data?.totalCount ?? 0}
           onPageChange={setPage}
+          onPageSizeChange={handlePageSizeChange}
         />
       </Paper>
     </Stack>

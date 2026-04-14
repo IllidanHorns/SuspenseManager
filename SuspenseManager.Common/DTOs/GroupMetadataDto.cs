@@ -80,3 +80,11 @@ public class LinkProductDto
 {
     public int ProductId { get; set; }
 }
+
+/// <summary>
+/// DTO для копирования прав из каталога в продукт группы
+/// </summary>
+public class CopyRightsDto
+{
+    public int RightsId { get; set; }
+}

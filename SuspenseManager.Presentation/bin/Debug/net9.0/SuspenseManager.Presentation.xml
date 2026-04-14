@@ -176,6 +176,25 @@
             Группа переводится в статус 16 (нет прав). Body не требуется.
             </summary>
         </member>
+        <member name="M:SuspenseManager.Controllers.GroupProcessingController.ValidateGroup(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Валидирует группу со статусом 16:
+            1. Если у продукта есть права в каталоге — переводит в 88.
+            2. Если прав нет — создаёт права из GroupMetaRights и переводит в 88.
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.GroupProcessingController.SearchRights(System.Int32,System.String,System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Ищет записи прав (CatalogProductRights) у других продуктов каталога по заданным критериям.
+            Используется оператором для выбора прав с похожего продукта.
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.GroupProcessingController.CopyRights(System.Int32,Common.DTOs.CopyRightsDto,System.Threading.CancellationToken)">
+            <summary>
+            Копирует выбранную запись прав в продукт, связанный с группой,
+            и переводит группу в статус 88 (валидирована).
+            </summary>
+        </member>
         <member name="T:SuspenseManager.Controllers.SuspenseController">
             <summary>
             Контроллер суспенсов: ручной ввод, просмотр списка, обновление

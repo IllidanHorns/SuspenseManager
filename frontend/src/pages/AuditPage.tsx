@@ -44,6 +44,7 @@ import {
 } from '../api/audit';
 import { fmtDateTime } from '../utils/format';
 import { StatusBadge } from '../components/common/StatusBadge';
+import { PageSizeSelect } from '../components/common/PageSizeSelect';
 import { STATUS_LABELS } from '../types';
 import type { AuditGroupDto, AuditLineDto, AuditLogEntryDto, BusinessStatus } from '../types';
 
@@ -137,6 +138,8 @@ const STATUS_OPTIONS = [
 
 function GroupsTab() {
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const handlePageSizeChange = (v: number) => { setPageSize(v); setPage(1); };
   const [onlyMine, setOnlyMine] = useState(false);
   const [pendingStatus, setPendingStatus] = useState('');
   const [pendingFrom, setPendingFrom] = useState('');
@@ -149,11 +152,11 @@ function GroupsTab() {
   const [logsPage, setLogsPage] = useState(1);
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['audit-groups', page, onlyMine, appliedStatus, appliedFrom, appliedTo],
+    queryKey: ['audit-groups', page, pageSize, onlyMine, appliedStatus, appliedFrom, appliedTo],
     queryFn: () =>
       getAuditGroups({
         pageNumber: page,
-        pageSize: 20,
+        pageSize,
         onlyMine,
         status: appliedStatus ?? undefined,
         lastChangedFrom: appliedFrom ?? undefined,
@@ -328,7 +331,10 @@ function GroupsTab() {
         {!isLoading && !error && (data?.items.length ?? 0) > 0 && (
           <Group justify="space-between" px="md" py="xs" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
             <Text size="sm" c="dimmed">Всего: {(data?.totalCount ?? 0).toLocaleString('ru-RU')}</Text>
-            <Pagination value={page} onChange={setPage} total={Math.max(1, data?.totalPages ?? 1)} size="sm" />
+            <Group gap="sm">
+              <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} />
+              <Pagination value={page} onChange={setPage} total={Math.max(1, data?.totalPages ?? 1)} size="sm" />
+            </Group>
           </Group>
         )}
       </Paper>
@@ -349,6 +355,8 @@ function GroupsTab() {
 
 function LinesTab() {
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const handlePageSizeChange = (v: number) => { setPageSize(v); setPage(1); };
   const [onlyMine, setOnlyMine] = useState(false);
   const [pendingStatus, setPendingStatus] = useState('');
   const [pendingGroupId, setPendingGroupId] = useState('');
@@ -363,11 +371,11 @@ function LinesTab() {
   const [logsPage, setLogsPage] = useState(1);
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['audit-lines', page, onlyMine, appliedStatus, appliedGroupId, appliedFrom, appliedTo],
+    queryKey: ['audit-lines', page, pageSize, onlyMine, appliedStatus, appliedGroupId, appliedFrom, appliedTo],
     queryFn: () =>
       getAuditLines({
         pageNumber: page,
-        pageSize: 20,
+        pageSize,
         onlyMine,
         status: appliedStatus ?? undefined,
         groupId: appliedGroupId ?? undefined,
@@ -566,7 +574,10 @@ function LinesTab() {
         {!isLoading && !error && (data?.items.length ?? 0) > 0 && (
           <Group justify="space-between" px="md" py="xs" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
             <Text size="sm" c="dimmed">Всего: {(data?.totalCount ?? 0).toLocaleString('ru-RU')}</Text>
-            <Pagination value={page} onChange={setPage} total={Math.max(1, data?.totalPages ?? 1)} size="sm" />
+            <Group gap="sm">
+              <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} />
+              <Pagination value={page} onChange={setPage} total={Math.max(1, data?.totalPages ?? 1)} size="sm" />
+            </Group>
           </Group>
         )}
       </Paper>

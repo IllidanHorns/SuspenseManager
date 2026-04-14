@@ -24,6 +24,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getSuspenses, getUngroupedSuspenses } from '../api/suspenses';
 import { useSearchParams } from 'react-router-dom';
 import { StatusBadge } from '../components/common/StatusBadge';
+import { PageSizeSelect } from '../components/common/PageSizeSelect';
 
 interface FilterValues {
   isrc: string;
@@ -47,6 +48,7 @@ export function SuspensesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const mode = searchParams.get('status') ?? 'all';
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const [pending, setPending] = useState<FilterValues>(EMPTY_FILTERS);
   const [applied, setApplied] = useState<Record<string, string>>({});
@@ -64,14 +66,16 @@ export function SuspensesPage() {
     setPage(1);
   };
 
+  const handlePageSizeChange = (v: number) => { setPageSize(v); setPage(1); };
+
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') applyFilters();
   };
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['suspenses', mode, page, applied],
+    queryKey: ['suspenses', mode, page, pageSize, applied],
     queryFn: () => {
-      const params = { pageNumber: page, pageSize: 30, Filters: applied };
+      const params = { pageNumber: page, pageSize, Filters: applied };
       if (mode === '0') return getUngroupedSuspenses(0, params);
       if (mode === '1') return getUngroupedSuspenses(1, params);
       return getSuspenses(params);
@@ -220,7 +224,10 @@ export function SuspensesPage() {
           </ScrollArea>
           <Group justify="space-between" px="md" py="xs" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
             <Text size="sm" c="dimmed">Всего: {data!.totalCount.toLocaleString('ru-RU')}</Text>
-            <Pagination value={page} onChange={setPage} total={Math.max(1, data!.totalPages)} size="sm" />
+            <Group gap="sm">
+              <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} />
+              <Pagination value={page} onChange={setPage} total={Math.max(1, data!.totalPages)} size="sm" />
+            </Group>
           </Group>
         </Paper>
       )}

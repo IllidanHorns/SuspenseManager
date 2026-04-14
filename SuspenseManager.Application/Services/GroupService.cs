@@ -25,7 +25,9 @@ public class GroupService : IGroupService
             .Include(g => g.GroupMetaData)
             .Where(g => g.ArchiveLevel == 0 && g.BusinessStatus == (int)BusinessStatus.InGroupNoProduct);
 
-        return await query.ToPagedResponseAsync(request, ct);
+        var result = await query.ToPagedResponseAsync(request, ct);
+        await FillSuspenseCountsAsync(result.Items, ct);
+        return result;
     }
 
     public async Task<PagedResponse<SuspenseGroup>> GetNoRightsGroupsAsync(PagedRequest request, CancellationToken ct = default)
@@ -38,7 +40,9 @@ public class GroupService : IGroupService
             .Include(g => g.CatalogProduct)
             .Where(g => g.ArchiveLevel == 0 && g.BusinessStatus == (int)BusinessStatus.InGroupNoRights);
 
-        return await query.ToPagedResponseAsync(request, ct);
+        var result = await query.ToPagedResponseAsync(request, ct);
+        await FillSuspenseCountsAsync(result.Items, ct);
+        return result;
     }
 
     public async Task<PagedResponse<SuspenseGroup>> GetSavedGroupsAsync(PagedRequest request, CancellationToken ct = default)
@@ -53,7 +57,9 @@ public class GroupService : IGroupService
                 (g.BusinessStatus == (int)BusinessStatus.InGroupNoProduct ||
                  g.BusinessStatus == (int)BusinessStatus.InGroupNoRights));
 
-        return await query.ToPagedResponseAsync(request, ct);
+        var result = await query.ToPagedResponseAsync(request, ct);
+        await FillSuspenseCountsAsync(result.Items, ct);
+        return result;
     }
 
     public async Task<SuspenseGroup?> GetByIdAsync(int id, CancellationToken ct = default)
@@ -66,6 +72,22 @@ public class GroupService : IGroupService
             .Include(g => g.CatalogProduct)
             .Include(g => g.SuspenseLines)
             .FirstOrDefaultAsync(g => g.Id == id && g.ArchiveLevel == 0, ct);
+    }
+
+    private async Task FillSuspenseCountsAsync(List<SuspenseGroup> groups, CancellationToken ct)
+    {
+        if (groups.Count == 0) return;
+
+        var ids = groups.Select(g => g.Id).ToList();
+
+        var counts = await _db.SuspenseLines
+            .Where(s => s.GroupId.HasValue && ids.Contains(s.GroupId.Value) && s.ArchiveLevel == 0)
+            .GroupBy(s => s.GroupId!.Value)
+            .Select(g => new { GroupId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.GroupId, x => x.Count, ct);
+
+        foreach (var group in groups)
+            group.SuspenseCount = counts.GetValueOrDefault(group.Id, 0);
     }
 
     public async Task<PagedResponse<SuspenseLine>> GetGroupSuspensesAsync(int groupId, PagedRequest request, CancellationToken ct = default)

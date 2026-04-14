@@ -147,6 +147,14 @@ public class GroupingService : IGroupingService
             _db.SuspenseGroups.Add(group);
             await _db.SaveChangesAsync(ct);
 
+            // Создаём начальные метаданные из значений группировки
+            var meta = BuildInitialMetadata(group.Id, request);
+            _db.GroupMetadata.Add(meta);
+            await _db.SaveChangesAsync(ct);
+
+            group.MetaDataId = meta.Id;
+            await _db.SaveChangesAsync(ct);
+
             // Обновляем суспенсы и создаём связи
             var now = DateTime.UtcNow;
             foreach (var suspense in suspenses)
@@ -181,6 +189,28 @@ public class GroupingService : IGroupingService
             await transaction.RollbackAsync(ct);
             throw;
         }
+    }
+
+    private static GroupMetadata BuildInitialMetadata(int groupId, GroupingCommitRequest request)
+    {
+        var kv = request.KeyValues;
+
+        // TrackTitle → Title для статуса 0; ProductName → Title для статуса 1
+        kv.TryGetValue("TrackTitle", out var trackTitle);
+        kv.TryGetValue("ProductName", out var productName);
+
+        return new GroupMetadata
+        {
+            SuspenseGroupId = groupId,
+            Isrc           = kv.GetValueOrDefault("Isrc"),
+            Barcode        = kv.GetValueOrDefault("Barcode"),
+            CatalogNumber  = kv.GetValueOrDefault("CatalogNumber"),
+            Artist         = kv.GetValueOrDefault("Artist"),
+            Title          = trackTitle ?? productName,
+            Genre          = kv.GetValueOrDefault("Genre"),
+            CreateTime     = DateTime.UtcNow,
+            ChangeTime     = DateTime.UtcNow,
+        };
     }
 
     private async Task<List<SuspenseLine>> FindMatchingSuspensesAsync(

@@ -41,6 +41,18 @@ public interface IGroupProcessingService
     // Возврат из отложенных
     Task<SuspenseGroup> ReturnFromPostponedAsync(int groupId, CancellationToken ct = default);
 
-    // Фиксация группы — переводит группу и все суспенсы в статус Validated (88)
+    // Валидация группы (16 → 88): проверяет права в каталоге, при отсутствии — создаёт из метаправ
     Task<SuspenseGroup> ValidateGroupAsync(int groupId, CancellationToken ct = default);
+
+    // Поиск прав в каталоге по характеристикам продукта (для копирования в группу)
+    Task<List<CatalogProductRights>> SearchCatalogRightsAsync(
+        int groupId,
+        string? artist,
+        string? isrc,
+        string? productName,
+        string? barcode,
+        CancellationToken ct = default);
+
+    // Копирование прав из каталога в продукт группы + переход в статус 88
+    Task<SuspenseGroup> CopyRightsToProductAsync(int groupId, int rightsId, CancellationToken ct = default);
 }

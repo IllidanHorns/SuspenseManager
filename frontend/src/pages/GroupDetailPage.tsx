@@ -9,7 +9,6 @@ import {
   Tabs,
   Table,
   ScrollArea,
-  Badge,
   Loader,
   Center,
   Alert,
@@ -19,11 +18,12 @@ import {
   TextInput,
   Textarea,
   NumberInput,
-  ActionIcon,
+  Select,
   Tooltip,
   Anchor,
   Pagination,
   SimpleGrid,
+  Badge,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
@@ -41,6 +41,8 @@ import {
   IconUnlink,
   IconEdit,
   IconArrowBack,
+  IconShieldCheck,
+  IconCopy,
 } from '@tabler/icons-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -58,10 +60,23 @@ import {
   ungroupGroup,
   returnFromPostponed,
   exportGroupSuspenses,
+  validateGroup,
+  searchCatalogRights,
+  copyRightsToProduct,
 } from '../api/processing';
+import { getCompanies } from '../api/companies';
+import { getTerritories } from '../api/territories';
 import { fmtDate, fmtDateTime, downloadBlob } from '../utils/format';
 import { StatusBadge } from '../components/common/StatusBadge';
-import type { GroupMetadata, GroupMetaRights, CatalogProduct, SuspenseLine } from '../types';
+import { PageSizeSelect } from '../components/common/PageSizeSelect';
+import type {
+  GroupMetadata,
+  GroupMetaRights,
+  CatalogProduct,
+  CatalogProductRights,
+  SuspenseLine,
+  Territory,
+} from '../types';
 
 // ─── Metadata Form ────────────────────────────────────────────────────────────
 
@@ -86,6 +101,7 @@ function MetadataTab({ groupId, metadata }: { groupId: number; metadata: GroupMe
     try {
       await updateMetadata(groupId, values);
       await qc.invalidateQueries({ queryKey: ['group', groupId] });
+      await qc.invalidateQueries({ queryKey: ['groups'] });
       notifications.show({ title: 'Сохранено', message: 'Метаданные обновлены', color: 'green', icon: <IconCircleCheck size={16} /> });
     } catch (e: unknown) {
       notifications.show({ title: 'Ошибка', message: e instanceof Error ? e.message : 'Ошибка сохранения', color: 'red' });
@@ -101,7 +117,7 @@ function MetadataTab({ groupId, metadata }: { groupId: number; metadata: GroupMe
           <TextInput label="Название" {...form.getInputProps('title')} />
           <TextInput label="Исполнитель" {...form.getInputProps('artist')} />
           <TextInput label="ISRC" {...form.getInputProps('isrc')} />
-          <TextInput label="Штрих-код" {...form.getInputProps('barcode')} />
+          <TextInput label="Баркод" {...form.getInputProps('barcode')} />
           <TextInput label="Кат. номер" {...form.getInputProps('catalogNumber')} />
           <TextInput label="Жанр" {...form.getInputProps('genre')} />
         </SimpleGrid>
@@ -122,24 +138,79 @@ function MetaRightsTab({ groupId, metaRights }: { groupId: number; metaRights: G
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
 
+  const { data: companiesData } = useQuery({
+    queryKey: ['companies'],
+    queryFn: () => getCompanies({ pageSize: 500 }),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: territoriesData } = useQuery({
+    queryKey: ['territories'],
+    queryFn: getTerritories,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const companies = companiesData?.items ?? [];
+  const territories = territoriesData?.items ?? [];
+
+  const companyOptions = companies.map((c) => ({
+    value: String(c.id),
+    label: c.shortName || c.legalName,
+  }));
+
+  const territoryOptions = territories.map((t) => ({
+    value: String(t.id),
+    label: `${t.code}${t.description ? ` — ${t.description}` : ''}`,
+  }));
+
   const form = useForm({
     initialValues: {
-      docNumber: metaRights?.docNumber ?? '',
-      docType: metaRights?.docType ?? '',
-      docDate: metaRights?.docDate ?? '',
-      docStart: metaRights?.docStart ?? '',
-      docEnd: metaRights?.docEnd ?? '',
-      territoryCode: metaRights?.territoryCode ?? '',
-      territoryDesc: metaRights?.territoryDesc ?? '',
-      share: metaRights?.share ?? (null as number | null),
+      senderCompanyId:   metaRights?.senderCompanyId   ? String(metaRights.senderCompanyId)   : (null as string | null),
+      receiverCompanyId: metaRights?.receiverCompanyId ? String(metaRights.receiverCompanyId) : (null as string | null),
+      territoryId:       metaRights?.territoryId       ? String(metaRights.territoryId)       : (null as string | null),
+      territoryCode:     metaRights?.territoryCode ?? '',
+      territoryDesc:     metaRights?.territoryDesc ?? '',
+      docNumber:         metaRights?.docNumber ?? '',
+      docType:           metaRights?.docType ?? '',
+      docDate:           metaRights?.docDate ?? '',
+      docStart:          metaRights?.docStart ?? '',
+      docEnd:            metaRights?.docEnd ?? '',
+      share:             metaRights?.share ?? (null as number | null),
     },
   });
+
+  // При выборе территории — автозаполняем код и описание
+  const handleTerritoryChange = (val: string | null) => {
+    form.setFieldValue('territoryId', val);
+    if (val) {
+      const t: Territory | undefined = territories.find((x) => String(x.id) === val);
+      if (t) {
+        form.setFieldValue('territoryCode', t.code);
+        form.setFieldValue('territoryDesc', t.description ?? '');
+      }
+    }
+  };
 
   const handleSave = async (values: typeof form.values) => {
     setSaving(true);
     try {
-      await updateMetaRights(groupId, values);
+      // Преобразуем строковые ID в числа и пустые даты в null
+      const payload = {
+        senderCompanyId:   values.senderCompanyId   ? Number(values.senderCompanyId)   : null,
+        receiverCompanyId: values.receiverCompanyId ? Number(values.receiverCompanyId) : null,
+        territoryId:       values.territoryId       ? Number(values.territoryId)       : null,
+        territoryCode:     values.territoryCode || null,
+        territoryDesc:     values.territoryDesc || null,
+        docNumber:         values.docNumber || null,
+        docType:           values.docType || null,
+        docDate:           values.docDate || null,
+        docStart:          values.docStart || null,
+        docEnd:            values.docEnd || null,
+        share:             values.share ?? null,
+      };
+      await updateMetaRights(groupId, payload);
       await qc.invalidateQueries({ queryKey: ['group', groupId] });
+      await qc.invalidateQueries({ queryKey: ['groups'] });
       notifications.show({ title: 'Сохранено', message: 'Права обновлены', color: 'green', icon: <IconCircleCheck size={16} /> });
     } catch (e: unknown) {
       notifications.show({ title: 'Ошибка', message: e instanceof Error ? e.message : 'Ошибка сохранения', color: 'red' });
@@ -151,16 +222,61 @@ function MetaRightsTab({ groupId, metaRights }: { groupId: number; metaRights: G
   return (
     <form onSubmit={form.onSubmit(handleSave)}>
       <Stack gap="md">
+        <Alert icon={<IconAlertCircle size={14} />} color="blue" variant="light" radius="md">
+          Заполните обязательные поля (*) и нажмите «Валидировать» — система создаст права в каталоге
+          и переведёт группу в статус 88. Или используйте «Найти права», чтобы скопировать права
+          с похожего продукта.
+        </Alert>
+
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+          <Select
+            label="Компания-отправитель *"
+            placeholder="Выберите компанию"
+            data={companyOptions}
+            searchable
+            clearable
+            value={form.values.senderCompanyId}
+            onChange={(v) => form.setFieldValue('senderCompanyId', v)}
+          />
+          <Select
+            label="Компания-получатель *"
+            placeholder="Выберите компанию"
+            data={companyOptions}
+            searchable
+            clearable
+            value={form.values.receiverCompanyId}
+            onChange={(v) => form.setFieldValue('receiverCompanyId', v)}
+          />
+          <Select
+            label="Территория *"
+            placeholder="Выберите территорию"
+            data={territoryOptions}
+            searchable
+            clearable
+            value={form.values.territoryId}
+            onChange={handleTerritoryChange}
+          />
+          <TextInput
+            label="Код территории"
+            description="Заполняется автоматически при выборе территории"
+            {...form.getInputProps('territoryCode')}
+          />
           <TextInput label="Номер договора" {...form.getInputProps('docNumber')} />
           <TextInput label="Тип договора" {...form.getInputProps('docType')} />
           <TextInput label="Дата договора" type="date" {...form.getInputProps('docDate')} />
-          <TextInput label="Действует с" type="date" {...form.getInputProps('docStart')} />
-          <TextInput label="Действует по" type="date" {...form.getInputProps('docEnd')} />
-          <TextInput label="Территория (код)" {...form.getInputProps('territoryCode')} />
-          <TextInput label="Территория (описание)" {...form.getInputProps('territoryDesc')} />
-          <NumberInput label="Доля (%)" min={0} max={100} decimalScale={2} {...form.getInputProps('share')} />
+          <TextInput label="Действует с *" type="date" {...form.getInputProps('docStart')} />
+          <TextInput label="Действует по *" type="date" {...form.getInputProps('docEnd')} />
+          <NumberInput
+            label="Доля (%) *"
+            min={0}
+            max={100}
+            decimalScale={2}
+            {...form.getInputProps('share')}
+          />
         </SimpleGrid>
+
+        <Text size="xs" c="dimmed">* — обязательные поля для валидации</Text>
+
         <Group justify="flex-end">
           <Button type="submit" loading={saving} color="violet" leftSection={<IconEdit size={14} />}>
             Сохранить права
@@ -185,10 +301,12 @@ function PossibleProductsModal({
   onLink: () => void;
 }) {
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [linking, setLinking] = useState<number | null>(null);
+  const handlePageSizeChange = (v: number) => { setPageSize(v); setPage(1); };
   const { data, isLoading } = useQuery({
-    queryKey: ['possible-products', groupId, page],
-    queryFn: () => getPossibleProducts(groupId, { pageNumber: page, pageSize: 10 }),
+    queryKey: ['possible-products', groupId, page, pageSize],
+    queryFn: () => getPossibleProducts(groupId, { pageNumber: page, pageSize }),
     enabled: opened,
   });
 
@@ -244,10 +362,211 @@ function PossibleProductsModal({
           </Table>
           <Group justify="space-between" pt="xs" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
             <Text size="sm" c="dimmed">Всего: {data?.totalCount ?? 0}</Text>
-            <Pagination value={page} onChange={setPage} total={Math.max(1, data?.totalPages ?? 1)} size="sm" />
+            <Group gap="sm">
+              <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} />
+              <Pagination value={page} onChange={setPage} total={Math.max(1, data?.totalPages ?? 1)} size="sm" />
+            </Group>
           </Group>
         </Stack>
       )}
+    </Modal>
+  );
+}
+
+// ─── Search Rights Modal ──────────────────────────────────────────────────────
+
+function SearchRightsModal({
+  opened,
+  onClose,
+  groupId,
+  onApplied,
+}: {
+  opened: boolean;
+  onClose: () => void;
+  groupId: number;
+  onApplied: () => void;
+}) {
+  const [artist, setArtist] = useState('');
+  const [isrc, setIsrc] = useState('');
+  const [productName, setProductName] = useState('');
+  const [barcode, setBarcode] = useState('');
+  const [results, setResults] = useState<CatalogProductRights[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [applying, setApplying] = useState<number | null>(null);
+  const [searched, setSearched] = useState(false);
+
+  const handleSearch = async () => {
+    if (!artist && !isrc && !productName && !barcode) {
+      notifications.show({ title: 'Ошибка', message: 'Укажите хотя бы один параметр поиска', color: 'orange' });
+      return;
+    }
+    setSearching(true);
+    try {
+      const data = await searchCatalogRights(groupId, { artist, isrc, productName, barcode });
+      setResults(data);
+      setSearched(true);
+    } catch (e: unknown) {
+      notifications.show({ title: 'Ошибка', message: e instanceof Error ? e.message : 'Ошибка поиска', color: 'red' });
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleApply = async (rights: CatalogProductRights) => {
+    setApplying(rights.id);
+    try {
+      await copyRightsToProduct(groupId, rights.id);
+      notifications.show({
+        title: 'Права применены',
+        message: `Договор ${rights.docNumber ?? '—'} скопирован, группа переведена в статус 88`,
+        color: 'green',
+        icon: <IconCircleCheck size={16} />,
+      });
+      onApplied();
+      onClose();
+    } catch (e: unknown) {
+      notifications.show({ title: 'Ошибка', message: e instanceof Error ? e.message : 'Ошибка применения', color: 'red' });
+    } finally {
+      setApplying(null);
+    }
+  };
+
+  const onKey = (e: React.KeyboardEvent) => { if (e.key === 'Enter') handleSearch(); };
+
+  return (
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      title="Найти права в каталоге"
+      size="xl"
+      radius="md"
+    >
+      <Stack gap="md">
+        <Text size="sm" c="dimmed">
+          Поиск прав у других продуктов каталога. Найденные права будут скопированы
+          в продукт группы и группа перейдёт в статус 88.
+        </Text>
+
+        {/* Search form */}
+        <Paper withBorder radius="md" p="sm">
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+            <TextInput
+              size="xs"
+              label="Исполнитель"
+              placeholder="Например: The Beatles"
+              value={artist}
+              onChange={(e) => setArtist(e.target.value)}
+              onKeyDown={onKey}
+            />
+            <TextInput
+              size="xs"
+              label="ISRC"
+              placeholder="Например: GBUM71200025"
+              value={isrc}
+              onChange={(e) => setIsrc(e.target.value)}
+              onKeyDown={onKey}
+            />
+            <TextInput
+              size="xs"
+              label="Название продукта"
+              placeholder="Например: Abbey Road"
+              value={productName}
+              onChange={(e) => setProductName(e.target.value)}
+              onKeyDown={onKey}
+            />
+            <TextInput
+              size="xs"
+              label="Баркод"
+              placeholder="Например: 094638246817"
+              value={barcode}
+              onChange={(e) => setBarcode(e.target.value)}
+              onKeyDown={onKey}
+            />
+          </SimpleGrid>
+          <Group justify="flex-end" mt="sm">
+            <Button
+              size="xs"
+              leftSection={<IconSearch size={12} />}
+              loading={searching}
+              onClick={handleSearch}
+            >
+              Найти
+            </Button>
+          </Group>
+        </Paper>
+
+        {/* Results */}
+        {searching ? (
+          <Center py="xl"><Loader color="indigo" /></Center>
+        ) : searched && results.length === 0 ? (
+          <Alert icon={<IconAlertCircle size={14} />} color="orange" radius="md">
+            Ничего не найдено. Попробуйте изменить критерии поиска.
+          </Alert>
+        ) : results.length > 0 ? (
+          <ScrollArea>
+            <Table striped highlightOnHover style={{ minWidth: 800 }}>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Продукт</Table.Th>
+                  <Table.Th>Договор</Table.Th>
+                  <Table.Th>Отправитель</Table.Th>
+                  <Table.Th>Получатель</Table.Th>
+                  <Table.Th>Территория</Table.Th>
+                  <Table.Th>Период</Table.Th>
+                  <Table.Th>Доля</Table.Th>
+                  <Table.Th></Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {results.map((r) => (
+                  <Table.Tr key={r.id}>
+                    <Table.Td>
+                      <Stack gap={2}>
+                        <Text size="sm" fw={500}>{r.catalogProduct?.productName ?? `ID: ${r.catalogProductId}`}</Text>
+                        <Text size="xs" c="dimmed">{r.catalogProduct?.artist ?? ''}</Text>
+                      </Stack>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm">{r.docNumber ?? '—'}</Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm">{r.companySender}</Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm">{r.companyReceiver}</Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Badge variant="light" color="blue" size="sm">{r.territoryCode}</Badge>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="xs" c="dimmed">
+                        {fmtDate(r.docStart)} – {fmtDate(r.docEnd)}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm">{r.share}%</Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Tooltip label="Скопировать права в продукт группы и перевести в статус 88">
+                        <Button
+                          size="xs"
+                          color="green"
+                          variant="light"
+                          leftSection={<IconCopy size={12} />}
+                          loading={applying === r.id}
+                          onClick={() => handleApply(r)}
+                        >
+                          Применить
+                        </Button>
+                      </Tooltip>
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </ScrollArea>
+        ) : null}
+      </Stack>
     </Modal>
   );
 }
@@ -256,6 +575,8 @@ function PossibleProductsModal({
 
 function SuspensesTab({ groupId }: { groupId: number }) {
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const handlePageSizeChange = (v: number) => { setPageSize(v); setPage(1); };
   const [pendingIsrc, setPendingIsrc] = useState('');
   const [pendingArtist, setPendingArtist] = useState('');
   const [pendingOperator, setPendingOperator] = useState('');
@@ -280,8 +601,8 @@ function SuspensesTab({ groupId }: { groupId: number }) {
   const onKey = (e: React.KeyboardEvent) => { if (e.key === 'Enter') applyFilters(); };
 
   const { data, isLoading } = useQuery({
-    queryKey: ['group-suspenses', groupId, page, applied],
-    queryFn: () => getGroupSuspenses(groupId, { pageNumber: page, pageSize: 20, Filters: applied }),
+    queryKey: ['group-suspenses', groupId, page, pageSize, applied],
+    queryFn: () => getGroupSuspenses(groupId, { pageNumber: page, pageSize, Filters: applied }),
   });
 
   const rows = data?.items ?? [];
@@ -340,7 +661,10 @@ function SuspensesTab({ groupId }: { groupId: number }) {
           </ScrollArea>
           <Group justify="space-between" px="sm" pt="xs" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
             <Text size="sm" c="dimmed">Всего: {data?.totalCount ?? 0}</Text>
-            <Pagination value={page} onChange={setPage} total={Math.max(1, data?.totalPages ?? 1)} size="sm" />
+            <Group gap="sm">
+              <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} />
+              <Pagination value={page} onChange={setPage} total={Math.max(1, data?.totalPages ?? 1)} size="sm" />
+            </Group>
           </Group>
         </>
       )}
@@ -374,6 +698,7 @@ export function GroupDetailPage() {
   });
 
   const [possibleOpen, { open: openPossible, close: closePossible }] = useDisclosure(false);
+  const [searchRightsOpen, { open: openSearchRights, close: closeSearchRights }] = useDisclosure(false);
   const [boOpen, { open: openBo, close: closeBo }] = useDisclosure(false);
   const [postponeOpen, { open: openPostpone, close: closePostpone }] = useDisclosure(false);
   const [ungroupOpen, { open: openUngroup, close: closeUngroup }] = useDisclosure(false);
@@ -382,11 +707,16 @@ export function GroupDetailPage() {
   const [postponeReason, setPostponeReason] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  const refreshGroup = async () => {
+    await qc.invalidateQueries({ queryKey: ['group', groupId] });
+    await qc.invalidateQueries({ queryKey: ['groups'] });
+  };
+
   const runAction = async (key: string, fn: () => Promise<unknown>) => {
     setActionLoading(key);
     try {
       await fn();
-      await qc.invalidateQueries({ queryKey: ['group', groupId] });
+      await refreshGroup();
     } catch (e: unknown) {
       notifications.show({ title: 'Ошибка', message: e instanceof Error ? e.message : 'Ошибка', color: 'red' });
     } finally {
@@ -398,6 +728,17 @@ export function GroupDetailPage() {
     runAction('catalog-fast', async () => {
       await catalogFast(groupId);
       notifications.show({ title: 'Продукт создан', message: 'Быстрая каталогизация выполнена', color: 'green' });
+    });
+
+  const handleValidate = () =>
+    runAction('validate', async () => {
+      await validateGroup(groupId);
+      notifications.show({
+        title: 'Группа валидирована',
+        message: 'Статус изменён на 88 — Валидирован',
+        color: 'green',
+        icon: <IconCircleCheck size={16} />,
+      });
     });
 
   const handleSendBo = async () => {
@@ -502,6 +843,35 @@ export function GroupDetailPage() {
                 </Button>
               </>
             )}
+
+            {isNoRights && (
+              <>
+                <Tooltip label="Проверить права в каталоге и перевести группу в статус 88">
+                  <Button
+                    size="sm"
+                    color="green"
+                    variant="filled"
+                    leftSection={<IconShieldCheck size={14} />}
+                    loading={actionLoading === 'validate'}
+                    onClick={handleValidate}
+                  >
+                    Валидировать
+                  </Button>
+                </Tooltip>
+                <Tooltip label="Найти права у похожего продукта в каталоге">
+                  <Button
+                    size="sm"
+                    color="grape"
+                    variant="light"
+                    leftSection={<IconSearch size={14} />}
+                    onClick={openSearchRights}
+                  >
+                    Найти права
+                  </Button>
+                </Tooltip>
+              </>
+            )}
+
             <Button
               size="sm"
               color="green"
@@ -511,7 +881,7 @@ export function GroupDetailPage() {
             >
               Экспорт
             </Button>
-            {/* Отложить — только для активных групп 15/16 */}
+
             {(isNoProduct || isNoRights) && (
               <Button
                 size="sm"
@@ -534,7 +904,6 @@ export function GroupDetailPage() {
                 Отложить
               </Button>
             )}
-            {/* Вернуть из отложенных — только для 30/32 */}
             {isPostponed && (
               <Button
                 size="sm"
@@ -547,7 +916,6 @@ export function GroupDetailPage() {
                 Вернуть в обработку
               </Button>
             )}
-            {/* Расформировать — для 15/16/30/32 */}
             {canUngroup && (
               <Button
                 size="sm"
@@ -597,7 +965,15 @@ export function GroupDetailPage() {
         opened={possibleOpen}
         onClose={closePossible}
         groupId={groupId}
-        onLink={() => qc.invalidateQueries({ queryKey: ['group', groupId] })}
+        onLink={refreshGroup}
+      />
+
+      {/* Search Rights Modal */}
+      <SearchRightsModal
+        opened={searchRightsOpen}
+        onClose={closeSearchRights}
+        groupId={groupId}
+        onApplied={refreshGroup}
       />
 
       {/* Back Office Modal */}

@@ -23,8 +23,6 @@ public static class GroupingSqlBuilder
         ["SenderCompany"] = "s.[SenderCompany]",
         ["RecipientCompany"] = "s.[RecipientCompany]",
         ["Operator"] = "s.[Operator]",
-        ["AgreementType"] = "s.[AgreementType]",
-        ["AgreementNumber"] = "s.[AgreementNumber]",
         ["TerritoryCode"] = "s.[TerritoryCode]",
     };
 

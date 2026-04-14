@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace Models;
 
 public class SuspenseGroup
@@ -60,6 +62,12 @@ public class SuspenseGroup
     public int? MetaRightsId { get; set; }
 
     public GroupMetaRights? GroupMetaRights { get; set; }
+
+    /// <summary>
+    /// Количество активных суспенс-строк в группе (не хранится в БД, заполняется в сервисе)
+    /// </summary>
+    [NotMapped]
+    public int SuspenseCount { get; set; }
 
     /// <summary>
     /// Коллекция суспенсов в группе

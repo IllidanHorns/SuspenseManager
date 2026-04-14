@@ -31,11 +31,12 @@ import { notifications } from '@mantine/notifications';
 import { useDisclosure } from '@mantine/hooks';
 import { getGroupingPreview, commitGroup } from '../api/grouping';
 import { useAuth } from '../hooks/useAuth';
+import { PageSizeSelect } from '../components/common/PageSizeSelect';
 import type { GroupingPreviewItem } from '../types';
 
 const STATUS_0_COLS = [
   { value: 'Isrc', label: 'ISRC' },
-  { value: 'Barcode', label: 'Штрих-код' },
+  { value: 'Barcode', label: 'Баркод' },
   { value: 'CatalogNumber', label: 'Кат. номер' },
   { value: 'Artist', label: 'Исполнитель' },
   { value: 'TrackTitle', label: 'Название трека' },
@@ -43,15 +44,15 @@ const STATUS_0_COLS = [
   { value: 'SenderCompany', label: 'Отправитель' },
   { value: 'RecipientCompany', label: 'Получатель' },
   { value: 'Operator', label: 'Оператор' },
-  { value: 'AgreementType', label: 'Тип договора' },
-  { value: 'AgreementNumber', label: 'Номер договора' },
   { value: 'TerritoryCode', label: 'Территория' },
 ];
 
+// Используется только для отображения лейблов (не входит в список выбора)
+const PRODUCT_ID_COL = { value: 'ProductId', label: 'Идентификатор продукта' };
+
 const STATUS_1_COLS = [
-  { value: 'ProductId', label: 'ID продукта' },
   { value: 'Isrc', label: 'ISRC' },
-  { value: 'Barcode', label: 'Штрих-код' },
+  { value: 'Barcode', label: 'Баркод' },
   { value: 'CatalogNumber', label: 'Кат. номер' },
   { value: 'ProductName', label: 'Название продукта' },
   { value: 'Artist', label: 'Исполнитель' },
@@ -68,6 +69,7 @@ export function GroupingPage() {
   const [status, setStatus] = useState<'0' | '1'>('0');
   const [columns, setColumns] = useState<string[]>(['Artist', 'TrackTitle']);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [filters, setFilters] = useState<Record<string, string>>({});
 
   const [items, setItems] = useState<GroupingPreviewItem[]>([]);
@@ -81,6 +83,8 @@ export function GroupingPage() {
   const [confirmOpened, { open: openConfirm, close: closeConfirm }] = useDisclosure(false);
 
   const availableCols = status === '0' ? STATUS_0_COLS : STATUS_1_COLS;
+  const allColLabels = [PRODUCT_ID_COL, ...STATUS_0_COLS, ...STATUS_1_COLS];
+  const colLabel = (col: string) => allColLabels.find((c) => c.value === col)?.label ?? col;
 
   const handlePreview = async (p = page) => {
     if (columns.length === 0) {
@@ -92,9 +96,9 @@ export function GroupingPage() {
     try {
       const res = await getGroupingPreview({
         businessStatus: Number(status),
-        groupByColumns: columns,
+        groupByColumns: effectiveColumns,
         pageNumber: p,
-        pageSize: 20,
+        pageSize,
         ...filters,
       });
       setItems(res.items);
@@ -112,6 +116,12 @@ export function GroupingPage() {
     handlePreview(p);
   };
 
+  const handlePageSizeChange = (v: number) => {
+    setPageSize(v);
+    setPage(1);
+    handlePreview(1);
+  };
+
   const openCommitDialog = (item: GroupingPreviewItem) => {
     setCommitTarget(item);
     openConfirm();
@@ -123,7 +133,7 @@ export function GroupingPage() {
     try {
       await commitGroup({
         businessStatus: Number(status),
-        groupByColumns: columns,
+        groupByColumns: effectiveColumns,
         keyValues: commitTarget.key,
         accountId,
       });
@@ -146,9 +156,12 @@ export function GroupingPage() {
     }
   };
 
+  // Для статуса 1 ProductId всегда добавляется автоматически — не отображается в UI
+  const effectiveColumns = status === '1' ? ['ProductId', ...columns] : columns;
+
   const handleStatusChange = (val: string) => {
     setStatus(val as '0' | '1');
-    setColumns(val === '0' ? ['Artist', 'TrackTitle'] : ['ProductId']);
+    setColumns(val === '0' ? ['Artist', 'TrackTitle'] : ['Artist']);
     setItems([]);
     setFilters({});
   };
@@ -178,6 +191,7 @@ export function GroupingPage() {
             <Box style={{ flex: 1, minWidth: 280 }}>
               <MultiSelect
                 label="Колонки для группировки"
+                description={status === '1' ? 'Идентификатор продукта всегда включён в группировку автоматически' : undefined}
                 placeholder="Выберите колонки"
                 data={availableCols}
                 value={columns}
@@ -209,15 +223,15 @@ export function GroupingPage() {
             </Tooltip>
           </Group>
 
-          {columns.length > 0 && (
+          {effectiveColumns.length > 0 && (
             <Box>
               <Text size="sm" fw={500} mb="xs" c="dimmed">Фильтры</Text>
               <Group gap="sm" wrap="wrap">
-                {columns.map((col) => (
+                {effectiveColumns.map((col) => (
                   <TextInput
                     key={col}
                     size="xs"
-                    placeholder={availableCols.find((c) => c.value === col)?.label ?? col}
+                    placeholder={colLabel(col)}
                     value={filters[col] ?? ''}
                     onChange={(e) => setFilters((f) => ({ ...f, [col]: e.target.value }))}
                     style={{ width: 160 }}
@@ -247,9 +261,9 @@ export function GroupingPage() {
             <Table striped highlightOnHover>
               <Table.Thead>
                 <Table.Tr>
-                  {columns.map((col) => (
+                  {effectiveColumns.map((col) => (
                     <Table.Th key={col}>
-                      {availableCols.find((c) => c.value === col)?.label ?? col}
+                      {colLabel(col)}
                     </Table.Th>
                   ))}
                   <Table.Th style={{ textAlign: 'right' }}>Кол-во</Table.Th>
@@ -259,7 +273,7 @@ export function GroupingPage() {
               <Table.Tbody>
                 {items.map((item, idx) => (
                   <Table.Tr key={idx}>
-                    {columns.map((col) => (
+                    {effectiveColumns.map((col) => (
                       <Table.Td key={col}>
                         <Text size="sm">{item.key[col] ?? '—'}</Text>
                       </Table.Td>
@@ -284,7 +298,10 @@ export function GroupingPage() {
           </ScrollArea>
           <Group justify="space-between" px="md" py="xs" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
             <Text size="sm" c="dimmed">Всего: {totalCount.toLocaleString('ru-RU')}</Text>
-            <Pagination value={page} onChange={handlePageChange} total={Math.max(1, totalPages)} size="sm" />
+            <Group gap="sm">
+              <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} />
+              <Pagination value={page} onChange={handlePageChange} total={Math.max(1, totalPages)} size="sm" />
+            </Group>
           </Group>
         </Paper>
       ) : null}
@@ -305,7 +322,7 @@ export function GroupingPage() {
             <Stack gap={4}>
               {commitTarget && Object.entries(commitTarget.key).map(([k, v]) => (
                 <Group key={k} justify="space-between">
-                  <Text size="sm" c="dimmed">{availableCols.find((c) => c.value === k)?.label ?? k}:</Text>
+                  <Text size="sm" c="dimmed">{colLabel(k)}:</Text>
                   <Text size="sm" fw={500}>{v || '—'}</Text>
                 </Group>
               ))}

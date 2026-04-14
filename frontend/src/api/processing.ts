@@ -6,6 +6,7 @@ import type {
   UpdateGroupMetaRightsDto,
   SuspenseGroup,
   CatalogProduct,
+  CatalogProductRights,
   PagedResponse,
   PagedRequest,
 } from '../types';
@@ -80,4 +81,25 @@ export async function exportGroupSuspenses(groupId: number): Promise<Blob> {
 
 export async function exportGroupsByStatus(status: 15 | 16): Promise<Blob> {
   return apiGetBlob('/groups/export', { status });
+}
+
+export async function validateGroup(groupId: number): Promise<SuspenseGroup> {
+  return apiPost<SuspenseGroup>(`/groups/${groupId}/validate`);
+}
+
+export async function searchCatalogRights(
+  groupId: number,
+  params: { artist?: string; isrc?: string; productName?: string; barcode?: string }
+): Promise<CatalogProductRights[]> {
+  return apiGet<CatalogProductRights[]>(
+    `/groups/${groupId}/search-rights`,
+    params as Record<string, unknown>
+  );
+}
+
+export async function copyRightsToProduct(
+  groupId: number,
+  rightsId: number
+): Promise<SuspenseGroup> {
+  return apiPost<SuspenseGroup>(`/groups/${groupId}/copy-rights`, { rightsId });
 }

@@ -36,10 +36,12 @@ import { getPostponedGroups } from '../api/groups';
 import { returnFromPostponed, ungroupGroup } from '../api/processing';
 import { fmtDateTime } from '../utils/format';
 import { StatusBadge } from '../components/common/StatusBadge';
+import { PageSizeSelect } from '../components/common/PageSizeSelect';
 import { notifications } from '@mantine/notifications';
 
 export function PostponedPage() {
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [returning, setReturning] = useState<number | null>(null);
   const [ungroupTarget, setUngroupTarget] = useState<number | null>(null);
   const [ungroupLoading, setUngroupLoading] = useState(false);
@@ -64,9 +66,11 @@ export function PostponedPage() {
     setPage(1);
   };
 
+  const handlePageSizeChange = (v: number) => { setPageSize(v); setPage(1); };
+
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['postponed', page, applied],
-    queryFn: () => getPostponedGroups({ pageNumber: page, pageSize: 20, Filters: applied }),
+    queryKey: ['postponed', page, pageSize, applied],
+    queryFn: () => getPostponedGroups({ pageNumber: page, pageSize, Filters: applied }),
   });
 
   const handleReturn = async (groupId: number) => {
@@ -241,7 +245,10 @@ export function PostponedPage() {
           </ScrollArea>
           <Group justify="space-between" px="md" py="xs" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
             <Text size="sm" c="dimmed">Всего: {data.totalCount.toLocaleString('ru-RU')}</Text>
-            <Pagination value={page} onChange={setPage} total={Math.max(1, data.totalPages)} size="sm" />
+            <Group gap="sm">
+              <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} />
+              <Pagination value={page} onChange={setPage} total={Math.max(1, data.totalPages)} size="sm" />
+            </Group>
           </Group>
         </Paper>
       )}
