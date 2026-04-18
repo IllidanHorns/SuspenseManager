@@ -1084,6 +1084,73 @@ namespace Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Models.BackOfficeTask", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ArchiveLevel")
+                        .HasDefaultValue(0)
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ArchiveTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ChangeTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedByAccountId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GroupId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProblemDescription")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("TaskStatus")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArchiveLevel");
+
+                    b.HasIndex("CreatedByAccountId");
+
+                    b.HasIndex("GroupId");
+
+                    b.HasIndex("TaskStatus");
+
+                    b.ToTable("BackOfficeTasks");
+                });
+
+            modelBuilder.Entity("Models.BackOfficeTask", b =>
+                {
+                    b.HasOne("Models.Account", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Models.SuspenseGroup", "Group")
+                        .WithMany("BackOfficeTasks")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Group");
+                });
+
             modelBuilder.Entity("Models.AccountRightsLink", b =>
                 {
                     b.HasOne("Models.Account", "Account")
@@ -1344,6 +1411,8 @@ namespace Data.Migrations
 
             modelBuilder.Entity("Models.SuspenseGroup", b =>
                 {
+                    b.Navigation("BackOfficeTasks");
+
                     b.Navigation("GroupMetaData");
 
                     b.Navigation("GroupMetaRights");

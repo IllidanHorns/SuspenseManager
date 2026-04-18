@@ -28,6 +28,7 @@ public class SuspenseManagerDbContext : DbContext
     public DbSet<StatusDictionary> StatusDictionary { get; set; }
     public DbSet<SuspenseGroupLog> SuspenseGroupLogs { get; set; }
     public DbSet<SuspenseLineLog> SuspenseLineLogs { get; set; }
+    public DbSet<BackOfficeTask> BackOfficeTasks { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

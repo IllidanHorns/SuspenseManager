@@ -78,4 +78,9 @@ public class SuspenseGroup
     /// Коллекция связей суспенсов с группой (для истории)
     /// </summary>
     public List<SuspenseGroupLink> SuspenseGroupLinks { get; set; }
+
+    /// <summary>
+    /// Задания в бэк-офисе по этой группе (история заданий)
+    /// </summary>
+    public List<BackOfficeTask> BackOfficeTasks { get; set; } = [];
 }

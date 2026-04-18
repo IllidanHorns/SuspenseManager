@@ -59,8 +59,8 @@ export async function linkProduct(groupId: number, productId: number): Promise<S
   return apiPost<SuspenseGroup>(`/groups/${groupId}/link-product`, { productId });
 }
 
-export async function sendToBackOffice(groupId: number, comment?: string): Promise<SuspenseGroup> {
-  return apiPost<SuspenseGroup>(`/groups/${groupId}/send-to-backoffice`, { comment });
+export async function sendToBackOffice(groupId: number, problemDescription: string): Promise<SuspenseGroup> {
+  return apiPost<SuspenseGroup>(`/groups/${groupId}/send-to-backoffice`, { problemDescription });
 }
 
 export async function postponeGroup(groupId: number, reason?: string): Promise<SuspenseGroup> {

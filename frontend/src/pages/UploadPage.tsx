@@ -15,7 +15,13 @@ import {
   Box,
   Progress,
   ThemeIcon,
+  Modal,
+  TextInput,
+  NumberInput,
+  Grid,
 } from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { useDisclosure } from '@mantine/hooks';
 import {
   IconUpload,
   IconFile,
@@ -23,9 +29,11 @@ import {
   IconCircleCheck,
   IconAlertTriangle,
   IconX,
+  IconPencilPlus,
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
-import { uploadFile } from '../api/upload';
+import { uploadFile, uploadManual } from '../api/upload';
+import type { ManualSuspenseLineInput } from '../api/upload';
 import { STATUS_LABELS, STATUS_COLORS } from '../types';
 import type { ValidationResultDto } from '../types';
 
@@ -35,6 +43,55 @@ export function UploadPage() {
   const [result, setResult] = useState<ValidationResultDto | null>(null);
   const [error, setError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const [manualOpened, { open: openManual, close: closeManual }] = useDisclosure(false);
+  const [manualLoading, setManualLoading] = useState(false);
+
+  const manualForm = useForm<ManualSuspenseLineInput>({
+    initialValues: {
+      isrc: '',
+      barcode: '',
+      catalogNumber: '',
+      productFormatCode: '',
+      artist: '',
+      trackTitle: '',
+      genre: '',
+      senderCompany: '',
+      recipientCompany: '',
+      operator: '',
+      agreementType: '',
+      agreementNumber: '',
+      territoryCode: '',
+      qty: 1,
+      ppd: undefined,
+      exchangeCurrency: undefined,
+      exchangeRate: undefined,
+    },
+  });
+
+  const handleManualSubmit = async (values: ManualSuspenseLineInput) => {
+    setManualLoading(true);
+    try {
+      const res = await uploadManual(values);
+      setResult(res);
+      closeManual();
+      manualForm.reset();
+      notifications.show({
+        title: 'Строка добавлена',
+        message: `Статус: ${STATUS_LABELS[res.lines[0]?.businessStatus] ?? '—'}`,
+        color: 'green',
+        icon: <IconCircleCheck size={16} />,
+      });
+    } catch (e: unknown) {
+      notifications.show({
+        title: 'Ошибка',
+        message: e instanceof Error ? e.message : 'Ошибка при добавлении строки',
+        color: 'red',
+      });
+    } finally {
+      setManualLoading(false);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -80,10 +137,88 @@ export function UploadPage() {
 
   return (
     <Stack gap="xl">
-      <Box>
-        <Title order={3} fw={600}>Загрузка отчёта</Title>
-        <Text c="dimmed" size="sm">Загрузите Excel-файл со стриминговым отчётом для валидации</Text>
-      </Box>
+      <Modal
+        opened={manualOpened}
+        onClose={closeManual}
+        title="Ручной ввод строки суспенса"
+        size="lg"
+      >
+        <form onSubmit={manualForm.onSubmit(handleManualSubmit)}>
+          <Stack gap="sm">
+            <Text size="xs" c="dimmed">Заполните хотя бы одно из полей: ISRC, Баркод или Каталожный номер</Text>
+            <Grid>
+              <Grid.Col span={4}>
+                <TextInput label="ISRC" placeholder="RU-A0A-25-00001" {...manualForm.getInputProps('isrc')} />
+              </Grid.Col>
+              <Grid.Col span={4}>
+                <TextInput label="Баркод" placeholder="4607012345678" {...manualForm.getInputProps('barcode')} />
+              </Grid.Col>
+              <Grid.Col span={4}>
+                <TextInput label="Каталожный номер" placeholder="CAT-001" {...manualForm.getInputProps('catalogNumber')} />
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <TextInput label="Артист" {...manualForm.getInputProps('artist')} />
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <TextInput label="Название трека" {...manualForm.getInputProps('trackTitle')} />
+              </Grid.Col>
+              <Grid.Col span={4}>
+                <TextInput label="Жанр" {...manualForm.getInputProps('genre')} />
+              </Grid.Col>
+              <Grid.Col span={4}>
+                <TextInput label="Формат (TTkey)" placeholder="DIGI" {...manualForm.getInputProps('productFormatCode')} />
+              </Grid.Col>
+              <Grid.Col span={4}>
+                <TextInput label="Код территории" placeholder="RU" {...manualForm.getInputProps('territoryCode')} />
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <TextInput label="Компания отправитель" {...manualForm.getInputProps('senderCompany')} />
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <TextInput label="Компания получатель" {...manualForm.getInputProps('recipientCompany')} />
+              </Grid.Col>
+              <Grid.Col span={4}>
+                <TextInput label="Оператор" placeholder="Yandex Music" {...manualForm.getInputProps('operator')} />
+              </Grid.Col>
+              <Grid.Col span={4}>
+                <TextInput label="Тип договора" {...manualForm.getInputProps('agreementType')} />
+              </Grid.Col>
+              <Grid.Col span={4}>
+                <TextInput label="Номер договора" {...manualForm.getInputProps('agreementNumber')} />
+              </Grid.Col>
+              <Grid.Col span={4}>
+                <NumberInput label="Кол-во прослушиваний" min={0} {...manualForm.getInputProps('qty')} />
+              </Grid.Col>
+              <Grid.Col span={4}>
+                <NumberInput label="Цена за стрим (PPD)" min={0} decimalScale={6} {...manualForm.getInputProps('ppd')} />
+              </Grid.Col>
+              <Grid.Col span={4}>
+                <TextInput label="Валюта" placeholder="RUB" {...manualForm.getInputProps('exchangeCurrency')} />
+              </Grid.Col>
+            </Grid>
+            <Group justify="flex-end" mt="sm">
+              <Button variant="subtle" color="gray" onClick={closeManual}>Отмена</Button>
+              <Button type="submit" loading={manualLoading} leftSection={<IconPencilPlus size={16} />}>
+                Добавить строку
+              </Button>
+            </Group>
+          </Stack>
+        </form>
+      </Modal>
+
+      <Group justify="space-between" align="flex-end">
+        <Box>
+          <Title order={3} fw={600}>Загрузка отчёта</Title>
+          <Text c="dimmed" size="sm">Загрузите Excel-файл со стриминговым отчётом для валидации</Text>
+        </Box>
+        <Button
+          variant="light"
+          leftSection={<IconPencilPlus size={16} />}
+          onClick={openManual}
+        >
+          Ввести вручную
+        </Button>
+      </Group>
 
       <Paper
         withBorder

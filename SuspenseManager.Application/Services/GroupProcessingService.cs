@@ -6,6 +6,7 @@ using Data;
 using Microsoft.EntityFrameworkCore;
 using Models;
 using Models.Enums;
+using BackOfficeTaskStatus = Models.Enums.BackOfficeTaskStatus;
 
 namespace Application.Services;
 
@@ -54,6 +55,14 @@ public class GroupProcessingService : IGroupProcessingService
         // Если устанавливается CatalogProductId — связываем группу с продуктом
         if (dto.CatalogProductId.HasValue && dto.CatalogProductId != meta.CatalogProductId)
         {
+            // Для BO-групп привязка продукта выполняется только через BO-эндпоинт link-product,
+            // иначе BO-задание не получит правильного жизненного цикла (Completed / смена статуса)
+            if (group.BusinessStatus == (int)BusinessStatus.BackOfficeNoProduct ||
+                group.BusinessStatus == (int)BusinessStatus.BackOfficeNoRights)
+                throw new BusinessException(
+                    "Для групп в бэк-офисе привязка продукта выполняется через эндпоинт link-product задания",
+                    "USE_BO_LINK_PRODUCT");
+
             var product = await _db.CatalogProducts
                 .FirstOrDefaultAsync(p => p.Id == dto.CatalogProductId.Value && p.ArchiveLevel == 0, ct)
                 ?? throw new BusinessException("Продукт не найден", "PRODUCT_NOT_FOUND", 404);
@@ -95,9 +104,12 @@ public class GroupProcessingService : IGroupProcessingService
 
         var group = await GetGroupOrThrowAsync(groupId, ct);
 
-        if (group.BusinessStatus != (int)BusinessStatus.InGroupNoRights)
+        if (group.BusinessStatus != (int)BusinessStatus.InGroupNoRights
+            && group.BusinessStatus != (int)BusinessStatus.BackOfficeNoRights)
         {
-            throw new BusinessException("Обновление метаправ доступно только для групп со статусом 'нет прав' (16)", "INVALID_STATUS");
+            throw new BusinessException(
+                "Обновление метаправ доступно только для групп со статусом 'нет прав' (16 или 320)",
+                "INVALID_STATUS");
         }
 
         var metaRights = await _db.GroupMetaRights.FirstOrDefaultAsync(m => m.GroupId == groupId, ct);
@@ -437,8 +449,10 @@ public class GroupProcessingService : IGroupProcessingService
         return group;
     }
 
-    public async Task<SuspenseGroup> SendToBackOfficeAsync(int groupId, SendToBackOfficeDto dto, CancellationToken ct = default)
+    public async Task<SuspenseGroup> SendToBackOfficeAsync(int groupId, SendToBackOfficeDto dto, int accountId, CancellationToken ct = default)
     {
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+
         var group = await GetGroupOrThrowAsync(groupId, ct);
 
         var newStatus = group.BusinessStatus switch
@@ -448,14 +462,33 @@ public class GroupProcessingService : IGroupProcessingService
             _ => throw new BusinessException("Отправка в бэк-офис доступна только для групп со статусом 15 или 16", "INVALID_STATUS")
         };
 
+        // Защита от создания дублирующего задания (группа уже в BO)
+        var hasActiveTask = await _db.BackOfficeTasks
+            .AnyAsync(t => t.GroupId == groupId && t.ArchiveLevel == 0, ct);
+        if (hasActiveTask)
+            throw new BusinessException(
+                "Для данной группы уже существует активное задание в бэк-офисе",
+                "TASK_ALREADY_EXISTS");
+
         var prevStatus = group.BusinessStatus;
         group.BusinessStatus = newStatus;
         group.ChangeTime = DateTime.UtcNow;
+
+        _db.BackOfficeTasks.Add(new BackOfficeTask
+        {
+            GroupId = groupId,
+            CreatedByAccountId = accountId,
+            ProblemDescription = dto.ProblemDescription,
+            TaskStatus = (int)BackOfficeTaskStatus.Open,
+            CreateTime = DateTime.UtcNow,
+            ArchiveLevel = 0,
+        });
 
         await UpdateSuspenseStatusAsync(groupId, newStatus, null, ct);
         await _db.SaveChangesAsync(ct);
         await _audit.LogGroupAsync(groupId, prevStatus, newStatus, ct);
         await _audit.LogGroupLinesAsync(groupId, prevStatus, newStatus, ct);
+        await tx.CommitAsync(ct);
         return group;
     }
 

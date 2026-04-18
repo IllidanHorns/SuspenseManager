@@ -36,6 +36,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 builder.Services.AddScoped<IGroupingService, GroupingService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<IBackOfficeService, BackOfficeService>();
+builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddHttpContextAccessor();
 
 // FluentValidation

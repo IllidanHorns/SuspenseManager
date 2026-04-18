@@ -50,12 +50,12 @@ public class Company
     /// <summary>
     /// ИНН
     /// </summary>
-    public string Inn { get; set; }
+    public string? Inn { get; set; }
 
     /// <summary>
     /// БИК
     /// </summary>
-    public string Bic { get; set; }
+    public string? Bic { get; set; }
 
     /// <summary>
     /// Дата создания

@@ -272,6 +272,102 @@ export interface PagedRequest {
   [key: string]: unknown;
 }
 
+// ─── Back Office ─────────────────────────────────────────────────────────────
+
+export interface BackOfficeTaskDto {
+  id: number;
+  groupId: number;
+  groupStatus: number;
+  suspenseCount: number;
+  problemDescription: string;
+  taskStatus: number; // 0=Open 1=ReturnedToOperator 2=GroupDeleted 3=Completed
+  createTime: string;
+  createdByAccountId: number;
+  createdByLogin: string;
+  createdByName: string | null;
+  artist: string | null;
+  title: string | null;
+  isrc: string | null;
+  barcode: string | null;
+}
+
+export interface BackOfficeTask {
+  id: number;
+  groupId: number;
+  group: SuspenseGroup;
+  createdByAccountId: number;
+  problemDescription: string;
+  taskStatus: number;
+  createTime: string;
+  changeTime: string | null;
+  archiveLevel: number;
+}
+
+// ─── Catalog create/update DTOs ──────────────────────────────────────────────
+
+export interface CreateCatalogProductDto {
+  productName?: string | null;
+  artist?: string | null;
+  isrc?: string | null;
+  barcode?: string | null;
+  catalogNumber?: string | null;
+  productFormatCode?: string | null;
+  genre?: string | null;
+  albumName?: string | null;
+  composer?: string | null;
+  description?: string | null;
+  releaseDate?: string | null;
+  productTypeId?: number | null;
+}
+
+export interface UpdateCatalogProductDto extends CreateCatalogProductDto {}
+
+export interface CreateCatalogProductRightsDto {
+  catalogProductId: number;
+  docNumber?: string | null;
+  companySenderId: number;
+  companyReceiverId: number;
+  share: number;
+  territoryId: number;
+  docStart: string;
+  docEnd: string;
+}
+
+export interface UpdateCatalogProductRightsDto {
+  docNumber?: string | null;
+  companySenderId?: number | null;
+  companyReceiverId?: number | null;
+  share?: number | null;
+  territoryId?: number | null;
+  docStart?: string | null;
+  docEnd?: string | null;
+}
+
+export interface CreateCompanyDto {
+  legalName: string;
+  shortName: string;
+  companyCode?: string | null;
+  bankName?: string | null;
+  phoneNumber?: string | null;
+  country?: string | null;
+  legalAddress?: string | null;
+  actualAddress?: string | null;
+  inn?: string | null;
+  bic?: string | null;
+}
+
+export interface UpdateCompanyDto extends Partial<CreateCompanyDto> {}
+
+export interface CreateTerritoryDto {
+  territoryCode: string;
+  territoryName?: string | null;
+}
+
+export interface UpdateTerritoryDto {
+  territoryCode?: string | null;
+  territoryName?: string | null;
+}
+
 // ─── Audit ───────────────────────────────────────────────────────────────────
 
 export interface AuditGroupDto {

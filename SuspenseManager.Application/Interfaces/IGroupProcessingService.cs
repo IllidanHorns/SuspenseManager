@@ -18,7 +18,7 @@ public interface IGroupProcessingService
     Task<PagedResponse<CatalogProduct>> GetPossibleProductsAsync(int groupId, PagedRequest request, CancellationToken ct = default);
 
     // п.20 — отправка в бэк-офис
-    Task<SuspenseGroup> SendToBackOfficeAsync(int groupId, SendToBackOfficeDto dto, CancellationToken ct = default);
+    Task<SuspenseGroup> SendToBackOfficeAsync(int groupId, SendToBackOfficeDto dto, int accountId, CancellationToken ct = default);
 
     // п.21 — отложить
     Task<SuspenseGroup> PostponeAsync(int groupId, PostponeGroupDto dto, CancellationToken ct = default);

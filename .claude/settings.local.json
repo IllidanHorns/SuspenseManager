@@ -11,7 +11,10 @@
       "Bash(dotnet build:*)",
       "Bash(dotnet ef:*)",
       "Bash(taskkill /PID 22244 /F)",
-      "Bash(kill 22244)"
+      "Bash(kill 22244)",
+      "Bash(xargs ls *)",
+      "Bash(sqlcmd *)",
+      "Bash(dotnet run *)"
     ]
   }
 }

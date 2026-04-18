@@ -207,7 +207,7 @@ public class GroupProcessingServiceTests : IDisposable
         var group = await CreateGroupAsync((int)BusinessStatus.InGroupNoProduct);
         await CreateSuspenseInGroupAsync(group.Id, (int)BusinessStatus.InGroupNoProduct);
 
-        await _service.SendToBackOfficeAsync(group.Id, new SendToBackOfficeDto());
+        await _service.SendToBackOfficeAsync(group.Id, new SendToBackOfficeDto { ProblemDescription = "test" }, accountId: 1);
 
         var updated = await _db.SuspenseGroups.FindAsync(group.Id);
         updated!.BusinessStatus.Should().Be((int)BusinessStatus.BackOfficeNoProduct);
@@ -219,7 +219,7 @@ public class GroupProcessingServiceTests : IDisposable
         var group = await CreateGroupAsync((int)BusinessStatus.InGroupNoRights);
         await CreateSuspenseInGroupAsync(group.Id, (int)BusinessStatus.InGroupNoRights);
 
-        await _service.SendToBackOfficeAsync(group.Id, new SendToBackOfficeDto());
+        await _service.SendToBackOfficeAsync(group.Id, new SendToBackOfficeDto { ProblemDescription = "test" }, accountId: 1);
 
         var updated = await _db.SuspenseGroups.FindAsync(group.Id);
         updated!.BusinessStatus.Should().Be((int)BusinessStatus.BackOfficeNoRights);
@@ -231,7 +231,7 @@ public class GroupProcessingServiceTests : IDisposable
         var group = await CreateGroupAsync((int)BusinessStatus.PostponedNoProduct);
 
         var ex = await Assert.ThrowsAsync<BusinessException>(() =>
-            _service.SendToBackOfficeAsync(group.Id, new SendToBackOfficeDto()));
+            _service.SendToBackOfficeAsync(group.Id, new SendToBackOfficeDto { ProblemDescription = "test" }, accountId: 1));
 
         ex.BusinessCode.Should().Be("INVALID_STATUS");
     }

@@ -92,6 +92,41 @@
         <member name="P:Common.DTOs.AuditLinesRequest.LastChangedTo">
             <summary>Дата последнего изменения до (UTC)</summary>
         </member>
+        <member name="T:Common.DTOs.BackOfficeTasksRequest">
+            <summary>
+            Запрос на получение списка заданий в бэк-офисе
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.BackOfficeTasksRequest.TaskType">
+            <summary>
+            Фильтр по типу: null = все, 120 = нет продукта, 320 = нет прав
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.BackOfficeTaskDto">
+            <summary>
+            DTO задания в бэк-офисе — для списка и детальной карточки
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.BackOfficeTaskDto.GroupStatus">
+            <summary>
+            Текущий статус группы (120 или 320)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.BackOfficeTaskDto.TaskStatus">
+            <summary>
+            Статус задания: 0=Open, 1=ReturnedToOperator, 2=GroupDeleted, 3=Completed
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.BoLinkProductDto">
+            <summary>
+            DTO для привязки продукта к группе через BO-задание
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.BoCopyRightsDto">
+            <summary>
+            DTO для копирования прав через BO-задание
+            </summary>
+        </member>
         <member name="T:Common.DTOs.GroupingPreviewRequest">
             <summary>
             Запрос на предпросмотр динамической группировки суспенсов
@@ -165,7 +200,13 @@
         </member>
         <member name="T:Common.DTOs.SendToBackOfficeDto">
             <summary>
-            DTO для отправки в бэк-офис (п.20)
+            DTO для отправки в бэк-офис (п.20).
+            Оператор обязан описать проблему — без этого задание в BO не создаётся.
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.SendToBackOfficeDto.ProblemDescription">
+            <summary>
+            Описание проблемы от оператора: что именно не получилось сделать самостоятельно
             </summary>
         </member>
         <member name="T:Common.DTOs.PostponeGroupDto">

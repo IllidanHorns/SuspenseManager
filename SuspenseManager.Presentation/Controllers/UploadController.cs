@@ -1,5 +1,6 @@
 using Application.Interfaces;
 using Common.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -25,6 +26,28 @@ public class UploadController : ControllerBase
         _excelParsingService = excelParsingService;
         _validationService = validationService;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// Ручной ввод одной строки суспенса.
+    /// </summary>
+    [HttpPost("manual")]
+    public async Task<IActionResult> UploadManual([FromBody] SuspenseLineDto dto)
+    {
+        if (dto == null)
+            return BadRequest(ApiResponse<object>.Fail(400, "Данные не переданы", "BODY_EMPTY"));
+
+        if (string.IsNullOrWhiteSpace(dto.Isrc) &&
+            string.IsNullOrWhiteSpace(dto.Barcode) &&
+            string.IsNullOrWhiteSpace(dto.CatalogNumber))
+        {
+            return BadRequest(ApiResponse<object>.Fail(400,
+                "Необходимо указать хотя бы одно из полей: ISRC, Баркод, Каталожный номер",
+                "IDENTIFIER_REQUIRED"));
+        }
+
+        var result = await _validationService.ValidateBatchAsync([dto]);
+        return Ok(ApiResponse<ValidationResultDto>.Success(result, "Строка добавлена", "UPLOAD_COMPLETED"));
     }
 
     /// <summary>

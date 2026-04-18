@@ -1,5 +1,7 @@
+using System.Security.Claims;
 using Application.Interfaces;
 using Common.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Models;
 
@@ -111,10 +113,12 @@ public class GroupProcessingController : ControllerBase
     // --- п.20 Отправка в бэк-офис ---
 
     [HttpPost("{groupId:int}/send-to-backoffice")]
+    [Authorize]
     public async Task<IActionResult> SendToBackOffice(int groupId, [FromBody] SendToBackOfficeDto dto, CancellationToken ct)
     {
-        var group = await _processingService.SendToBackOfficeAsync(groupId, dto, ct);
-        _logger.LogInformation("Группа отправлена в бэк-офис: GroupId={GroupId}", groupId);
+        var accountId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var group = await _processingService.SendToBackOfficeAsync(groupId, dto, accountId, ct);
+        _logger.LogInformation("Группа отправлена в бэк-офис: GroupId={GroupId}, AccountId={AccountId}", groupId, accountId);
         return Ok(ApiResponse<Models.SuspenseGroup>.Success(group, "Группа передана в бэк-офис", "SENT_TO_BACKOFFICE"));
     }
 

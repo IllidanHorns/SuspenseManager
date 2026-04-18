@@ -9,6 +9,9 @@ import { GroupDetailPage } from './pages/GroupDetailPage';
 import { PostponedPage } from './pages/PostponedPage';
 import { SuspensesPage } from './pages/SuspensesPage';
 import { AuditPage } from './pages/AuditPage';
+import { BackOfficeTasksPage } from './pages/BackOfficeTasksPage';
+import { BackOfficeTaskDetailPage } from './pages/BackOfficeTaskDetailPage';
+import { CatalogPage } from './pages/CatalogPage';
 import { useAuth } from './hooks/useAuth';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -35,6 +38,9 @@ export function App() {
         <Route path="postponed" element={<PostponedPage />} />
         <Route path="suspenses" element={<SuspensesPage />} />
         <Route path="audit" element={<AuditPage />} />
+        <Route path="backoffice/tasks" element={<BackOfficeTasksPage />} />
+        <Route path="backoffice/tasks/:taskId" element={<BackOfficeTaskDetailPage />} />
+        <Route path="catalog" element={<CatalogPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

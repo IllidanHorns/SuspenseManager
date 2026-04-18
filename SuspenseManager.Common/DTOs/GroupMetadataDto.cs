@@ -58,11 +58,15 @@ public class QuickCatalogDto
 }
 
 /// <summary>
-/// DTO для отправки в бэк-офис (п.20)
+/// DTO для отправки в бэк-офис (п.20).
+/// Оператор обязан описать проблему — без этого задание в BO не создаётся.
 /// </summary>
 public class SendToBackOfficeDto
 {
-    public string? Comment { get; set; }
+    /// <summary>
+    /// Описание проблемы от оператора: что именно не получилось сделать самостоятельно
+    /// </summary>
+    public required string ProblemDescription { get; set; }
 }
 
 /// <summary>

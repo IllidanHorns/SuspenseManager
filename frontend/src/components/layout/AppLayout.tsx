@@ -13,6 +13,8 @@ import {
   IconMoon,
   IconChevronRight,
   IconHistory,
+  IconBriefcase,
+  IconBook2,
 } from '@tabler/icons-react';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -24,6 +26,8 @@ const NAV_ITEMS = [
   { path: '/postponed', label: 'Отложенные', icon: IconClock },
   { path: '/suspenses', label: 'Сасп. строки', icon: IconList },
   { path: '/audit', label: 'Аудит', icon: IconHistory },
+  { path: '/backoffice/tasks', label: 'Бэк-офис', icon: IconBriefcase },
+  { path: '/catalog', label: 'Каталог', icon: IconBook2 },
 ];
 
 export function AppLayout() {

@@ -53,6 +53,92 @@
             Отзыв refresh токена (logout).
             </summary>
         </member>
+        <member name="T:SuspenseManager.Controllers.BackOfficeController">
+            <summary>
+            Контроллер для работы сотрудника бэк-офиса:
+            задания, обработка групп, управление каталогом.
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.BackOfficeController.GetTasks(Common.DTOs.BackOfficeTasksRequest,System.Threading.CancellationToken)">
+            <summary>
+            Список активных заданий бэк-офиса.
+            Опциональный фильтр: taskType=120 (нет продукта) или taskType=320 (нет прав).
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.BackOfficeController.GetTask(System.Int32,System.Threading.CancellationToken)">
+            <summary>Детальная карточка задания с полной информацией о группе.</summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.BackOfficeController.ReturnGroup(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Вернуть группу оператору (120→15 или 320→16).
+            Задание закрывается.
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.BackOfficeController.DeleteGroup(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Удалить группу и все строки суспенсов (мягкое удаление).
+            Используется когда стримы не принадлежат компании и могут быть проигнорированы.
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.BackOfficeController.LinkProduct(System.Int32,Common.DTOs.BoLinkProductDto,System.Threading.CancellationToken)">
+            <summary>
+            Привязать продукт к группе 120 (нет продукта в BO).
+            Если у продукта есть права → 88, задание закрывается.
+            Если прав нет → 320, задание остаётся открытым.
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.BackOfficeController.Validate(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Валидировать группу 320 (нет прав в BO).
+            Проверяет права продукта в каталоге; если нет — создаёт из метаправ группы.
+            При успехе → 88, задание закрывается.
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.BackOfficeController.GetPossibleProducts(System.Int32,Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
+            <summary>Поиск возможных продуктов для привязки к группе 120.</summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.BackOfficeController.SearchRights(System.Int32,System.String,System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>Поиск прав в каталоге для копирования в группу 320.</summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.BackOfficeController.CopyRights(System.Int32,Common.DTOs.BoCopyRightsDto,System.Threading.CancellationToken)">
+            <summary>
+            Скопировать права с другого продукта каталога в продукт группы 320.
+            При успехе → 88, задание закрывается.
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.BackOfficeController.UpdateMetadata(System.Int32,System.Int32,Common.DTOs.UpdateGroupMetadataDto,System.Threading.CancellationToken)">
+            <summary>Обновить метаданные группы (доступно для 120 и 320).</summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.BackOfficeController.UpdateMetaRights(System.Int32,System.Int32,Common.DTOs.UpdateGroupMetaRightsDto,System.Threading.CancellationToken)">
+            <summary>Обновить метаправа группы (доступно для 320).</summary>
+        </member>
+        <member name="T:SuspenseManager.Controllers.CatalogController">
+            <summary>
+            Управление каталогом продуктов и прав — доступно только сотрудникам бэк-офиса.
+            Удаление не предусмотрено: используется мягкое удаление только через другие процессы.
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.CatalogController.GetProducts(Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
+            <summary>Список продуктов каталога с пагинацией.</summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.CatalogController.GetProduct(System.Int32,System.Threading.CancellationToken)">
+            <summary>Продукт по ID со всеми правами.</summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.CatalogController.CreateProduct(Common.DTOs.CreateCatalogProductDto,System.Threading.CancellationToken)">
+            <summary>Создать новый продукт каталога.</summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.CatalogController.UpdateProduct(System.Int32,Common.DTOs.UpdateCatalogProductDto,System.Threading.CancellationToken)">
+            <summary>Обновить продукт каталога (частичное обновление — передаются только изменяемые поля).</summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.CatalogController.GetRights(Common.DTOs.PagedRequest,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>Список прав. Опциональный фильтр productId — права конкретного продукта.</summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.CatalogController.CreateRights(Common.DTOs.CreateCatalogProductRightsDto,System.Threading.CancellationToken)">
+            <summary>Добавить права на продукт каталога.</summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.CatalogController.UpdateRights(System.Int32,Common.DTOs.UpdateCatalogProductRightsDto,System.Threading.CancellationToken)">
+            <summary>Обновить запись прав (частичное обновление).</summary>
+        </member>
         <member name="T:SuspenseManager.Controllers.CompanyController">
             <summary>
             Контроллер компаний: отправители и получатели
@@ -64,9 +150,13 @@
             </summary>
         </member>
         <member name="M:SuspenseManager.Controllers.CompanyController.GetById(System.Int32,System.Threading.CancellationToken)">
-            <summary>
-            Компания по ID
-            </summary>
+            <summary>Компания по ID.</summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.CompanyController.Create(Common.DTOs.CreateCompanyDto,System.Threading.CancellationToken)">
+            <summary>Создать компанию.</summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.CompanyController.Update(System.Int32,Common.DTOs.UpdateCompanyDto,System.Threading.CancellationToken)">
+            <summary>Обновить компанию (частичное обновление).</summary>
         </member>
         <member name="T:SuspenseManager.Controllers.GroupController">
             <summary>
@@ -231,8 +321,17 @@
             </summary>
         </member>
         <member name="M:SuspenseManager.Controllers.TerritoryController.GetAll(Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
+            <summary>Список территорий с пагинацией.</summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.TerritoryController.Create(Common.DTOs.CreateTerritoryDto,System.Threading.CancellationToken)">
+            <summary>Создать территорию.</summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.TerritoryController.Update(System.Int32,Common.DTOs.UpdateTerritoryDto,System.Threading.CancellationToken)">
+            <summary>Обновить территорию.</summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.UploadController.UploadManual(Common.DTOs.SuspenseLineDto)">
             <summary>
-            Список территорий с пагинацией
+            Ручной ввод одной строки суспенса.
             </summary>
         </member>
         <member name="M:SuspenseManager.Controllers.UploadController.Upload(Microsoft.AspNetCore.Http.IFormFile)">

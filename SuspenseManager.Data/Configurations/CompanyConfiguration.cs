@@ -20,8 +20,8 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
         builder.Property(x => x.Country).IsRequired().HasMaxLength(10);
         builder.Property(x => x.LegalAddress).IsRequired().HasMaxLength(500);
         builder.Property(x => x.ActualAddress).IsRequired().HasMaxLength(500);
-        builder.Property(x => x.Inn).IsRequired().HasMaxLength(12);
-        builder.Property(x => x.Bic).IsRequired().HasMaxLength(20);
+        builder.Property(x => x.Inn).HasMaxLength(12);
+        builder.Property(x => x.Bic).HasMaxLength(20);
         builder.Property(x => x.CreateTime).IsRequired();
         builder.Property(x => x.ArchiveLevel).IsRequired();
 
