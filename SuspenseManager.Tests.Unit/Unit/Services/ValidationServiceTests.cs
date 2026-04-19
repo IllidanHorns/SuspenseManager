@@ -1,6 +1,8 @@
 using Application.Interfaces;
 using Application.Services;
+using Application.Validators;
 using Common.DTOs;
+using Common.Exceptions;
 using Data;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -26,7 +28,7 @@ public class ValidationServiceTests : IDisposable
             .Options;
         _db = new SuspenseManagerDbContext(options);
         var auditMock = new Mock<IAuditService>();
-        _service = new ValidationService(_db, auditMock.Object);
+        _service = new ValidationService(_db, auditMock.Object, new SuspenseLineDtoValidator());
     }
 
     public void Dispose() => _db.Dispose();
@@ -107,10 +109,11 @@ public class ValidationServiceTests : IDisposable
     [Fact]
     public async Task ValidateSingle_ProductNotFound_DueToIsrcMismatch_Returns_NoProduct()
     {
-        _db.CatalogProducts.Add(MakeProduct(isrc: "ISRC999"));
+        // Важно: при несовпадении ISRC поиск всё ещё может найти продукт по баркоду/каталожному номеру и т.д.
+        _db.CatalogProducts.Add(MakeProduct(isrc: "ISRC999", barcode: "1111111111", catalogNumber: "CAT-999"));
         await _db.SaveChangesAsync();
 
-        var result = await _service.ValidateSingleAsync(MakeDto(isrc: "ISRC001"));
+        var result = await _service.ValidateSingleAsync(MakeDto(isrc: "ISRC001", barcode: "2222222222", catalogNumber: "CAT-001"));
 
         result.BusinessStatus.Should().Be((int)BusinessStatus.NoProduct);
     }
@@ -118,23 +121,24 @@ public class ValidationServiceTests : IDisposable
     [Fact]
     public async Task ValidateSingle_ProductNotFound_DueToBarcodeMismatch_Returns_NoProduct()
     {
-        _db.CatalogProducts.Add(MakeProduct(barcode: "0000000000"));
+        _db.CatalogProducts.Add(MakeProduct(isrc: "ONLYISRC", barcode: "0000000000", catalogNumber: "CAT-P"));
         await _db.SaveChangesAsync();
 
-        var result = await _service.ValidateSingleAsync(MakeDto(barcode: "1234567890"));
+        var result = await _service.ValidateSingleAsync(MakeDto(isrc: "OTHERISRC", barcode: "1234567890", catalogNumber: "CAT-X"));
 
         result.BusinessStatus.Should().Be((int)BusinessStatus.NoProduct);
     }
 
     [Fact]
-    public async Task ValidateSingle_ProductNotFound_DueToFormatCodeMismatch_Returns_NoProduct()
+    public async Task ValidateSingle_FormatCodeNotUsedInCatalogLookup_ProductStillFound_NoRights()
     {
+        // Формат (TTkey) не участвует в FindProductAsync — совпадение идёт по ISRC/баркоду/названию+артисту/каталожному номеру.
         _db.CatalogProducts.Add(MakeProduct(formatCode: "CD"));
         await _db.SaveChangesAsync();
 
         var result = await _service.ValidateSingleAsync(MakeDto(productFormatCode: "DIGI"));
 
-        result.BusinessStatus.Should().Be((int)BusinessStatus.NoProduct);
+        result.BusinessStatus.Should().Be((int)BusinessStatus.NoRights);
     }
 
     [Fact]
@@ -151,11 +155,9 @@ public class ValidationServiceTests : IDisposable
     }
 
     [Theory]
-    [InlineData("", "1234567890", "CAT-001", "DIGI")]  // Пустой ISRC
-    [InlineData("ISRC001", "", "CAT-001", "DIGI")]     // Пустой Barcode
-    [InlineData("ISRC001", "1234567890", "", "DIGI")]  // Пустой CatalogNumber
-    [InlineData("ISRC001", "1234567890", "CAT-001", "")] // Пустой ProductFormatCode
-    public async Task ValidateSingle_MissingIdentifierField_Returns_NoProduct(
+    [InlineData("", "", "", "DIGI")] // нет идентификаторов продукта в строке
+    [InlineData("NOMATCH", "NOMATCH", "NOMATCH", "DIGI")] // ни один ключ не совпадает с каталогом
+    public async Task ValidateSingle_NoProductLookupMatch_Returns_NoProduct(
         string isrc, string barcode, string catalogNumber, string formatCode)
     {
         _db.CatalogProducts.Add(MakeProduct());
@@ -278,6 +280,19 @@ public class ValidationServiceTests : IDisposable
     }
 
     // ──────────────── Тесты: пакетная валидация ───────────────────────────────
+
+    [Fact]
+    public async Task ValidateBatch_IsrcTooLong_ThrowsValidationException_WithRowNumber()
+    {
+        var longIsrc = new string('X', 16);
+        var lines = new List<SuspenseLineDto> { MakeDto(isrc: longIsrc) };
+
+        var act = async () => await _service.ValidateBatchAsync(lines);
+
+        (await act.Should().ThrowAsync<ValidationException>())
+            .Which.Errors.Should()
+            .Contain(e => e.Field == nameof(SuspenseLineDto.Isrc) && e.Message.Contains("Строка 2"));
+    }
 
     [Fact]
     public async Task ValidateBatch_EmptyList_ReturnsZeroTotals()

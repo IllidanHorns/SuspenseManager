@@ -25,7 +25,7 @@ public class SuspenseLineConfiguration : IEntityTypeConfiguration<SuspenseLine>
         builder.Property(x => x.TerritoryCode).HasMaxLength(10);
         builder.Property(x => x.CauseSuspense).IsRequired().HasMaxLength(255);
         builder.Property(x => x.Genre).HasMaxLength(100);
-        builder.Property(x => x.ExchangeCurrency).HasPrecision(18, 2);
+        builder.Property(x => x.ExchangeCurrency).HasPrecision(18, 6);
         builder.Property(x => x.ExchangeRate).HasPrecision(18, 6);
         builder.Property(x => x.CreateTime).IsRequired();
         builder.Property(x => x.BusinessStatus).IsRequired();

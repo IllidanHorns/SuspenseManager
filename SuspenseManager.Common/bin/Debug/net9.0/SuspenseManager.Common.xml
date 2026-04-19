@@ -4,6 +4,24 @@
         <name>SuspenseManager.Common</name>
     </assembly>
     <members>
+        <member name="T:Common.DTOs.AccountActivityItemDto">
+            <summary>Запись из объединённой ленты: логи по группам и по строкам, где исполнитель — данный аккаунт.</summary>
+        </member>
+        <member name="P:Common.DTOs.AccountActivityItemDto.Kind">
+            <summary>group | line</summary>
+        </member>
+        <member name="P:Common.DTOs.AccountActivityItemDto.EntityId">
+            <summary>Id группы (для kind=group) или id строки (для kind=line).</summary>
+        </member>
+        <member name="P:Common.DTOs.AccountActivityItemDto.GroupId">
+            <summary>Для строки — группа на момент события (если была).</summary>
+        </member>
+        <member name="P:Common.DTOs.UpdateAccountDto.UnlinkUser">
+            <summary>Если true — снять привязку пользователя (UserId = null).</summary>
+        </member>
+        <member name="T:Common.DTOs.AdminMetricsDto">
+            <summary>Сводные метрики для экрана администрирования.</summary>
+        </member>
         <member name="T:Common.DTOs.ApiResponse`1">
             <summary>
             Универсальный ответ API. Оборачивает все ответы в единый формат.
@@ -127,6 +145,21 @@
             DTO для копирования прав через BO-задание
             </summary>
         </member>
+        <member name="T:Common.DTOs.ExcelParseResult">
+            <summary>
+            Результат разбора Excel: проверка заголовков и строки DTO.
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.ExcelParseResult.HeadersValid">
+            <summary>
+            Все обязательные столбцы (по шаблону импорта) найдены в первой строке.
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.ExcelParseResult.MissingRequiredHeaders">
+            <summary>
+            Описания отсутствующих столбцов (какие подписи допустимы — для сообщения пользователю).
+            </summary>
+        </member>
         <member name="T:Common.DTOs.GroupingPreviewRequest">
             <summary>
             Запрос на предпросмотр динамической группировки суспенсов
@@ -143,6 +176,18 @@
             Для статуса 1 обязательно должен содержать "ProductId".
             </summary>
         </member>
+        <member name="P:Common.DTOs.GroupingPreviewRequest.CountMin">
+            <summary>Минимальное кол-во строк в группе (HAVING)</summary>
+        </member>
+        <member name="P:Common.DTOs.GroupingPreviewRequest.CountMax">
+            <summary>Максимальное кол-во строк в группе (HAVING)</summary>
+        </member>
+        <member name="P:Common.DTOs.GroupingPreviewRequest.RevenueMin">
+            <summary>Минимальная выручка группы в рублях (HAVING)</summary>
+        </member>
+        <member name="P:Common.DTOs.GroupingPreviewRequest.RevenueMax">
+            <summary>Максимальная выручка группы в рублях (HAVING)</summary>
+        </member>
         <member name="T:Common.DTOs.GroupingPreviewItem">
             <summary>
             Одна строка результата динамической группировки
@@ -156,6 +201,21 @@
         <member name="P:Common.DTOs.GroupingPreviewItem.Count">
             <summary>
             Количество суспенсов в группе
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.GroupingPreviewItem.RevenueRub">
+            <summary>
+            Суммарная выручка по группе в рублях: SUM(Qty * PPD * ExchangeRate)
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.GroupLinesPreviewRequest">
+            <summary>
+            Запрос на предпросмотр строк суспенса внутри потенциальной группы
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.SuspenseLinePreviewDto">
+            <summary>
+            Строка суспенса для предпросмотра группы
             </summary>
         </member>
         <member name="T:Common.DTOs.GroupingCommitRequest">
@@ -181,6 +241,11 @@
         <member name="P:Common.DTOs.GroupingCommitRequest.AccountId">
             <summary>
             ID аккаунта пользователя, создающего группу
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.GroupListRequest.OnlyMine">
+            <summary>
+            Только группы, созданные текущим аккаунтом (по AccountId группы).
             </summary>
         </member>
         <member name="T:Common.DTOs.UpdateGroupMetadataDto">
@@ -223,6 +288,24 @@
             <summary>
             DTO для копирования прав из каталога в продукт группы
             </summary>
+        </member>
+        <member name="T:Common.DTOs.UserUiPreferencesDto">
+            <summary>Настройки интерфейса, хранятся в Account.UiPreferencesJson (JSON).</summary>
+        </member>
+        <member name="P:Common.DTOs.UserUiPreferencesDto.DefaultTablePageSize">
+            <summary>Размер страницы таблиц по умолчанию (как в PageSizeSelect).</summary>
+        </member>
+        <member name="P:Common.DTOs.UserUiPreferencesDto.FiltersExpandedByDefault">
+            <summary>Раскрывать фильтры по умолчанию на всех страницах.</summary>
+        </member>
+        <member name="P:Common.DTOs.UserUiPreferencesDto.ColorScheme">
+            <summary>Тема интерфейса: light, dark или auto (системная).</summary>
+        </member>
+        <member name="P:Common.DTOs.UserUiPreferencesDto.NotificationsPosition">
+            <summary>Позиция всплывающих уведомлений (как у Mantine Notifications).</summary>
+        </member>
+        <member name="P:Common.DTOs.UpdateMeSettingsDto.CurrentPassword">
+            <summary>Смена пароля: укажите текущий и новый.</summary>
         </member>
         <member name="T:Common.DTOs.PagedRequest">
             <summary>
@@ -285,6 +368,15 @@
             <summary>
             Общее количество страниц
             </summary>
+        </member>
+        <member name="T:Common.DTOs.RightCatalogItemDto">
+            <summary>Элемент справочника прав для UI админки.</summary>
+        </member>
+        <member name="T:Common.DTOs.RolePresetDto">
+            <summary>Готовый пресет роли: набор идентификаторов прав из БД.</summary>
+        </member>
+        <member name="T:Common.DTOs.ReplaceAccountRightsDto">
+            <summary>Полная замена набора прав аккаунта.</summary>
         </member>
         <member name="T:Common.DTOs.SuspenseLineDto">
             <summary>
@@ -384,6 +476,17 @@
         <member name="P:Common.DTOs.SuspenseLineDto.RecipientCompanyId">
             <summary>
             FK компании получателя (если известен)
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.SuspenseListRequest">
+            <summary>
+            Список суспенс-строк с опцией «только мои» (по создателю текущей группы).
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.SuspenseListRequest.OnlyMine">
+            <summary>
+            Оставить только строки, входящие в группы, созданные текущим аккаунтом.
+            Строки без группы не попадают в выборку.
             </summary>
         </member>
         <member name="T:Common.DTOs.ValidationResultDto">

@@ -15,6 +15,18 @@ public class GroupingPreviewRequest : PagedRequest
     /// Для статуса 1 обязательно должен содержать "ProductId".
     /// </summary>
     public List<string> GroupByColumns { get; set; } = [];
+
+    /// <summary>Минимальное кол-во строк в группе (HAVING)</summary>
+    public int? CountMin { get; set; }
+
+    /// <summary>Максимальное кол-во строк в группе (HAVING)</summary>
+    public int? CountMax { get; set; }
+
+    /// <summary>Минимальная выручка группы в рублях (HAVING)</summary>
+    public decimal? RevenueMin { get; set; }
+
+    /// <summary>Максимальная выручка группы в рублях (HAVING)</summary>
+    public decimal? RevenueMax { get; set; }
 }
 
 /// <summary>
@@ -31,6 +43,47 @@ public class GroupingPreviewItem
     /// Количество суспенсов в группе
     /// </summary>
     public int Count { get; set; }
+
+    /// <summary>
+    /// Суммарная выручка по группе в рублях: SUM(Qty * PPD * ExchangeRate)
+    /// </summary>
+    public decimal RevenueRub { get; set; }
+}
+
+/// <summary>
+/// Запрос на предпросмотр строк суспенса внутри потенциальной группы
+/// </summary>
+public class GroupLinesPreviewRequest
+{
+    public int BusinessStatus { get; set; }
+    public List<string> GroupByColumns { get; set; } = [];
+    public Dictionary<string, string?> KeyValues { get; set; } = new();
+    public int PageNumber { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+}
+
+/// <summary>
+/// Строка суспенса для предпросмотра группы
+/// </summary>
+public class SuspenseLinePreviewDto
+{
+    public int Id { get; set; }
+    public string? Isrc { get; set; }
+    public string? Barcode { get; set; }
+    public string? CatalogNumber { get; set; }
+    public string? Artist { get; set; }
+    public string? TrackTitle { get; set; }
+    public string? Genre { get; set; }
+    public string? Operator { get; set; }
+    public string? SenderCompany { get; set; }
+    public string? RecipientCompany { get; set; }
+    public string? TerritoryCode { get; set; }
+    public string? AgreementType { get; set; }
+    public string? AgreementNumber { get; set; }
+    public int Qty { get; set; }
+    public double? Ppd { get; set; }
+    public decimal ExchangeCurrency { get; set; }
+    public decimal ExchangeRate { get; set; }
 }
 
 /// <summary>

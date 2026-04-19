@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Application.Interfaces;
 using Common.DTOs;
 using Common.Exceptions;
@@ -24,7 +25,39 @@ public class AccountService : IAccountService
             .Include(a => a.User)
             .Where(a => a.ArchiveLevel == 0);
 
-        return await query.ToPagedResponseAsync(request, ct);
+        Dictionary<string, string>? filters = request.Filters != null
+            ? new Dictionary<string, string>(request.Filters, StringComparer.OrdinalIgnoreCase)
+            : null;
+
+        string? profile = null;
+        if (filters != null)
+        {
+            var key = filters.Keys.FirstOrDefault(k => k.Equals("UserProfile", StringComparison.OrdinalIgnoreCase));
+            if (key != null && filters.Remove(key, out var p))
+            {
+                profile = p;
+            }
+        }
+
+        if (profile == "linked")
+        {
+            query = query.Where(a => a.UserId != null);
+        }
+        else if (profile == "unlinked")
+        {
+            query = query.Where(a => a.UserId == null);
+        }
+
+        var pagedRequest = new PagedRequest
+        {
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize,
+            SortBy = request.SortBy,
+            SortDirection = request.SortDirection,
+            Filters = filters is { Count: > 0 } ? filters : null,
+        };
+
+        return await query.ToPagedResponseAsync(pagedRequest, ct);
     }
 
     public async Task<Account?> GetByIdAsync(int id, CancellationToken ct = default)
@@ -88,7 +121,11 @@ public class AccountService : IAccountService
             account.Description = dto.Description;
         }
 
-        if (dto.UserId.HasValue)
+        if (dto.UnlinkUser)
+        {
+            account.UserId = null;
+        }
+        else if (dto.UserId.HasValue)
         {
             account.UserId = dto.UserId;
         }
@@ -161,5 +198,60 @@ public class AccountService : IAccountService
             .Include(l => l.Rights)
             .Select(l => l.Rights)
             .ToListAsync(ct);
+    }
+
+    public async Task ReplaceRightsAsync(int accountId, List<int> rightIds, CancellationToken ct = default)
+    {
+        var account = await _db.Accounts
+            .FirstOrDefaultAsync(a => a.Id == accountId && a.ArchiveLevel == 0, ct)
+            ?? throw new KeyNotFoundException($"Аккаунт с ID {accountId} не найден");
+
+        var distinct = rightIds.Distinct().ToList();
+        if (distinct.Count > 0)
+        {
+            var existingIds = await _db.Rights
+                .Where(r => distinct.Contains(r.Id) && r.ArchiveLevel == 0)
+                .Select(r => r.Id)
+                .ToListAsync(ct);
+            var missing = distinct.Except(existingIds).ToList();
+            if (missing.Count > 0)
+            {
+                throw new BusinessException(
+                    $"Неизвестные идентификаторы прав: {string.Join(", ", missing)}",
+                    "UNKNOWN_RIGHTS",
+                    400);
+            }
+        }
+
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+
+        var oldLinks = await _db.AccountRightsLinks
+            .Where(l => l.AccountId == accountId && l.ArchiveLevel == 0)
+            .ToListAsync(ct);
+
+        var now = DateTime.UtcNow;
+        foreach (var link in oldLinks)
+        {
+            link.ArchiveLevel = 1;
+            link.ArchiveTime = now;
+            link.ChangeTime = now;
+        }
+
+        await _db.SaveChangesAsync(ct);
+
+        foreach (var rid in distinct)
+        {
+            _db.AccountRightsLinks.Add(new AccountRightsLink
+            {
+                AccountId = accountId,
+                RightId = rid,
+                CreateTime = now,
+                ArchiveLevel = 0
+            });
+        }
+
+        account.ChangeTime = now;
+        await _db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
     }
 }

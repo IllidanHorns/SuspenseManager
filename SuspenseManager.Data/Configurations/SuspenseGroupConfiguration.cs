@@ -16,6 +16,7 @@ public class SuspenseGroupConfiguration : IEntityTypeConfiguration<SuspenseGroup
         builder.Property(x => x.CreateTime).IsRequired();
         builder.Property(x => x.ArchiveLevel).IsRequired();
         builder.Property(x => x.AccountId).IsRequired();
+        builder.Property(x => x.PostponeReason).HasMaxLength(500);
 
         // FK на аккаунт (кто создал группу)
         builder.HasOne(x => x.Account)

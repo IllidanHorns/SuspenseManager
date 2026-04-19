@@ -77,6 +77,19 @@ public class AuditController : ControllerBase
         return Ok(ApiResponse<PagedResponse<AuditLogEntryDto>>.Success(result));
     }
 
+    /// <summary>
+    /// Лента последних действий аккаунта (переходы статусов по группам и строкам из логов аудита).
+    /// </summary>
+    [HttpGet("accounts/{accountId:int}/activity")]
+    public async Task<IActionResult> GetAccountActivity(
+        int accountId,
+        [FromQuery] PagedRequest request,
+        CancellationToken ct)
+    {
+        var result = await _auditService.GetAccountActivityAsync(accountId, request, ct);
+        return Ok(ApiResponse<PagedResponse<AccountActivityItemDto>>.Success(result));
+    }
+
     // ── Вспомогательные методы ───────────────────────────────────────────────
 
     private int GetCurrentAccountId()

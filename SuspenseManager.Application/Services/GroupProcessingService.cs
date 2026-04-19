@@ -1,3 +1,4 @@
+using Application.Helpers;
 using Application.Interfaces;
 using Common.DTOs;
 using Common.Exceptions;
@@ -27,6 +28,13 @@ public class GroupProcessingService : IGroupProcessingService
 
         var group = await GetGroupOrThrowAsync(groupId, ct);
 
+        if (group.CatalogProductId.HasValue)
+        {
+            throw new BusinessException(
+                "Продукт уже привязан к каталогу: метаданные продукта отображаются из каталога и не редактируются отдельно.",
+                "METADATA_PRODUCT_READONLY");
+        }
+
         var meta = await _db.GroupMetadata.FirstOrDefaultAsync(m => m.SuspenseGroupId == groupId, ct);
         if (meta == null)
         {
@@ -38,21 +46,7 @@ public class GroupProcessingService : IGroupProcessingService
             _db.GroupMetadata.Add(meta);
         }
 
-        meta.CatalogNumber = dto.CatalogNumber ?? meta.CatalogNumber;
-        meta.Barcode = dto.Barcode ?? meta.Barcode;
-        meta.Isrc = dto.Isrc ?? meta.Isrc;
-        meta.Artist = dto.Artist ?? meta.Artist;
-        meta.Title = dto.Title ?? meta.Title;
-        meta.Genre = dto.Genre ?? meta.Genre;
-        meta.Description = dto.Description ?? meta.Description;
-        meta.ProductTypeCode = dto.ProductTypeCode ?? meta.ProductTypeCode;
-        meta.ProductTypeDesc = dto.ProductTypeDesc ?? meta.ProductTypeDesc;
-        meta.Duration = dto.Duration ?? meta.Duration;
-        meta.ReleaseDate = dto.ReleaseDate ?? meta.ReleaseDate;
-        meta.ProductTypeId = dto.ProductTypeId ?? meta.ProductTypeId;
-        meta.ChangeTime = DateTime.UtcNow;
-
-        // Если устанавливается CatalogProductId — связываем группу с продуктом
+        // Привязка продукта через метаданные: поля продукта полностью берутся из каталога
         if (dto.CatalogProductId.HasValue && dto.CatalogProductId != meta.CatalogProductId)
         {
             // Для BO-групп привязка продукта выполняется только через BO-эндпоинт link-product,
@@ -64,10 +58,10 @@ public class GroupProcessingService : IGroupProcessingService
                     "USE_BO_LINK_PRODUCT");
 
             var product = await _db.CatalogProducts
+                .Include(p => p.ProductType)
                 .FirstOrDefaultAsync(p => p.Id == dto.CatalogProductId.Value && p.ArchiveLevel == 0, ct)
                 ?? throw new BusinessException("Продукт не найден", "PRODUCT_NOT_FOUND", 404);
 
-            // Если у продукта уже есть права в каталоге — сразу 88, иначе 16
             var rightsExist = await _db.CatalogProductRights
                 .AnyAsync(r => r.CatalogProductId == product.Id && r.ArchiveLevel == 0, ct);
 
@@ -76,7 +70,7 @@ public class GroupProcessingService : IGroupProcessingService
                 : (int)BusinessStatus.InGroupNoRights;
 
             var prevStatus = group.BusinessStatus;
-            meta.CatalogProductId = dto.CatalogProductId.Value;
+            GroupMetadataCatalogMapper.ApplyFromCatalogProduct(meta, product);
             group.CatalogProductId = dto.CatalogProductId.Value;
             group.BusinessStatus = newStatus;
             group.ChangeTime = DateTime.UtcNow;
@@ -85,6 +79,22 @@ public class GroupProcessingService : IGroupProcessingService
             await _db.SaveChangesAsync(ct);
             await _audit.LogGroupAsync(groupId, prevStatus, newStatus, ct);
             await _audit.LogGroupLinesAsync(groupId, prevStatus, newStatus, ct);
+        }
+        else
+        {
+            meta.CatalogNumber = dto.CatalogNumber ?? meta.CatalogNumber;
+            meta.Barcode = dto.Barcode ?? meta.Barcode;
+            meta.Isrc = dto.Isrc ?? meta.Isrc;
+            meta.Artist = dto.Artist ?? meta.Artist;
+            meta.Title = dto.Title ?? meta.Title;
+            meta.Genre = dto.Genre ?? meta.Genre;
+            meta.Description = dto.Description ?? meta.Description;
+            meta.ProductTypeCode = dto.ProductTypeCode ?? meta.ProductTypeCode;
+            meta.ProductTypeDesc = dto.ProductTypeDesc ?? meta.ProductTypeDesc;
+            meta.Duration = dto.Duration ?? meta.Duration;
+            meta.ReleaseDate = dto.ReleaseDate ?? meta.ReleaseDate;
+            meta.ProductTypeId = dto.ProductTypeId ?? meta.ProductTypeId;
+            meta.ChangeTime = DateTime.UtcNow;
         }
 
         if (group.MetaDataId == null)
@@ -163,12 +173,9 @@ public class GroupProcessingService : IGroupProcessingService
         }
 
         var meta = group.GroupMetaData;
-        var firstSuspense = group.SuspenseLines.FirstOrDefault();
+        EnsureCompleteMetadataForQuickCatalog(meta);
 
-        if (meta == null && firstSuspense == null)
-        {
-            throw new BusinessException("В группе нет данных для создания продукта (ни метаданных, ни суспенсов)", "NO_DATA_FOR_CATALOG");
-        }
+        var firstSuspense = group.SuspenseLines.FirstOrDefault();
 
         var isrc = meta?.Isrc ?? firstSuspense?.Isrc ?? string.Empty;
         var barcode = meta?.Barcode ?? firstSuspense?.Barcode ?? string.Empty;
@@ -210,10 +217,19 @@ public class GroupProcessingService : IGroupProcessingService
         _db.CatalogProducts.Add(product);
         await _db.SaveChangesAsync(ct);
 
+        var productWithType = await _db.CatalogProducts
+            .Include(p => p.ProductType)
+            .FirstAsync(p => p.Id == product.Id, ct);
+        var metaForSync = await GroupMetadataCatalogMapper.GetOrCreateForGroupAsync(_db, groupId, ct);
+        GroupMetadataCatalogMapper.ApplyFromCatalogProduct(metaForSync, productWithType);
+
         // Новый продукт прав никогда не имеет — всегда переходим в статус 16
         group.CatalogProductId = product.Id;
         group.BusinessStatus = (int)BusinessStatus.InGroupNoRights;
         group.ChangeTime = DateTime.UtcNow;
+
+        if (group.MetaDataId == null)
+            group.MetaDataId = metaForSync.Id;
 
         await UpdateSuspenseStatusAsync(groupId, (int)BusinessStatus.InGroupNoRights, product.Id, ct);
         await _db.SaveChangesAsync(ct);
@@ -263,8 +279,11 @@ public class GroupProcessingService : IGroupProcessingService
         }
 
         var product = await _db.CatalogProducts
+            .Include(p => p.ProductType)
             .FirstOrDefaultAsync(p => p.Id == dto.ProductId && p.ArchiveLevel == 0, ct)
             ?? throw new BusinessException("Продукт не найден", "PRODUCT_NOT_FOUND", 404);
+
+        EnsureCatalogProductIdentityCompleteForLink(product);
 
         // Проверяем наличие прав у продукта — если есть, сразу 88, иначе 16
         var rightsExist = await _db.CatalogProductRights
@@ -274,44 +293,46 @@ public class GroupProcessingService : IGroupProcessingService
             ? (int)BusinessStatus.Validated
             : (int)BusinessStatus.InGroupNoRights;
 
+        var meta = await GroupMetadataCatalogMapper.GetOrCreateForGroupAsync(_db, groupId, ct);
+        GroupMetadataCatalogMapper.ApplyFromCatalogProduct(meta, product);
+
         group.CatalogProductId = product.Id;
         group.BusinessStatus = newStatus;
         group.ChangeTime = DateTime.UtcNow;
 
         await UpdateSuspenseStatusAsync(groupId, newStatus, product.Id, ct);
         await _db.SaveChangesAsync(ct);
+
+        if (group.MetaDataId == null)
+        {
+            group.MetaDataId = meta.Id;
+            await _db.SaveChangesAsync(ct);
+        }
         await _audit.LogGroupAsync(groupId, (int)BusinessStatus.InGroupNoProduct, newStatus, ct);
         await _audit.LogGroupLinesAsync(groupId, (int)BusinessStatus.InGroupNoProduct, newStatus, ct);
         return group;
     }
 
-    public async Task<SuspenseGroup> ValidateGroupAsync(int groupId, CancellationToken ct = default)
+    public async Task<SuspenseGroup> CreateRightsAsync(int groupId, CancellationToken ct = default)
     {
         await using var tx = await _db.Database.BeginTransactionAsync(ct);
 
         var group = await GetGroupOrThrowAsync(groupId, ct);
 
         if (group.BusinessStatus != (int)BusinessStatus.InGroupNoRights)
-        {
             throw new BusinessException(
-                "Валидация доступна только для групп со статусом 'нет прав' (16)",
+                "Создание прав доступно только для групп со статусом 'нет прав' (16)",
                 "INVALID_STATUS");
-        }
 
         if (!group.CatalogProductId.HasValue)
-        {
-            throw new BusinessException(
-                "Группа не привязана к продукту каталога",
-                "NO_PRODUCT");
-        }
+            throw new BusinessException("Группа не привязана к продукту каталога", "NO_PRODUCT");
 
-        // Шаг 1: Проверяем — есть ли уже права у продукта в каталоге
+        // Проверяем нет ли уже прав (защита от гонки / повторного нажатия)
         var rightsExist = await _db.CatalogProductRights
             .AnyAsync(r => r.CatalogProductId == group.CatalogProductId.Value && r.ArchiveLevel == 0, ct);
 
         if (!rightsExist)
         {
-            // Шаг 2: Права не найдены — пробуем создать из GroupMetaRights
             ValidateMetaRightsFields(group.GroupMetaRights);
             await CreateCatalogRightsFromMetaAsync(group.CatalogProductId.Value, group.GroupMetaRights!, ct);
         }
@@ -335,6 +356,9 @@ public class GroupProcessingService : IGroupProcessingService
         string? isrc,
         string? productName,
         string? barcode,
+        string? rightsTerritoryCode,
+        string? rightsDocNumber,
+        bool combineProductFieldsWithAnd,
         CancellationToken ct = default)
     {
         var group = await GetGroupOrThrowAsync(groupId, ct);
@@ -346,41 +370,17 @@ public class GroupProcessingService : IGroupProcessingService
                 "INVALID_STATUS");
         }
 
-        if (string.IsNullOrWhiteSpace(artist) &&
-            string.IsNullOrWhiteSpace(isrc) &&
-            string.IsNullOrWhiteSpace(productName) &&
-            string.IsNullOrWhiteSpace(barcode))
-        {
-            throw new BusinessException("Укажите хотя бы один параметр поиска", "SEARCH_CRITERIA_EMPTY");
-        }
-
-        var productsQuery = _db.CatalogProducts
-            .AsNoTracking()
-            .Where(p => p.ArchiveLevel == 0);
-
-        // Исключаем продукт самой группы, чтобы не показывать его права
-        if (group.CatalogProductId.HasValue)
-            productsQuery = productsQuery.Where(p => p.Id != group.CatalogProductId.Value);
-
-        productsQuery = productsQuery.Where(p =>
-            (!string.IsNullOrEmpty(isrc) && p.Isrc == isrc) ||
-            (!string.IsNullOrEmpty(barcode) && p.Barcode == barcode) ||
-            (!string.IsNullOrEmpty(productName) && p.ProductName != null && p.ProductName.Contains(productName)) ||
-            (!string.IsNullOrEmpty(artist) && p.Artist != null && p.Artist.Contains(artist)));
-
-        var productIds = await productsQuery.Select(p => p.Id).Take(50).ToListAsync(ct);
-
-        if (productIds.Count == 0)
-            return [];
-
-        return await _db.CatalogProductRights
-            .AsNoTracking()
-            .Include(r => r.CompanySenderR)
-            .Include(r => r.CompanyReceiverR)
-            .Include(r => r.Territory)
-            .Include(r => r.CatalogProduct)
-            .Where(r => productIds.Contains(r.CatalogProductId) && r.ArchiveLevel == 0)
-            .ToListAsync(ct);
+        return await CatalogRightsSearchHelper.SearchAsync(
+            _db,
+            group.CatalogProductId,
+            artist,
+            isrc,
+            productName,
+            barcode,
+            rightsTerritoryCode,
+            rightsDocNumber,
+            combineProductFieldsWithAnd,
+            ct);
     }
 
     public async Task<SuspenseGroup> CopyRightsToProductAsync(int groupId, int rightsId, CancellationToken ct = default)
@@ -506,6 +506,7 @@ public class GroupProcessingService : IGroupProcessingService
         var prevStatus = group.BusinessStatus;
         group.BusinessStatus = newStatus;
         group.ChangeTime = DateTime.UtcNow;
+        group.PostponeReason = string.IsNullOrWhiteSpace(dto.Reason) ? null : dto.Reason.Trim();
 
         await UpdateSuspenseStatusAsync(groupId, newStatus, null, ct);
         await _db.SaveChangesAsync(ct);
@@ -606,18 +607,109 @@ public class GroupProcessingService : IGroupProcessingService
         await tx.CommitAsync(ct);
     }
 
-    public async Task<PagedResponse<SuspenseGroup>> GetPostponedGroupsAsync(PagedRequest request, CancellationToken ct = default)
+    public async Task<PagedResponse<SuspenseGroup>> GetPostponedGroupsAsync(GroupListRequest request, int currentAccountId, CancellationToken ct = default)
     {
         var query = _db.SuspenseGroups
             .AsNoTracking()
             .Include(g => g.Account)
             .Include(g => g.GroupMetaData)
             .Include(g => g.GroupMetaRights)
+            .Include(g => g.CatalogProduct)
             .Where(g => g.ArchiveLevel == 0 &&
                 (g.BusinessStatus == (int)BusinessStatus.PostponedNoProduct ||
                  g.BusinessStatus == (int)BusinessStatus.PostponedNoRights));
 
-        return await query.ToPagedResponseAsync(request, ct);
+        if (request.OnlyMine && currentAccountId > 0)
+        {
+            query = query.Where(g => g.AccountId == currentAccountId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Artist))
+        {
+            var v = request.Artist;
+            query = query.Where(g =>
+                (g.CatalogProduct != null && g.CatalogProduct.Artist != null && g.CatalogProduct.Artist.Contains(v)) ||
+                (g.GroupMetaData != null && g.GroupMetaData.Artist != null && g.GroupMetaData.Artist.Contains(v)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Title))
+        {
+            var v = request.Title;
+            query = query.Where(g =>
+                (g.CatalogProduct != null && g.CatalogProduct.ProductName != null && g.CatalogProduct.ProductName.Contains(v)) ||
+                (g.GroupMetaData != null && g.GroupMetaData.Title != null && g.GroupMetaData.Title.Contains(v)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Isrc))
+        {
+            var v = request.Isrc;
+            query = query.Where(g =>
+                (g.CatalogProduct != null && g.CatalogProduct.Isrc != null && g.CatalogProduct.Isrc.Contains(v)) ||
+                (g.GroupMetaData != null && g.GroupMetaData.Isrc != null && g.GroupMetaData.Isrc.Contains(v)));
+        }
+
+        if (request.CountMin.HasValue)
+        {
+            int min = request.CountMin.Value;
+            query = query.Where(g => _db.SuspenseLines.Count(s => s.GroupId == g.Id && s.ArchiveLevel == 0) >= min);
+        }
+
+        if (request.CountMax.HasValue)
+        {
+            int max = request.CountMax.Value;
+            query = query.Where(g => _db.SuspenseLines.Count(s => s.GroupId == g.Id && s.ArchiveLevel == 0) <= max);
+        }
+
+        if (request.RevenueMin.HasValue)
+        {
+            double min = (double)request.RevenueMin.Value;
+            query = query.Where(g => _db.SuspenseLines
+                .Where(s => s.GroupId == g.Id && s.ArchiveLevel == 0)
+                .Sum(s => (double)s.Qty * (s.Ppd ?? 0.0) * (double)s.ExchangeRate) >= min);
+        }
+
+        if (request.RevenueMax.HasValue)
+        {
+            double max = (double)request.RevenueMax.Value;
+            query = query.Where(g => _db.SuspenseLines
+                .Where(s => s.GroupId == g.Id && s.ArchiveLevel == 0)
+                .Sum(s => (double)s.Qty * (s.Ppd ?? 0.0) * (double)s.ExchangeRate) <= max);
+        }
+
+        var result = await query.ToPagedResponseAsync(request, ct);
+        await FillGroupAggregatesAsync(result.Items, ct);
+        return result;
+    }
+
+    private async Task FillGroupAggregatesAsync(List<SuspenseGroup> groups, CancellationToken ct)
+    {
+        if (groups.Count == 0) return;
+        var ids = groups.Select(g => g.Id).ToList();
+
+        var aggs = await _db.SuspenseLines
+            .Where(s => s.GroupId.HasValue && ids.Contains(s.GroupId.Value) && s.ArchiveLevel == 0)
+            .GroupBy(s => s.GroupId!.Value)
+            .Select(g => new
+            {
+                GroupId = g.Key,
+                Count = g.Count(),
+                RevenueDouble = g.Sum(s => (double)s.Qty * (s.Ppd ?? 0.0) * (double)s.ExchangeRate)
+            })
+            .ToDictionaryAsync(x => x.GroupId, ct);
+
+        foreach (var group in groups)
+        {
+            if (aggs.TryGetValue(group.Id, out var agg))
+            {
+                group.SuspenseCount = agg.Count;
+                group.RevenueRub = (decimal)agg.RevenueDouble;
+            }
+            else
+            {
+                group.SuspenseCount = 0;
+                group.RevenueRub = 0;
+            }
+        }
     }
 
     public async Task<SuspenseGroup> ReturnFromPostponedAsync(int groupId, CancellationToken ct = default)
@@ -634,6 +726,7 @@ public class GroupProcessingService : IGroupProcessingService
         var prevStatus = group.BusinessStatus;
         group.BusinessStatus = newStatus;
         group.ChangeTime = DateTime.UtcNow;
+        group.PostponeReason = null;
 
         await UpdateSuspenseStatusAsync(groupId, newStatus, null, ct);
         await _db.SaveChangesAsync(ct);
@@ -645,6 +738,69 @@ public class GroupProcessingService : IGroupProcessingService
     // ──────────────────────────────────────────────────────────────────────────
     // Private helpers
     // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Быстрая каталогизация: все поля должны быть заданы именно в метаданных группы (каталога ещё нет).
+    /// </summary>
+    private static void EnsureCompleteMetadataForQuickCatalog(GroupMetadata? meta)
+    {
+        if (meta == null)
+        {
+            throw new BusinessException(
+                "Для быстрой каталогизации заполните метаданные продукта на вкладке «Метаданные»: " +
+                "название, исполнитель, ISRC, баркод, каталожный номер.",
+                "METADATA_INCOMPLETE");
+        }
+
+        var missing = CollectMissingIdentityFields(
+            meta.Title, meta.Artist, meta.Isrc, meta.Barcode, meta.CatalogNumber);
+        if (missing.Count == 0)
+            return;
+
+        throw new BusinessException(
+            "Для быстрой каталогизации дозаполните метаданные продукта (вкладка «Метаданные»). " +
+            $"Не указано: {string.Join(", ", missing)}.",
+            "METADATA_INCOMPLETE");
+    }
+
+    /// <summary>
+    /// Привязка из «возможных продуктов»: в карточке каталога должны быть те же поля, что обязательны при быстрой каталогизации.
+    /// </summary>
+    private static void EnsureCatalogProductIdentityCompleteForLink(CatalogProduct product)
+    {
+        if (!CatalogProductIdentity.IsIncomplete(product))
+            return;
+
+        var missing = CollectMissingIdentityFields(
+            product.ProductName,
+            product.Artist,
+            product.Isrc,
+            product.Barcode,
+            product.CatalogNumber);
+
+        throw new BusinessException(
+            "У выбранного продукта в каталоге не заполнены обязательные поля: " +
+            string.Join(", ", missing) +
+            ". Связывание недоступно. Доработку карточки продукта выполняет бэк-офис — отправьте группу в бэк-офис или обратитесь к ответственным за каталог.",
+            "CATALOG_PRODUCT_INCOMPLETE");
+    }
+
+    private static List<string> CollectMissingIdentityFields(
+        string? title, string? artist, string? isrc, string? barcode, string? catalogNumber)
+    {
+        var missing = new List<string>();
+        if (string.IsNullOrWhiteSpace(title))
+            missing.Add("название");
+        if (string.IsNullOrWhiteSpace(artist))
+            missing.Add("исполнитель");
+        if (string.IsNullOrWhiteSpace(isrc))
+            missing.Add("ISRC");
+        if (string.IsNullOrWhiteSpace(barcode))
+            missing.Add("баркод");
+        if (string.IsNullOrWhiteSpace(catalogNumber))
+            missing.Add("каталожный номер");
+        return missing;
+    }
 
     private async Task<SuspenseGroup> GetGroupOrThrowAsync(int groupId, CancellationToken ct)
     {

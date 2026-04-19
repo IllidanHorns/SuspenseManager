@@ -31,6 +31,7 @@ builder.Services.AddScoped<ITerritoryService, TerritoryService>();
 builder.Services.AddScoped<IGroupProcessingService, GroupProcessingService>();
 builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IMeService, MeService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
@@ -38,6 +39,8 @@ builder.Services.AddScoped<IGroupingService, GroupingService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IBackOfficeService, BackOfficeService>();
 builder.Services.AddScoped<ICatalogService, CatalogService>();
+builder.Services.AddScoped<IRightsCatalogService, RightsCatalogService>();
+builder.Services.AddScoped<IAdminMetricsService, AdminMetricsService>();
 builder.Services.AddHttpContextAccessor();
 
 // FluentValidation

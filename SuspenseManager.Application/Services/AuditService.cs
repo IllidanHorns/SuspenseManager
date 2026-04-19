@@ -390,7 +390,82 @@ public class AuditService : IAuditService
         };
     }
 
-    // ── Вспомогательные методы ───────────────────────────────────────���───────
+    public async Task<PagedResponse<AccountActivityItemDto>> GetAccountActivityAsync(
+        int accountId, PagedRequest request, CancellationToken ct = default)
+    {
+        var statusDict = await _db.StatusDictionary
+            .AsNoTracking()
+            .ToDictionaryAsync(s => s.Code, s => s.Name, ct);
+
+        var qGroups = _db.SuspenseGroupLogs
+            .AsNoTracking()
+            .Where(l => l.AccountId == accountId)
+            .Select(l => new
+            {
+                l.OperationTime,
+                Kind = "group",
+                l.Id,
+                EntityId = l.SuspenseGroupId,
+                GroupId = (int?)l.SuspenseGroupId,
+                l.StatusFrom,
+                l.StatusTo
+            });
+
+        var qLines = _db.SuspenseLineLogs
+            .AsNoTracking()
+            .Where(l => l.AccountId == accountId)
+            .Select(l => new
+            {
+                l.OperationTime,
+                Kind = "line",
+                l.Id,
+                EntityId = l.SuspenseLineId,
+                GroupId = l.GroupId,
+                l.StatusFrom,
+                l.StatusTo
+            });
+
+        var union = qGroups.Concat(qLines);
+        var totalCount = await union.CountAsync(ct);
+
+        var slice = await union
+            .OrderByDescending(x => x.OperationTime)
+            .ThenByDescending(x => x.Id)
+            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .ToListAsync(ct);
+
+        var items = slice.Select(x =>
+        {
+            statusDict.TryGetValue(x.StatusTo, out var toName);
+            string? fromName = null;
+            if (x.StatusFrom.HasValue)
+                statusDict.TryGetValue(x.StatusFrom.Value, out fromName);
+
+            return new AccountActivityItemDto
+            {
+                Kind = x.Kind,
+                LogId = x.Id,
+                EntityId = x.EntityId,
+                GroupId = x.GroupId,
+                StatusFrom = x.StatusFrom,
+                StatusFromName = fromName,
+                StatusTo = x.StatusTo,
+                StatusToName = toName,
+                OperationTime = x.OperationTime
+            };
+        }).ToList();
+
+        return new PagedResponse<AccountActivityItemDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize
+        };
+    }
+
+    // ── Вспомогательные методы ────────────────────────────────────────────────
 
     private async Task<(int Id, string Login, string? Name)> GetCurrentUserContextAsync(CancellationToken ct)
     {

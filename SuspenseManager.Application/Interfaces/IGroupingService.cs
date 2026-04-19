@@ -16,6 +16,16 @@ public interface IGroupingService
     Task<PagedResponse<GroupingPreviewItem>> PreviewAsync(GroupingPreviewRequest request, CancellationToken ct = default);
 
     /// <summary>
+    /// Предпросмотр строк суспенса внутри потенциальной группы (без фиксации).
+    /// </summary>
+    Task<PagedResponse<SuspenseLinePreviewDto>> PreviewLinesAsync(GroupLinesPreviewRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Экспорт строк потенциальной группы в Excel (без фиксации, все строки без пагинации).
+    /// </summary>
+    Task<byte[]> ExportPreviewLinesAsync(GroupLinesPreviewRequest request, CancellationToken ct = default);
+
+    /// <summary>
     /// Фиксация (сохранение) группы: создаёт SuspenseGroup, обновляет статусы строк,
     /// создаёт SuspenseGroupLink для каждой строки.
     /// </summary>

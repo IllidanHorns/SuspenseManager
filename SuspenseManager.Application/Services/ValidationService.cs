@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Application.Interfaces;
 using Common.DTOs;
 using Data;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Models;
 using Models.Enums;
@@ -20,15 +21,22 @@ public class ValidationService : IValidationService
 {
     private readonly SuspenseManagerDbContext _db;
     private readonly IAuditService _audit;
+    private readonly IValidator<SuspenseLineDto> _lineValidator;
 
-    public ValidationService(SuspenseManagerDbContext db, IAuditService audit)
+    public ValidationService(
+        SuspenseManagerDbContext db,
+        IAuditService audit,
+        IValidator<SuspenseLineDto> lineValidator)
     {
         _db = db;
         _audit = audit;
+        _lineValidator = lineValidator;
     }
 
-    public async Task<ValidationResultDto> ValidateBatchAsync(List<SuspenseLineDto> lines)
+    public async Task<ValidationResultDto> ValidateBatchAsync(List<SuspenseLineDto> lines, bool numberRowsAsInExcel = true)
     {
+        await EnsureAllLinesPassDtoRulesAsync(lines, excelStyleRowNumbers: numberRowsAsInExcel);
+
         var result = new ValidationResultDto
         {
             TotalRows = lines.Count
@@ -58,6 +66,12 @@ public class ValidationService : IValidationService
 
         await _db.SaveChangesAsync();
 
+        // После SaveChanges у сущностей заполнены Id — синхронизируем с DTO ответа
+        for (var i = 0; i < result.Lines.Count; i++)
+        {
+            result.Lines[i].SuspenseLineId = createdLines[i].Id;
+        }
+
         // Логируем первичный статус каждой строки (после SaveChanges — IDs уже заполнены)
         foreach (var entity in createdLines)
         {
@@ -71,6 +85,7 @@ public class ValidationService : IValidationService
     {
         var (lineResult, entity) = await ProcessLineAsync(line);
         await _db.SaveChangesAsync();
+        lineResult.SuspenseLineId = entity.Id;
         await _audit.LogLineAsync(entity.Id, null, null, entity.BusinessStatus);
         return lineResult;
     }
@@ -121,6 +136,45 @@ public class ValidationService : IValidationService
             CauseSuspense = cause,
             ProductId = productId
         }, suspenseLine);
+    }
+
+    /// <summary>
+    /// Проверка ограничений DTO (длины полей, decimal, Qty и т.д.) до сохранения в БД.
+    /// Для Excel первая строка данных = строка 2 листа (под заголовками).
+    /// </summary>
+    private async Task EnsureAllLinesPassDtoRulesAsync(List<SuspenseLineDto> lines, bool excelStyleRowNumbers)
+    {
+        if (lines.Count == 0)
+        {
+            return;
+        }
+
+        var errors = new List<ApiError>();
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var vr = await _lineValidator.ValidateAsync(lines[i]);
+            if (vr.IsValid)
+            {
+                continue;
+            }
+
+            var rowLabel = excelStyleRowNumbers ? $"Строка {i + 2}: " : string.Empty;
+            foreach (var e in vr.Errors)
+            {
+                errors.Add(new ApiError
+                {
+                    Field = e.PropertyName,
+                    Message = $"{rowLabel}{e.ErrorMessage}"
+                });
+            }
+        }
+
+        if (errors.Count > 0)
+        {
+            throw new Common.Exceptions.ValidationException(
+                "Данные не прошли проверку (длина полей, форматы чисел и т.д.). Исправьте указанные строки и повторите операцию.",
+                errors);
+        }
     }
 
     /// <summary>

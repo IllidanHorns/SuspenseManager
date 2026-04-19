@@ -5,6 +5,14 @@
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Suspense Manager</title>
+    <script>
+      try {
+        var s = localStorage.getItem('mantine-color-scheme-value');
+        var c = s === 'light' || s === 'dark' || s === 'auto' ? s : 'light';
+        var computed = c !== 'auto' ? c : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-mantine-color-scheme', computed);
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -36,21 +36,27 @@ public interface IGroupProcessingService
     Task<SuspenseGroup> LinkProductAsync(int groupId, LinkProductDto dto, CancellationToken ct = default);
 
     // Отложенные группы
-    Task<PagedResponse<SuspenseGroup>> GetPostponedGroupsAsync(PagedRequest request, CancellationToken ct = default);
+    Task<PagedResponse<SuspenseGroup>> GetPostponedGroupsAsync(GroupListRequest request, int currentAccountId, CancellationToken ct = default);
 
     // Возврат из отложенных
     Task<SuspenseGroup> ReturnFromPostponedAsync(int groupId, CancellationToken ct = default);
 
-    // Валидация группы (16 → 88): проверяет права в каталоге, при отсутствии — создаёт из метаправ
-    Task<SuspenseGroup> ValidateGroupAsync(int groupId, CancellationToken ct = default);
+    // Создать права (16 → 88): создаёт CatalogProductRights из метаправ группы
+    Task<SuspenseGroup> CreateRightsAsync(int groupId, CancellationToken ct = default);
 
-    // Поиск прав в каталоге по характеристикам продукта (для копирования в группу)
+    /// <param name="combineProductFieldsWithAnd">
+    /// true — все непустые поля продукта (артист, isrc, …) должны совпасть с одним продуктом;
+    /// false — OR по полям продукта (режим «ручного поиска»).
+    /// </param>
     Task<List<CatalogProductRights>> SearchCatalogRightsAsync(
         int groupId,
         string? artist,
         string? isrc,
         string? productName,
         string? barcode,
+        string? rightsTerritoryCode,
+        string? rightsDocNumber,
+        bool combineProductFieldsWithAnd,
         CancellationToken ct = default);
 
     // Копирование прав из каталога в продукт группы + переход в статус 88

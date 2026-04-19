@@ -12,11 +12,22 @@ import { AuditPage } from './pages/AuditPage';
 import { BackOfficeTasksPage } from './pages/BackOfficeTasksPage';
 import { BackOfficeTaskDetailPage } from './pages/BackOfficeTaskDetailPage';
 import { CatalogPage } from './pages/CatalogPage';
+import { AdminPage } from './pages/AdminPage';
+import { KnowledgeBasePage } from './pages/KnowledgeBasePage';
+import { SettingsPage } from './pages/SettingsPage';
 import { useAuth } from './hooks/useAuth';
+import { hasAdminAccess } from './utils/adminAccess';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isLoggedIn } = useAuth();
   return isLoggedIn ? <>{children}</> : <Navigate to="/login" replace />;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { isLoggedIn, permissions } = useAuth();
+  if (!isLoggedIn) return <Navigate to="/login" replace />;
+  if (!hasAdminAccess(permissions)) return <Navigate to="/" replace />;
+  return <>{children}</>;
 }
 
 export function App() {
@@ -41,6 +52,16 @@ export function App() {
         <Route path="backoffice/tasks" element={<BackOfficeTasksPage />} />
         <Route path="backoffice/tasks/:taskId" element={<BackOfficeTaskDetailPage />} />
         <Route path="catalog" element={<CatalogPage />} />
+        <Route path="knowledge" element={<KnowledgeBasePage />} />
+        <Route path="settings" element={<SettingsPage />} />
+        <Route
+          path="admin"
+          element={
+            <AdminRoute>
+              <AdminPage />
+            </AdminRoute>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

@@ -18,6 +18,7 @@ import { useForm } from '@mantine/form';
 import { IconAlertCircle, IconSun, IconMoon } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { combine, DbMax, maxLen, required } from '../utils/fieldValidation';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -29,8 +30,8 @@ export function LoginPage() {
   const form = useForm({
     initialValues: { login: '', password: '' },
     validate: {
-      login: (v) => (!v ? 'Введите логин' : null),
-      password: (v) => (!v ? 'Введите пароль' : null),
+      login: combine(required('Введите логин'), maxLen(DbMax.account.login, 'Логин')),
+      password: combine(required('Введите пароль'), maxLen(DbMax.account.password, 'Пароль')),
     },
   });
 

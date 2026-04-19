@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Stack,
   Title,
@@ -42,10 +42,14 @@ import {
   IconEdit,
   IconArrowBack,
   IconShieldCheck,
-  IconCopy,
+  IconChevronUp,
+  IconChevronDown,
+  IconInfoCircle,
+  IconFileInfo,
 } from '@tabler/icons-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { isApiRequestError } from '../api/apiError';
 import { getGroupById, getGroupSuspenses } from '../api/groups';
 import {
   getMetadata,
@@ -60,27 +64,177 @@ import {
   ungroupGroup,
   returnFromPostponed,
   exportGroupSuspenses,
-  validateGroup,
+  createGroupRights,
   searchCatalogRights,
   copyRightsToProduct,
 } from '../api/processing';
 import { getCompanies } from '../api/companies';
 import { getTerritories } from '../api/territories';
 import { fmtDate, fmtDateTime, downloadBlob } from '../utils/format';
+import {
+  getMissingCatalogProductIdentityFields,
+  getMissingProductIdentityForQuickCatalog,
+} from '../utils/requiredProductIdentity';
+import {
+  DbMax,
+  combine,
+  dateIsoOptional,
+  optMaxLen,
+  required,
+  sharePercent,
+} from '../utils/fieldValidation';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { PageSizeSelect } from '../components/common/PageSizeSelect';
+import { ResizableTh } from '../components/common/ResizableTh';
+import { CollapsibleFilters } from '../components/common/CollapsibleFilters';
+import { SearchRightsCatalogModal } from '../components/groups/SearchRightsCatalogModal';
+import { ProductDetailModal } from '../components/groups/ProductDetailModal';
+import { useDefaultPageSize } from '../hooks/useDefaultPageSize';
 import type {
   GroupMetadata,
   GroupMetaRights,
   CatalogProduct,
-  CatalogProductRights,
   SuspenseLine,
   Territory,
 } from '../types';
 
+/** Выручка по строке: кол-во × цена за стрим × курс (как на бэкенде в агрегатах группы). */
+function lineRevenueRub(s: SuspenseLine): number {
+  const rate = typeof s.exchangeRate === 'number' ? s.exchangeRate : Number(s.exchangeRate);
+  return s.qty * (s.ppd ?? 0) * (Number.isFinite(rate) ? rate : 0);
+}
+
+function fmtRub(n: number): string {
+  return n.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function cell(v: string | number | null | undefined): string {
+  if (v === null || v === undefined) return '—';
+  const t = typeof v === 'number' ? String(v) : String(v).trim();
+  return t === '' ? '—' : t;
+}
+
+type GroupSuspenseSortField = 'Qty' | 'Ppd' | 'Revenue';
+
+function SortableResizableTh({
+  label,
+  field,
+  sortBy,
+  sortDirection,
+  onSort,
+}: {
+  label: string;
+  field: GroupSuspenseSortField;
+  sortBy: GroupSuspenseSortField | null;
+  sortDirection: 'asc' | 'desc';
+  onSort: (f: GroupSuspenseSortField) => void;
+}) {
+  const active = sortBy === field;
+  return (
+    <ResizableTh>
+      <Group
+        gap={4}
+        wrap="nowrap"
+        align="center"
+        justify="space-between"
+        pr={4}
+        onClick={() => onSort(field)}
+        style={{ cursor: 'pointer' }}
+      >
+        <Text size="xs" fw={600}>{label}</Text>
+        {active ? (
+          sortDirection === 'asc' ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />
+        ) : (
+          <Box w={14} />
+        )}
+      </Group>
+    </ResizableTh>
+  );
+}
+
+interface GroupSuspenseFilterForm {
+  isrc: string;
+  artist: string;
+  operator: string;
+  barcode: string;
+  catalogNumber: string;
+  trackTitle: string;
+  genre: string;
+  senderCompany: string;
+  recipientCompany: string;
+  territoryCode: string;
+  agreementType: string;
+  agreementNumber: string;
+  qtyMin: string;
+  qtyMax: string;
+  ppdMin: string;
+  ppdMax: string;
+  revenueMin: string;
+  revenueMax: string;
+}
+
+const EMPTY_GROUP_SUSPENSE_FILTERS: GroupSuspenseFilterForm = {
+  isrc: '',
+  artist: '',
+  operator: '',
+  barcode: '',
+  catalogNumber: '',
+  trackTitle: '',
+  genre: '',
+  senderCompany: '',
+  recipientCompany: '',
+  territoryCode: '',
+  agreementType: '',
+  agreementNumber: '',
+  qtyMin: '',
+  qtyMax: '',
+  ppdMin: '',
+  ppdMax: '',
+  revenueMin: '',
+  revenueMax: '',
+};
+
+function buildGroupSuspenseApplied(
+  p: GroupSuspenseFilterForm,
+  compactNoProduct: boolean,
+): Record<string, string> {
+  const f: Record<string, string> = {};
+  const t = (s: string) => s.trim();
+  if (t(p.isrc)) f.Isrc_contains = t(p.isrc);
+  if (t(p.artist)) f.Artist_contains = t(p.artist);
+  if (t(p.operator)) f.Operator_contains = t(p.operator);
+  if (t(p.barcode)) f.Barcode_contains = t(p.barcode);
+  if (t(p.catalogNumber)) f.CatalogNumber_contains = t(p.catalogNumber);
+  if (t(p.trackTitle)) f.TrackTitle_contains = t(p.trackTitle);
+  if (t(p.genre)) f.Genre_contains = t(p.genre);
+  if (t(p.senderCompany)) f.SenderCompany_contains = t(p.senderCompany);
+  if (t(p.recipientCompany)) f.RecipientCompany_contains = t(p.recipientCompany);
+  if (t(p.territoryCode)) f.TerritoryCode_contains = t(p.territoryCode);
+  if (!compactNoProduct) {
+    if (t(p.agreementType)) f.AgreementType_contains = t(p.agreementType);
+    if (t(p.agreementNumber)) f.AgreementNumber_contains = t(p.agreementNumber);
+  }
+  if (t(p.qtyMin)) f.Qty_gte = t(p.qtyMin);
+  if (t(p.qtyMax)) f.Qty_lte = t(p.qtyMax);
+  if (t(p.ppdMin)) f.Ppd_gte = t(p.ppdMin);
+  if (t(p.ppdMax)) f.Ppd_lte = t(p.ppdMax);
+  if (t(p.revenueMin)) f.Revenue_gte = t(p.revenueMin);
+  if (t(p.revenueMax)) f.Revenue_lte = t(p.revenueMax);
+  return f;
+}
+
 // ─── Metadata Form ────────────────────────────────────────────────────────────
 
-function MetadataTab({ groupId, metadata }: { groupId: number; metadata: GroupMetadata | null }) {
+function MetadataTab({
+  groupId,
+  metadata,
+  readOnly,
+}: {
+  groupId: number;
+  metadata: GroupMetadata | null;
+  /** После привязки к продукту каталога — только просмотр (данные синхронизируются с каталогом). */
+  readOnly: boolean;
+}) {
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
 
@@ -94,12 +248,39 @@ function MetadataTab({ groupId, metadata }: { groupId: number; metadata: GroupMe
       genre: metadata?.genre ?? '',
       description: metadata?.description ?? '',
     },
+    validate: {
+      title: optMaxLen(DbMax.groupMetadata.title, 'Название'),
+      artist: optMaxLen(DbMax.groupMetadata.artist, 'Исполнитель'),
+      isrc: optMaxLen(DbMax.groupMetadata.isrc, 'ISRC'),
+      barcode: optMaxLen(DbMax.groupMetadata.barcode, 'Баркод'),
+      catalogNumber: optMaxLen(DbMax.groupMetadata.catalogNumber, 'Каталожный номер'),
+      genre: optMaxLen(DbMax.groupMetadata.genre, 'Жанр'),
+      description: optMaxLen(DbMax.groupMetadata.description, 'Описание'),
+    },
   });
 
+  // initialValues срабатывают только при монтировании; метаданные приходят позже из useQuery
+  useEffect(() => {
+    if (metadata === undefined) return;
+    form.setValues({
+      title: metadata?.title ?? '',
+      artist: metadata?.artist ?? '',
+      isrc: metadata?.isrc ?? '',
+      barcode: metadata?.barcode ?? '',
+      catalogNumber: metadata?.catalogNumber ?? '',
+      genre: metadata?.genre ?? '',
+      description: metadata?.description ?? '',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- синхронизация с ответом сервера
+  }, [metadata]);
+
   const handleSave = async (values: typeof form.values) => {
+    if (readOnly) return;
     setSaving(true);
     try {
       await updateMetadata(groupId, values);
+      await qc.invalidateQueries({ queryKey: ['metadata', groupId] });
+      await qc.invalidateQueries({ queryKey: ['group-suspenses', groupId] });
       await qc.invalidateQueries({ queryKey: ['group', groupId] });
       await qc.invalidateQueries({ queryKey: ['groups'] });
       notifications.show({ title: 'Сохранено', message: 'Метаданные обновлены', color: 'green', icon: <IconCircleCheck size={16} /> });
@@ -109,6 +290,81 @@ function MetadataTab({ groupId, metadata }: { groupId: number; metadata: GroupMe
       setSaving(false);
     }
   };
+
+  if (readOnly) {
+    return (
+      <Stack gap="md">
+        <Alert color="blue" variant="light" icon={<IconCircleCheck size={18} />}>
+          Группа привязана к продукту каталога. Поля продукта показываются из метаданных (синхронизированы с
+          каталогом) и не редактируются отдельно.
+        </Alert>
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+          <Box>
+            <Text size="xs" c="dimmed">
+              Название
+            </Text>
+            <Text size="sm">{cell(metadata?.title)}</Text>
+          </Box>
+          <Box>
+            <Text size="xs" c="dimmed">
+              Исполнитель
+            </Text>
+            <Text size="sm">{cell(metadata?.artist)}</Text>
+          </Box>
+          <Box>
+            <Text size="xs" c="dimmed">
+              ISRC
+            </Text>
+            <Text size="sm">{cell(metadata?.isrc)}</Text>
+          </Box>
+          <Box>
+            <Text size="xs" c="dimmed">
+              Баркод
+            </Text>
+            <Text size="sm">{cell(metadata?.barcode)}</Text>
+          </Box>
+          <Box>
+            <Text size="xs" c="dimmed">
+              Кат. номер
+            </Text>
+            <Text size="sm">{cell(metadata?.catalogNumber)}</Text>
+          </Box>
+          <Box>
+            <Text size="xs" c="dimmed">
+              Жанр
+            </Text>
+            <Text size="sm">{cell(metadata?.genre)}</Text>
+          </Box>
+          <Box>
+            <Text size="xs" c="dimmed">
+              Тип продукта
+            </Text>
+            <Text size="sm">{cell(metadata?.productTypeCode)}</Text>
+          </Box>
+          <Box>
+            <Text size="xs" c="dimmed">
+              Описание типа
+            </Text>
+            <Text size="sm">{cell(metadata?.productTypeDesc)}</Text>
+          </Box>
+          <Box>
+            <Text size="xs" c="dimmed">
+              Дата релиза
+            </Text>
+            <Text size="sm">{metadata?.releaseDate ? fmtDate(metadata.releaseDate) : '—'}</Text>
+          </Box>
+        </SimpleGrid>
+        <Box>
+          <Text size="xs" c="dimmed">
+            Описание
+          </Text>
+          <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
+            {cell(metadata?.description)}
+          </Text>
+        </Box>
+      </Stack>
+    );
+  }
 
   return (
     <form onSubmit={form.onSubmit(handleSave)}>
@@ -160,7 +416,7 @@ function MetaRightsTab({ groupId, metaRights }: { groupId: number; metaRights: G
 
   const territoryOptions = territories.map((t) => ({
     value: String(t.id),
-    label: `${t.code}${t.description ? ` — ${t.description}` : ''}`,
+    label: `${t.territoryCode}${t.territoryName ? ` — ${t.territoryName}` : ''}`,
   }));
 
   const form = useForm({
@@ -177,7 +433,53 @@ function MetaRightsTab({ groupId, metaRights }: { groupId: number; metaRights: G
       docEnd:            metaRights?.docEnd ?? '',
       share:             metaRights?.share ?? (null as number | null),
     },
+    validate: {
+      senderCompanyId: (v) => (!v ? 'Выберите компанию-отправителя' : null),
+      receiverCompanyId: (v) => (!v ? 'Выберите компанию-получателя' : null),
+      territoryId: (v) => (!v ? 'Выберите территорию' : null),
+      territoryCode: optMaxLen(DbMax.groupMetaRights.territoryCode, 'Код территории'),
+      territoryDesc: optMaxLen(DbMax.groupMetaRights.territoryDesc, 'Описание территории'),
+      docNumber: optMaxLen(DbMax.groupMetaRights.docNumber, 'Номер договора'),
+      docType: optMaxLen(DbMax.groupMetaRights.docType, 'Тип договора'),
+      docDate: (v, values) => {
+        const base = dateIsoOptional('Дата договора')(v);
+        if (base) return base;
+        if (v && values.docStart && v > values.docStart) return 'Дата договора должна быть не позже даты начала действия';
+        return null;
+      },
+      docStart: combine(required('Укажите дату начала действия'), dateIsoOptional('Дата начала')),
+      docEnd: (v, values) => {
+        const base = combine(required('Укажите дату окончания действия'), dateIsoOptional('Дата окончания'))(v);
+        if (base) return base;
+        if (values.docStart && v && v <= values.docStart) return 'Дата окончания должна быть позже даты начала';
+        return null;
+      },
+      share: (v) => {
+        const base = sharePercent('Доля')(v);
+        if (base) return base;
+        if (v !== null && v !== undefined && Number(v) < 1) return 'Доля должна быть от 1 до 100%';
+        return null;
+      },
+    },
   });
+
+  useEffect(() => {
+    if (metaRights === undefined) return;
+    form.setValues({
+      senderCompanyId:   metaRights?.senderCompanyId   ? String(metaRights.senderCompanyId)   : null,
+      receiverCompanyId: metaRights?.receiverCompanyId ? String(metaRights.receiverCompanyId) : null,
+      territoryId:       metaRights?.territoryId       ? String(metaRights.territoryId)       : null,
+      territoryCode:     metaRights?.territoryCode ?? '',
+      territoryDesc:     metaRights?.territoryDesc ?? '',
+      docNumber:         metaRights?.docNumber ?? '',
+      docType:           metaRights?.docType ?? '',
+      docDate:           metaRights?.docDate ?? '',
+      docStart:          metaRights?.docStart ?? '',
+      docEnd:            metaRights?.docEnd ?? '',
+      share:             metaRights?.share ?? null,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [metaRights]);
 
   // При выборе территории — автозаполняем код и описание
   const handleTerritoryChange = (val: string | null) => {
@@ -185,8 +487,8 @@ function MetaRightsTab({ groupId, metaRights }: { groupId: number; metaRights: G
     if (val) {
       const t: Territory | undefined = territories.find((x) => String(x.id) === val);
       if (t) {
-        form.setFieldValue('territoryCode', t.code);
-        form.setFieldValue('territoryDesc', t.description ?? '');
+        form.setFieldValue('territoryCode', t.territoryCode);
+        form.setFieldValue('territoryDesc', t.territoryName ?? '');
       }
     }
   };
@@ -209,6 +511,7 @@ function MetaRightsTab({ groupId, metaRights }: { groupId: number; metaRights: G
         share:             values.share ?? null,
       };
       await updateMetaRights(groupId, payload);
+      await qc.invalidateQueries({ queryKey: ['meta-rights', groupId] });
       await qc.invalidateQueries({ queryKey: ['group', groupId] });
       await qc.invalidateQueries({ queryKey: ['groups'] });
       notifications.show({ title: 'Сохранено', message: 'Права обновлены', color: 'green', icon: <IconCircleCheck size={16} /> });
@@ -223,7 +526,7 @@ function MetaRightsTab({ groupId, metaRights }: { groupId: number; metaRights: G
     <form onSubmit={form.onSubmit(handleSave)}>
       <Stack gap="md">
         <Alert icon={<IconAlertCircle size={14} />} color="blue" variant="light" radius="md">
-          Заполните обязательные поля (*) и нажмите «Валидировать» — система создаст права в каталоге
+          Заполните обязательные поля (*) и нажмите «Создать права» — система добавит права в каталог
           и переведёт группу в статус 88. Или используйте «Найти права», чтобы скопировать права
           с похожего продукта.
         </Alert>
@@ -237,6 +540,7 @@ function MetaRightsTab({ groupId, metaRights }: { groupId: number; metaRights: G
             clearable
             value={form.values.senderCompanyId}
             onChange={(v) => form.setFieldValue('senderCompanyId', v)}
+            error={form.errors.senderCompanyId}
           />
           <Select
             label="Компания-получатель *"
@@ -246,6 +550,7 @@ function MetaRightsTab({ groupId, metaRights }: { groupId: number; metaRights: G
             clearable
             value={form.values.receiverCompanyId}
             onChange={(v) => form.setFieldValue('receiverCompanyId', v)}
+            error={form.errors.receiverCompanyId}
           />
           <Select
             label="Территория *"
@@ -255,6 +560,7 @@ function MetaRightsTab({ groupId, metaRights }: { groupId: number; metaRights: G
             clearable
             value={form.values.territoryId}
             onChange={handleTerritoryChange}
+            error={form.errors.territoryId}
           />
           <TextInput
             label="Код территории"
@@ -301,8 +607,9 @@ function PossibleProductsModal({
   onLink: () => void;
 }) {
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useDefaultPageSize();
   const [linking, setLinking] = useState<number | null>(null);
+  const [detailProductId, setDetailProductId] = useState<number | null>(null);
   const handlePageSizeChange = (v: number) => { setPageSize(v); setPage(1); };
   const { data, isLoading } = useQuery({
     queryKey: ['possible-products', groupId, page, pageSize],
@@ -318,342 +625,300 @@ function PossibleProductsModal({
       onLink();
       onClose();
     } catch (e: unknown) {
-      notifications.show({ title: 'Ошибка', message: e instanceof Error ? e.message : 'Ошибка привязки', color: 'red' });
+      const incomplete = isApiRequestError(e) && e.businessCode === 'CATALOG_PRODUCT_INCOMPLETE';
+      notifications.show({
+        title: incomplete ? 'Нельзя привязать этот продукт' : 'Ошибка',
+        message: e instanceof Error ? e.message : 'Ошибка привязки',
+        color: incomplete ? 'orange' : 'red',
+      });
     } finally {
       setLinking(null);
     }
   };
 
-  return (
-    <Modal opened={opened} onClose={onClose} title="Возможные продукты" size="lg" radius="md">
-      {isLoading ? <Center py="xl"><Loader color="indigo" /></Center> : (
-        <Stack gap="md">
-          <Table striped highlightOnHover>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>ID</Table.Th>
-                <Table.Th>Название</Table.Th>
-                <Table.Th>Исполнитель</Table.Th>
-                <Table.Th>ISRC</Table.Th>
-                <Table.Th></Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {(data?.items ?? []).map((p) => (
-                <Table.Tr key={p.id}>
-                  <Table.Td>{p.id}</Table.Td>
-                  <Table.Td>{p.productName ?? '—'}</Table.Td>
-                  <Table.Td>{p.artist ?? '—'}</Table.Td>
-                  <Table.Td>{p.isrc ?? '—'}</Table.Td>
-                  <Table.Td>
-                    <Button
-                      size="xs"
-                      color="indigo"
-                      variant="light"
-                      loading={linking === p.id}
-                      onClick={() => handleLink(p)}
-                    >
-                      Привязать
-                    </Button>
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-          <Group justify="space-between" pt="xs" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
-            <Text size="sm" c="dimmed">Всего: {data?.totalCount ?? 0}</Text>
-            <Group gap="sm">
-              <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} />
-              <Pagination value={page} onChange={setPage} total={Math.max(1, data?.totalPages ?? 1)} size="sm" />
-            </Group>
-          </Group>
-        </Stack>
-      )}
-    </Modal>
+  const modalTitle = (
+    <Group gap="xs">
+      <Text fw={600} size="md">Возможные продукты</Text>
+      <Tooltip
+        label="Система автоматически ищет в каталоге продукты, похожие на суспенсы группы — по исполнителю, названию, ISRC и баркоду. Если нужный продукт уже есть в каталоге, его можно привязать к группе вместо создания нового."
+        multiline
+        w={320}
+        position="bottom"
+      >
+        <IconInfoCircle size={16} style={{ cursor: 'help', color: 'var(--mantine-color-dimmed)', marginTop: 2 }} />
+      </Tooltip>
+    </Group>
   );
-}
-
-// ─── Search Rights Modal ──────────────────────────────────────────────────────
-
-function SearchRightsModal({
-  opened,
-  onClose,
-  groupId,
-  onApplied,
-}: {
-  opened: boolean;
-  onClose: () => void;
-  groupId: number;
-  onApplied: () => void;
-}) {
-  const [artist, setArtist] = useState('');
-  const [isrc, setIsrc] = useState('');
-  const [productName, setProductName] = useState('');
-  const [barcode, setBarcode] = useState('');
-  const [results, setResults] = useState<CatalogProductRights[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [applying, setApplying] = useState<number | null>(null);
-  const [searched, setSearched] = useState(false);
-
-  const handleSearch = async () => {
-    if (!artist && !isrc && !productName && !barcode) {
-      notifications.show({ title: 'Ошибка', message: 'Укажите хотя бы один параметр поиска', color: 'orange' });
-      return;
-    }
-    setSearching(true);
-    try {
-      const data = await searchCatalogRights(groupId, { artist, isrc, productName, barcode });
-      setResults(data);
-      setSearched(true);
-    } catch (e: unknown) {
-      notifications.show({ title: 'Ошибка', message: e instanceof Error ? e.message : 'Ошибка поиска', color: 'red' });
-    } finally {
-      setSearching(false);
-    }
-  };
-
-  const handleApply = async (rights: CatalogProductRights) => {
-    setApplying(rights.id);
-    try {
-      await copyRightsToProduct(groupId, rights.id);
-      notifications.show({
-        title: 'Права применены',
-        message: `Договор ${rights.docNumber ?? '—'} скопирован, группа переведена в статус 88`,
-        color: 'green',
-        icon: <IconCircleCheck size={16} />,
-      });
-      onApplied();
-      onClose();
-    } catch (e: unknown) {
-      notifications.show({ title: 'Ошибка', message: e instanceof Error ? e.message : 'Ошибка применения', color: 'red' });
-    } finally {
-      setApplying(null);
-    }
-  };
-
-  const onKey = (e: React.KeyboardEvent) => { if (e.key === 'Enter') handleSearch(); };
 
   return (
-    <Modal
-      opened={opened}
-      onClose={onClose}
-      title="Найти права в каталоге"
-      size="xl"
-      radius="md"
-    >
-      <Stack gap="md">
-        <Text size="sm" c="dimmed">
-          Поиск прав у других продуктов каталога. Найденные права будут скопированы
-          в продукт группы и группа перейдёт в статус 88.
-        </Text>
-
-        {/* Search form */}
-        <Paper withBorder radius="md" p="sm">
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-            <TextInput
-              size="xs"
-              label="Исполнитель"
-              placeholder="Например: The Beatles"
-              value={artist}
-              onChange={(e) => setArtist(e.target.value)}
-              onKeyDown={onKey}
-            />
-            <TextInput
-              size="xs"
-              label="ISRC"
-              placeholder="Например: GBUM71200025"
-              value={isrc}
-              onChange={(e) => setIsrc(e.target.value)}
-              onKeyDown={onKey}
-            />
-            <TextInput
-              size="xs"
-              label="Название продукта"
-              placeholder="Например: Abbey Road"
-              value={productName}
-              onChange={(e) => setProductName(e.target.value)}
-              onKeyDown={onKey}
-            />
-            <TextInput
-              size="xs"
-              label="Баркод"
-              placeholder="Например: 094638246817"
-              value={barcode}
-              onChange={(e) => setBarcode(e.target.value)}
-              onKeyDown={onKey}
-            />
-          </SimpleGrid>
-          <Group justify="flex-end" mt="sm">
-            <Button
-              size="xs"
-              leftSection={<IconSearch size={12} />}
-              loading={searching}
-              onClick={handleSearch}
-            >
-              Найти
-            </Button>
-          </Group>
-        </Paper>
-
-        {/* Results */}
-        {searching ? (
-          <Center py="xl"><Loader color="indigo" /></Center>
-        ) : searched && results.length === 0 ? (
-          <Alert icon={<IconAlertCircle size={14} />} color="orange" radius="md">
-            Ничего не найдено. Попробуйте изменить критерии поиска.
-          </Alert>
-        ) : results.length > 0 ? (
-          <ScrollArea>
-            <Table striped highlightOnHover style={{ minWidth: 800 }}>
+    <>
+      <Modal opened={opened} onClose={onClose} title={modalTitle} size="xl" radius="md">
+        {isLoading ? <Center py="xl"><Loader color="indigo" /></Center> : (
+          <Stack gap="md">
+            <Table striped highlightOnHover layout="fixed" style={{ minWidth: 640 }}>
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th>Продукт</Table.Th>
-                  <Table.Th>Договор</Table.Th>
-                  <Table.Th>Отправитель</Table.Th>
-                  <Table.Th>Получатель</Table.Th>
-                  <Table.Th>Территория</Table.Th>
-                  <Table.Th>Период</Table.Th>
-                  <Table.Th>Доля</Table.Th>
-                  <Table.Th></Table.Th>
+                  <ResizableTh>ID</ResizableTh>
+                  <ResizableTh>Название</ResizableTh>
+                  <ResizableTh>Исполнитель</ResizableTh>
+                  <ResizableTh>ISRC</ResizableTh>
+                  <ResizableTh minWidth={140} title="Пустые обязательные поля в каталоге">
+                    Не хватает
+                  </ResizableTh>
+                  <ResizableTh style={{ width: 150 }} />
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
-                {results.map((r) => (
-                  <Table.Tr key={r.id}>
-                    <Table.Td>
-                      <Stack gap={2}>
-                        <Text size="sm" fw={500}>{r.catalogProduct?.productName ?? `ID: ${r.catalogProductId}`}</Text>
-                        <Text size="xs" c="dimmed">{r.catalogProduct?.artist ?? ''}</Text>
-                      </Stack>
+                {(data?.items ?? []).map((p) => {
+                  const missing = getMissingCatalogProductIdentityFields(p);
+                  const canLink = missing.length === 0;
+                  return (
+                  <Table.Tr key={p.id}>
+                    <Table.Td>{p.id}</Table.Td>
+                    <Table.Td><Text size="sm" lineClamp={2}>{p.productName ?? '—'}</Text></Table.Td>
+                    <Table.Td><Text size="sm" lineClamp={2}>{p.artist ?? '—'}</Text></Table.Td>
+                    <Table.Td><Text size="sm" ff="monospace">{p.isrc ?? '—'}</Text></Table.Td>
+                    <Table.Td style={{ maxWidth: 200 }}>
+                      {canLink ? (
+                        <Text size="xs" c="teal">все поля</Text>
+                      ) : (
+                        <Group gap={4} wrap="wrap">
+                          {missing.map((m) => (
+                            <Badge key={m} size="xs" variant="light" color="orange">{m}</Badge>
+                          ))}
+                        </Group>
+                      )}
                     </Table.Td>
                     <Table.Td>
-                      <Text size="sm">{r.docNumber ?? '—'}</Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <Text size="sm">{r.companySender}</Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <Text size="sm">{r.companyReceiver}</Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <Badge variant="light" color="blue" size="sm">{r.territoryCode}</Badge>
-                    </Table.Td>
-                    <Table.Td>
-                      <Text size="xs" c="dimmed">
-                        {fmtDate(r.docStart)} – {fmtDate(r.docEnd)}
-                      </Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <Text size="sm">{r.share}%</Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <Tooltip label="Скопировать права в продукт группы и перевести в статус 88">
-                        <Button
-                          size="xs"
-                          color="green"
-                          variant="light"
-                          leftSection={<IconCopy size={12} />}
-                          loading={applying === r.id}
-                          onClick={() => handleApply(r)}
+                      <Group gap={6}>
+                        <Tooltip label="Подробнее о продукте">
+                          <Button
+                            size="xs"
+                            variant="subtle"
+                            color="gray"
+                            px={6}
+                            onClick={() => setDetailProductId(p.id)}
+                          >
+                            <IconFileInfo size={14} />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip
+                          label="Доработайте карточку в каталоге или отправьте группу в бэк-офис"
+                          disabled={canLink}
                         >
-                          Применить
-                        </Button>
-                      </Tooltip>
+                          <Button
+                            size="xs"
+                            color="indigo"
+                            variant="light"
+                            loading={linking === p.id}
+                            disabled={!canLink}
+                            onClick={() => handleLink(p)}
+                          >
+                            Привязать
+                          </Button>
+                        </Tooltip>
+                      </Group>
                     </Table.Td>
                   </Table.Tr>
-                ))}
+                  );
+                })}
               </Table.Tbody>
             </Table>
-          </ScrollArea>
-        ) : null}
-      </Stack>
-    </Modal>
+            <Group justify="space-between" pt="xs" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
+              <Text size="sm" c="dimmed">Всего: {data?.totalCount ?? 0}</Text>
+              <Group gap="sm">
+                <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} />
+                <Pagination value={page} onChange={setPage} total={Math.max(1, data?.totalPages ?? 1)} size="sm" />
+              </Group>
+            </Group>
+          </Stack>
+        )}
+      </Modal>
+      <ProductDetailModal productId={detailProductId} onClose={() => setDetailProductId(null)} />
+    </>
   );
 }
 
 // ─── Suspenses Tab ────────────────────────────────────────────────────────────
 
-function SuspensesTab({ groupId }: { groupId: number }) {
+function SuspensesTab({ groupId, businessStatus }: { groupId: number; businessStatus: number }) {
+  /** Сохранённые группы «нет продукта» (15) — договор/валюта/курс к правам не относятся, не показываем. */
+  const compactNoProduct = businessStatus === 15;
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useDefaultPageSize();
   const handlePageSizeChange = (v: number) => { setPageSize(v); setPage(1); };
-  const [pendingIsrc, setPendingIsrc] = useState('');
-  const [pendingArtist, setPendingArtist] = useState('');
-  const [pendingOperator, setPendingOperator] = useState('');
+  const [pending, setPending] = useState<GroupSuspenseFilterForm>(EMPTY_GROUP_SUSPENSE_FILTERS);
   const [applied, setApplied] = useState<Record<string, string>>({});
+  const [sortBy, setSortBy] = useState<GroupSuspenseSortField | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const hasActive = Object.keys(applied).length > 0;
 
+  const setField = (key: keyof GroupSuspenseFilterForm) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPending((prev) => ({ ...prev, [key]: e.target.value }));
+  };
+
   const applyFilters = () => {
-    const f: Record<string, string> = {};
-    if (pendingIsrc.trim())     f['Isrc_contains']    = pendingIsrc.trim();
-    if (pendingArtist.trim())   f['Artist_contains']  = pendingArtist.trim();
-    if (pendingOperator.trim()) f['Operator_contains'] = pendingOperator.trim();
-    setApplied(f);
+    setApplied(buildGroupSuspenseApplied(pending, compactNoProduct));
     setPage(1);
   };
 
   const resetFilters = () => {
-    setPendingIsrc(''); setPendingArtist(''); setPendingOperator('');
+    setPending(EMPTY_GROUP_SUSPENSE_FILTERS);
     setApplied({});
     setPage(1);
   };
 
   const onKey = (e: React.KeyboardEvent) => { if (e.key === 'Enter') applyFilters(); };
 
+  const toggleSort = (field: GroupSuspenseSortField) => {
+    if (sortBy !== field) {
+      setSortBy(field);
+      setSortDirection('asc');
+    } else if (sortDirection === 'asc') {
+      setSortDirection('desc');
+    } else {
+      setSortBy(null);
+      setSortDirection('asc');
+    }
+    setPage(1);
+  };
+
   const { data, isLoading } = useQuery({
-    queryKey: ['group-suspenses', groupId, page, pageSize, applied],
-    queryFn: () => getGroupSuspenses(groupId, { pageNumber: page, pageSize, Filters: applied }),
+    queryKey: ['group-suspenses', groupId, page, pageSize, applied, sortBy, sortDirection],
+    queryFn: () => getGroupSuspenses(groupId, {
+      pageNumber: page,
+      pageSize,
+      sortBy: sortBy ?? undefined,
+      sortDirection: sortBy ? sortDirection : undefined,
+      Filters: applied,
+    }),
   });
 
   const rows = data?.items ?? [];
 
   return (
     <Stack gap="md">
-      <Paper withBorder radius="md" p="sm">
-        <Group gap="sm" wrap="wrap" align="flex-end">
-          <TextInput size="xs" label="ISRC" placeholder="ISRC" value={pendingIsrc}
-            onChange={(e) => setPendingIsrc(e.target.value)} onKeyDown={onKey} style={{ width: 160 }} />
-          <TextInput size="xs" label="Исполнитель" placeholder="Исполнитель" value={pendingArtist}
-            onChange={(e) => setPendingArtist(e.target.value)} onKeyDown={onKey} style={{ flex: 1, minWidth: 140 }} />
-          <TextInput size="xs" label="Оператор" placeholder="Оператор" value={pendingOperator}
-            onChange={(e) => setPendingOperator(e.target.value)} onKeyDown={onKey} style={{ flex: 1, minWidth: 120 }} />
-          <Group gap="xs">
-            <Button size="xs" leftSection={<IconSearch size={12} />} onClick={applyFilters}>Найти</Button>
-            {hasActive && (
-              <Button size="xs" variant="subtle" color="gray" leftSection={<IconX size={12} />} onClick={resetFilters}>
-                Сбросить
-              </Button>
-            )}
-          </Group>
-        </Group>
-      </Paper>
+      <CollapsibleFilters activeCount={Object.keys(applied).length}>
+        <Paper withBorder radius="md" p="sm">
+          <Stack gap="sm">
+            <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="xs">
+              <TextInput size="xs" label="ISRC" placeholder="подстрока" value={pending.isrc} onChange={setField('isrc')} onKeyDown={onKey} />
+              <TextInput size="xs" label="Баркод" placeholder="подстрока" value={pending.barcode} onChange={setField('barcode')} onKeyDown={onKey} />
+              <TextInput size="xs" label="Кат. номер" placeholder="подстрока" value={pending.catalogNumber} onChange={setField('catalogNumber')} onKeyDown={onKey} />
+              <TextInput size="xs" label="Исполнитель" placeholder="подстрока" value={pending.artist} onChange={setField('artist')} onKeyDown={onKey} />
+              <TextInput size="xs" label="Название" placeholder="подстрока" value={pending.trackTitle} onChange={setField('trackTitle')} onKeyDown={onKey} />
+              <TextInput size="xs" label="Жанр" placeholder="подстрока" value={pending.genre} onChange={setField('genre')} onKeyDown={onKey} />
+              <TextInput size="xs" label="Оператор" placeholder="подстрока" value={pending.operator} onChange={setField('operator')} onKeyDown={onKey} />
+              <TextInput size="xs" label="Отправитель" placeholder="подстрока" value={pending.senderCompany} onChange={setField('senderCompany')} onKeyDown={onKey} />
+              <TextInput size="xs" label="Получатель" placeholder="подстрока" value={pending.recipientCompany} onChange={setField('recipientCompany')} onKeyDown={onKey} />
+              <TextInput size="xs" label="Территория" placeholder="подстрока" value={pending.territoryCode} onChange={setField('territoryCode')} onKeyDown={onKey} />
+              {!compactNoProduct && (
+                <>
+                  <TextInput size="xs" label="Тип договора" placeholder="подстрока" value={pending.agreementType} onChange={setField('agreementType')} onKeyDown={onKey} />
+                  <TextInput size="xs" label="Номер договора" placeholder="подстрока" value={pending.agreementNumber} onChange={setField('agreementNumber')} onKeyDown={onKey} />
+                </>
+              )}
+            </SimpleGrid>
+            <SimpleGrid cols={{ base: 1, sm: 2, md: 6 }} spacing="xs">
+              <TextInput size="xs" label="Стримы от" placeholder="≥" value={pending.qtyMin} onChange={setField('qtyMin')} onKeyDown={onKey} />
+              <TextInput size="xs" label="Стримы до" placeholder="≤" value={pending.qtyMax} onChange={setField('qtyMax')} onKeyDown={onKey} />
+              <TextInput size="xs" label="Цена от" placeholder="≥" value={pending.ppdMin} onChange={setField('ppdMin')} onKeyDown={onKey} />
+              <TextInput size="xs" label="Цена до" placeholder="≤" value={pending.ppdMax} onChange={setField('ppdMax')} onKeyDown={onKey} />
+              <TextInput size="xs" label="Выручка от, ₽" placeholder="≥" value={pending.revenueMin} onChange={setField('revenueMin')} onKeyDown={onKey} />
+              <TextInput size="xs" label="Выручка до, ₽" placeholder="≤" value={pending.revenueMax} onChange={setField('revenueMax')} onKeyDown={onKey} />
+            </SimpleGrid>
+            <Group gap="xs">
+              <Button size="xs" leftSection={<IconSearch size={12} />} onClick={applyFilters}>Найти</Button>
+              {hasActive && (
+                <Button size="xs" variant="subtle" color="gray" leftSection={<IconX size={12} />} onClick={resetFilters}>
+                  Сбросить
+                </Button>
+              )}
+            </Group>
+          </Stack>
+        </Paper>
+      </CollapsibleFilters>
       {isLoading ? <Center py="xl"><Loader color="indigo" /></Center> : (
         <>
           <ScrollArea>
-            <Table striped highlightOnHover style={{ minWidth: 900 }}>
+            <Table striped highlightOnHover style={{ minWidth: compactNoProduct ? 1280 : 1680 }}>
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th>ID</Table.Th>
-                  <Table.Th>ISRC</Table.Th>
-                  <Table.Th>Исполнитель</Table.Th>
-                  <Table.Th>Трек</Table.Th>
-                  <Table.Th>Оператор</Table.Th>
-                  <Table.Th>Территория</Table.Th>
-                  <Table.Th>Qty</Table.Th>
-                  <Table.Th>PPD</Table.Th>
+                  <ResizableTh>ID</ResizableTh>
+                  <ResizableTh>ISRC</ResizableTh>
+                  <ResizableTh>Баркод</ResizableTh>
+                  <ResizableTh>Кат. номер</ResizableTh>
+                  <ResizableTh>Исполнитель</ResizableTh>
+                  <ResizableTh>Название</ResizableTh>
+                  <ResizableTh>Жанр</ResizableTh>
+                  <ResizableTh>Оператор</ResizableTh>
+                  <ResizableTh>Отправитель</ResizableTh>
+                  <ResizableTh>Получатель</ResizableTh>
+                  <ResizableTh>Территория</ResizableTh>
+                  {!compactNoProduct && (
+                    <>
+                      <ResizableTh>Тип договора</ResizableTh>
+                      <ResizableTh>Номер договора</ResizableTh>
+                    </>
+                  )}
+                  <SortableResizableTh
+                    label="Кол-во стримов"
+                    field="Qty"
+                    sortBy={sortBy}
+                    sortDirection={sortDirection}
+                    onSort={toggleSort}
+                  />
+                  <SortableResizableTh
+                    label="Цена за стрим"
+                    field="Ppd"
+                    sortBy={sortBy}
+                    sortDirection={sortDirection}
+                    onSort={toggleSort}
+                  />
+                  {!compactNoProduct && (
+                    <>
+                      <ResizableTh>Валюта</ResizableTh>
+                      <ResizableTh>Курс</ResizableTh>
+                    </>
+                  )}
+                  <SortableResizableTh
+                    label="Выручка, ₽"
+                    field="Revenue"
+                    sortBy={sortBy}
+                    sortDirection={sortDirection}
+                    onSort={toggleSort}
+                  />
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
                 {rows.map((s: SuspenseLine) => (
                   <Table.Tr key={s.id}>
                     <Table.Td><Text size="sm" fw={600}>{s.id}</Text></Table.Td>
-                    <Table.Td><Text size="sm">{s.isrc ?? '—'}</Text></Table.Td>
-                    <Table.Td><Text size="sm">{s.artist ?? '—'}</Text></Table.Td>
-                    <Table.Td><Text size="sm">{s.trackTitle ?? '—'}</Text></Table.Td>
-                    <Table.Td><Text size="sm">{s.operator ?? '—'}</Text></Table.Td>
-                    <Table.Td><Text size="sm">{s.territoryCode ?? '—'}</Text></Table.Td>
+                    <Table.Td><Text size="sm">{cell(s.isrc)}</Text></Table.Td>
+                    <Table.Td><Text size="sm">{cell(s.barcode)}</Text></Table.Td>
+                    <Table.Td><Text size="sm">{cell(s.catalogNumber)}</Text></Table.Td>
+                    <Table.Td><Text size="sm">{cell(s.artist)}</Text></Table.Td>
+                    <Table.Td><Text size="sm">{cell(s.trackTitle)}</Text></Table.Td>
+                    <Table.Td><Text size="sm">{cell(s.genre)}</Text></Table.Td>
+                    <Table.Td><Text size="sm">{cell(s.operator)}</Text></Table.Td>
+                    <Table.Td><Text size="sm">{cell(s.senderCompany)}</Text></Table.Td>
+                    <Table.Td><Text size="sm">{cell(s.recipientCompany)}</Text></Table.Td>
+                    <Table.Td><Text size="sm">{cell(s.territoryCode)}</Text></Table.Td>
+                    {!compactNoProduct && (
+                      <>
+                        <Table.Td><Text size="sm">{cell(s.agreementType)}</Text></Table.Td>
+                        <Table.Td><Text size="sm">{cell(s.agreementNumber)}</Text></Table.Td>
+                      </>
+                    )}
                     <Table.Td><Text size="sm">{s.qty}</Text></Table.Td>
-                    <Table.Td><Text size="sm">{s.ppd}</Text></Table.Td>
+                    <Table.Td><Text size="sm">{s.ppd != null ? String(s.ppd) : '—'}</Text></Table.Td>
+                    {!compactNoProduct && (
+                      <>
+                        <Table.Td><Text size="sm">{cell(s.exchangeCurrency)}</Text></Table.Td>
+                        <Table.Td><Text size="sm">{s.exchangeRate}</Text></Table.Td>
+                      </>
+                    )}
+                    <Table.Td><Text size="sm" fw={500}>{fmtRub(lineRevenueRub(s))}</Text></Table.Td>
                   </Table.Tr>
                 ))}
               </Table.Tbody>
@@ -702,8 +967,10 @@ export function GroupDetailPage() {
   const [boOpen, { open: openBo, close: closeBo }] = useDisclosure(false);
   const [postponeOpen, { open: openPostpone, close: closePostpone }] = useDisclosure(false);
   const [ungroupOpen, { open: openUngroup, close: closeUngroup }] = useDisclosure(false);
+  const [catalogFastOpen, { open: openCatalogFast, close: closeCatalogFast }] = useDisclosure(false);
 
   const [boComment, setBoComment] = useState('');
+  const [boCommentError, setBoCommentError] = useState<string | null>(null);
   const [postponeReason, setPostponeReason] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -724,28 +991,53 @@ export function GroupDetailPage() {
     }
   };
 
-  const handleCatalogFast = () =>
-    runAction('catalog-fast', async () => {
+  const handleCatalogFast = () => {
+    const miss = getMissingProductIdentityForQuickCatalog(metadata ?? group?.groupMetaData ?? null);
+    if (miss.length) {
+      notifications.show({
+        title: 'Сначала дозаполните метаданные',
+        message: `Для быстрой каталогизации нужны: название, исполнитель, ISRC, баркод, каталожный номер. Не хватает: ${miss.join(', ')}.`,
+        color: 'orange',
+      });
+      return;
+    }
+    openCatalogFast();
+  };
+
+  const handleCatalogFastConfirm = () => {
+    closeCatalogFast();
+    return runAction('catalog-fast', async () => {
       await catalogFast(groupId);
       notifications.show({ title: 'Продукт создан', message: 'Быстрая каталогизация выполнена', color: 'green' });
     });
+  };
 
-  const handleValidate = () =>
-    runAction('validate', async () => {
-      await validateGroup(groupId);
+  const [createRightsOpen, { open: openCreateRights, close: closeCreateRights }] = useDisclosure(false);
+
+  const handleCreateRightsConfirm = () => {
+    closeCreateRights();
+    return runAction('create-rights', async () => {
+      await createGroupRights(groupId);
       notifications.show({
-        title: 'Группа валидирована',
-        message: 'Статус изменён на 88 — Валидирован',
+        title: 'Права созданы',
+        message: 'Права добавлены в каталог, статус группы изменён на 88',
         color: 'green',
         icon: <IconCircleCheck size={16} />,
       });
     });
+  };
 
   const handleSendBo = async () => {
+    if (!boComment.trim()) {
+      setBoCommentError('Описание проблемы обязательно — без него специалист бэк-офиса не сможет понять, что нужно сделать с группой');
+      return;
+    }
     await runAction('bo', async () => {
       await sendToBackOffice(groupId, boComment);
       notifications.show({ title: 'Отправлено в бэк-офис', message: '', color: 'blue' });
       closeBo();
+      setBoComment('');
+      setBoCommentError(null);
     });
   };
 
@@ -795,6 +1087,9 @@ export function GroupDetailPage() {
   const isPostponed = group.businessStatus === 30 || group.businessStatus === 32;
   const canUngroup = [15, 16, 30, 32].includes(group.businessStatus);
 
+  const metaForCheck = metadata ?? group.groupMetaData ?? null;
+  const missingForQuick = getMissingProductIdentityForQuickCatalog(metaForCheck);
+
   return (
     <Stack gap="xl">
       {/* Header */}
@@ -816,17 +1111,33 @@ export function GroupDetailPage() {
             </Text>
           </Box>
 
+          {isPostponed && group.postponeReason && (
+            <Paper withBorder radius="md" p="md" w="100%">
+              <Text size="xs" c="dimmed" fw={500} mb={4}>ПРИЧИНА ОТКЛАДЫВАНИЯ</Text>
+              <Text size="sm" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: 200, overflowY: 'auto' }}>
+                {group.postponeReason}
+              </Text>
+            </Paper>
+          )}
+
           {/* Action buttons */}
           <Group gap="xs" wrap="wrap">
             {isNoProduct && (
               <>
-                <Tooltip label="Быстрая каталогизация — создать новый продукт из метаданных">
+                <Tooltip
+                  label={
+                    missingForQuick.length
+                      ? `Сначала заполните в метаданных: ${missingForQuick.join(', ')}`
+                      : 'Быстрая каталогизация — создать новый продукт из метаданных'
+                  }
+                >
                   <Button
                     size="sm"
                     color="teal"
                     variant="light"
                     leftSection={<IconWand size={14} />}
                     loading={actionLoading === 'catalog-fast'}
+                    disabled={missingForQuick.length > 0}
                     onClick={handleCatalogFast}
                   >
                     Быстрый каталог
@@ -846,16 +1157,16 @@ export function GroupDetailPage() {
 
             {isNoRights && (
               <>
-                <Tooltip label="Проверить права в каталоге и перевести группу в статус 88">
+                <Tooltip label="Создать права в каталоге из заполненных метаправ и перевести группу в статус 88">
                   <Button
                     size="sm"
                     color="green"
                     variant="filled"
                     leftSection={<IconShieldCheck size={14} />}
-                    loading={actionLoading === 'validate'}
-                    onClick={handleValidate}
+                    loading={actionLoading === 'create-rights'}
+                    onClick={openCreateRights}
                   >
-                    Валидировать
+                    Создать права
                   </Button>
                 </Tooltip>
                 <Tooltip label="Найти права у похожего продукта в каталоге">
@@ -883,15 +1194,17 @@ export function GroupDetailPage() {
             </Button>
 
             {(isNoProduct || isNoRights) && (
-              <Button
-                size="sm"
-                color="gray"
-                variant="light"
-                leftSection={<IconBuildingWarehouse size={14} />}
-                onClick={openBo}
-              >
-                Бэк-офис
-              </Button>
+              <Tooltip label="Эскалация в бэк-офис">
+                <Button
+                  size="sm"
+                  color="gray"
+                  variant="light"
+                  leftSection={<IconBuildingWarehouse size={14} />}
+                  onClick={openBo}
+                >
+                  Бэк-офис
+                </Button>
+              </Tooltip>
             )}
             {(isNoProduct || isNoRights) && (
               <Button
@@ -942,12 +1255,16 @@ export function GroupDetailPage() {
         </Tabs.List>
 
         <Tabs.Panel value="suspenses" pt="md">
-          <SuspensesTab groupId={groupId} />
+          <SuspensesTab groupId={groupId} businessStatus={group.businessStatus} />
         </Tabs.Panel>
 
         <Tabs.Panel value="metadata" pt="md">
           <Paper withBorder radius="md" p="md">
-            <MetadataTab groupId={groupId} metadata={metadata ?? null} />
+            <MetadataTab
+              groupId={groupId}
+              metadata={metadata ?? null}
+              readOnly={group.catalogProductId != null}
+            />
           </Paper>
         </Tabs.Panel>
 
@@ -969,22 +1286,114 @@ export function GroupDetailPage() {
       />
 
       {/* Search Rights Modal */}
-      <SearchRightsModal
-        opened={searchRightsOpen}
-        onClose={closeSearchRights}
-        groupId={groupId}
-        onApplied={refreshGroup}
-      />
+      {group && (
+        <SearchRightsCatalogModal
+          opened={searchRightsOpen}
+          onClose={closeSearchRights}
+          group={group}
+          onApplied={refreshGroup}
+          searchRights={(params) => searchCatalogRights(groupId, params)}
+          copyRights={async (rightsId) => {
+            await copyRightsToProduct(groupId, rightsId);
+          }}
+        />
+      )}
+
+      {/* Create Rights Confirm Modal */}
+      <Modal opened={createRightsOpen} onClose={closeCreateRights} title="Подтверждение создания прав" centered radius="md" size="md">
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
+            В каталоге будет создана запись прав для продукта{' '}
+            <strong>{group?.catalogProduct?.productName ?? `#${group?.catalogProductId}`}</strong>.
+            Эти права будут применяться ко всем будущим суспенсам с этим продуктом автоматически.
+          </Text>
+          {(() => {
+            const r = metaRights;
+            const rows: { label: string; value: string | number | null | undefined }[] = [
+              { label: 'Компания-отправитель', value: r?.senderCompany?.shortName ?? r?.senderCompanyId },
+              { label: 'Компания-получатель', value: r?.receiverCompany?.shortName ?? r?.receiverCompanyId },
+              { label: 'Территория', value: r?.territoryCode },
+              { label: 'Номер договора', value: r?.docNumber },
+              { label: 'Период', value: r?.docStart && r?.docEnd ? `${r.docStart} — ${r.docEnd}` : r?.docStart ?? r?.docEnd },
+              { label: 'Доля', value: r?.share != null ? `${r.share}%` : null },
+            ];
+            return (
+              <Paper withBorder radius="md" p="sm">
+                <Stack gap={6}>
+                  {rows.map(({ label, value }) => (
+                    <Group key={label} gap="xs" align="flex-start">
+                      <Text size="xs" c="dimmed" w={160} style={{ flexShrink: 0 }}>{label}</Text>
+                      <Text size="sm" fw={value ? 500 : 400} c={value ? undefined : 'dimmed'}>
+                        {value ?? '—'}
+                      </Text>
+                    </Group>
+                  ))}
+                </Stack>
+              </Paper>
+            );
+          })()}
+          <Group justify="flex-end">
+            <Button variant="subtle" color="gray" onClick={closeCreateRights}>Отмена</Button>
+            <Button color="green" loading={actionLoading === 'create-rights'} onClick={handleCreateRightsConfirm}>
+              Создать права
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {/* Catalog Fast Confirm Modal */}
+      <Modal opened={catalogFastOpen} onClose={closeCatalogFast} title="Подтверждение быстрой каталогизации" centered radius="md" size="md">
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
+            Будет создан новый продукт в каталоге со следующими данными из метаданных группы:
+          </Text>
+          {(() => {
+            const m = metadata ?? group?.groupMetaData;
+            const rows: { label: string; value: string | null | undefined }[] = [
+              { label: 'Название', value: m?.title },
+              { label: 'Исполнитель', value: m?.artist },
+              { label: 'ISRC', value: m?.isrc },
+              { label: 'Баркод', value: m?.barcode },
+              { label: 'Каталожный №', value: m?.catalogNumber },
+              { label: 'Жанр', value: m?.genre },
+              { label: 'Дата выпуска', value: m?.releaseDate },
+              { label: 'Описание', value: m?.description },
+            ];
+            return (
+              <Paper withBorder radius="md" p="sm">
+                <Stack gap={6}>
+                  {rows.map(({ label, value }) => value ? (
+                    <Group key={label} gap="xs" align="flex-start">
+                      <Text size="xs" c="dimmed" w={120} style={{ flexShrink: 0 }}>{label}</Text>
+                      <Text size="sm" fw={500}>{value}</Text>
+                    </Group>
+                  ) : null)}
+                </Stack>
+              </Paper>
+            );
+          })()}
+          <Group justify="flex-end">
+            <Button variant="subtle" color="gray" onClick={closeCatalogFast}>Отмена</Button>
+            <Button color="teal" loading={actionLoading === 'catalog-fast'} onClick={handleCatalogFastConfirm}>
+              Создать продукт
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
       {/* Back Office Modal */}
-      <Modal opened={boOpen} onClose={closeBo} title="Отправить в бэк-офис" centered radius="md">
+      <Modal opened={boOpen} onClose={() => { closeBo(); setBoCommentError(null); }} title="Отправить в бэк-офис" centered radius="md">
         <Stack gap="md">
           <Textarea
-            label="Комментарий"
-            placeholder="Опишите причину отправки..."
+            label="Комментарий для бэк-офиса"
+            placeholder="Опишите причину отправки, что не удалось найти, что нужно проверить..."
             value={boComment}
-            onChange={(e) => setBoComment(e.target.value)}
-            rows={3}
+            onChange={(e) => { setBoComment(e.target.value); if (e.target.value.trim()) setBoCommentError(null); }}
+            rows={4}
+            maxLength={2000}
+            description={boCommentError ? undefined : `${boComment.length} / 2000`}
+            error={boCommentError}
+            required
           />
           <Group justify="flex-end">
             <Button variant="subtle" color="gray" onClick={closeBo}>Отмена</Button>
@@ -1004,6 +1413,8 @@ export function GroupDetailPage() {
             value={postponeReason}
             onChange={(e) => setPostponeReason(e.target.value)}
             rows={3}
+            maxLength={500}
+            description={`${postponeReason.length} / 500`}
           />
           <Group justify="flex-end">
             <Button variant="subtle" color="gray" onClick={closePostpone}>Отмена</Button>

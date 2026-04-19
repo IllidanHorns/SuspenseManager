@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using Application.Interfaces;
 using Common.DTOs;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace SuspenseManager.Controllers;
@@ -10,6 +12,7 @@ namespace SuspenseManager.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class SuspenseController : ControllerBase
 {
     private readonly IValidationService _validationService;
@@ -29,13 +32,20 @@ public class SuspenseController : ControllerBase
         _logger = logger;
     }
 
+    private int GetCurrentAccountId()
+    {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? User.FindFirstValue("account_id");
+        return int.TryParse(value, out var id) ? id : 0;
+    }
+
     /// <summary>
     /// Список суспенсов с пагинацией, фильтрацией, сортировкой
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] PagedRequest request, CancellationToken ct)
+    public async Task<IActionResult> GetAll([FromQuery] SuspenseListRequest request, CancellationToken ct)
     {
-        var result = await _suspenseService.GetSuspensesAsync(request, ct);
+        var result = await _suspenseService.GetSuspensesAsync(request, GetCurrentAccountId(), ct);
         return Ok(ApiResponse<PagedResponse<Models.SuspenseLine>>.Success(result));
     }
 
@@ -122,5 +132,16 @@ public class SuspenseController : ControllerBase
         _logger.LogInformation("Суспенс обновлён: ID={Id}", id);
 
         return Ok(ApiResponse<Models.SuspenseLine>.Success(entity, "Суспенс обновлён", "SUSPENSE_UPDATED"));
+    }
+
+    /// <summary>
+    /// Мягкая архивация суспенс-строки (доступно только для статусов 0 и 1)
+    /// </summary>
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Archive(int id, CancellationToken ct)
+    {
+        await _suspenseService.ArchiveAsync(id, ct);
+        _logger.LogInformation("Суспенс архивирован: ID={Id}", id);
+        return Ok(ApiResponse<object>.Success(new { id }, "Суспенс архивирован", "SUSPENSE_ARCHIVED"));
     }
 }

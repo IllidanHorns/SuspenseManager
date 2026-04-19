@@ -14,6 +14,9 @@ public class UpdateAccountDto
     public string? Password { get; set; }
     public string? Description { get; set; }
     public int? UserId { get; set; }
+
+    /// <summary>Если true — снять привязку пользователя (UserId = null).</summary>
+    public bool UnlinkUser { get; set; }
 }
 
 public class CreateUserDto

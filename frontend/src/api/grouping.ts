@@ -1,5 +1,5 @@
-import { apiGet, apiPost } from './client';
-import type { PagedResponse, GroupingPreviewItem, GroupingCommitRequest, SuspenseGroup } from '../types';
+import { apiGet, apiPost, apiPostBlob } from './client';
+import type { PagedResponse, GroupingPreviewItem, GroupingCommitRequest, SuspenseGroup, SuspenseLinePreviewDto } from '../types';
 
 export interface GroupingPreviewParams {
   businessStatus: number;
@@ -32,4 +32,22 @@ export async function getGroupingPreview(
 
 export async function commitGroup(dto: GroupingCommitRequest): Promise<SuspenseGroup> {
   return apiPost<SuspenseGroup>('/grouping/commit', dto);
+}
+
+export async function previewGroupLines(dto: {
+  businessStatus: number;
+  groupByColumns: string[];
+  keyValues: Record<string, string | null>;
+  pageNumber: number;
+  pageSize: number;
+}): Promise<PagedResponse<SuspenseLinePreviewDto>> {
+  return apiPost<PagedResponse<SuspenseLinePreviewDto>>('/grouping/preview-lines', dto);
+}
+
+export async function exportPreviewLines(dto: {
+  businessStatus: number;
+  groupByColumns: string[];
+  keyValues: Record<string, string | null>;
+}): Promise<Blob> {
+  return apiPostBlob('/grouping/export-lines', dto);
 }

@@ -101,7 +101,11 @@ public static class GroupingSqlBuilder
         string? sortBy,
         string sortDirection,
         int offset,
-        int pageSize)
+        int pageSize,
+        int? countMin = null,
+        int? countMax = null,
+        decimal? revenueMin = null,
+        decimal? revenueMax = null)
     {
         var allowed = GetAllowedColumns(businessStatus);
         var parameters = new List<SqlParameter>();
@@ -112,6 +116,9 @@ public static class GroupingSqlBuilder
             .Select(col => $"{allowed[col]} AS [{col}]")
             .ToList();
         selectColumns.Add("COUNT(*) AS [Count]");
+        selectColumns.Add(
+            "SUM(CAST(s.[Qty] AS DECIMAL(18,6)) * ISNULL(s.[Ppd], 0) * " +
+            "CASE WHEN ISNULL(s.[ExchangeRate], 0) = 0 THEN 1 ELSE s.[ExchangeRate] END) AS [RevenueRub]");
 
         var selectClause = string.Join(", ", selectColumns);
 
@@ -165,25 +172,51 @@ public static class GroupingSqlBuilder
             .ToList();
         var groupByClause = "GROUP BY " + string.Join(", ", groupByExpressions);
 
+        // HAVING — агрегатные фильтры по Count и RevenueRub
+        var havingConditions = new List<string>();
+        if (countMin.HasValue)
+        {
+            havingConditions.Add($"COUNT(*) >= @pCountMin");
+            parameters.Add(new SqlParameter("@pCountMin", countMin.Value));
+        }
+        if (countMax.HasValue)
+        {
+            havingConditions.Add($"COUNT(*) <= @pCountMax");
+            parameters.Add(new SqlParameter("@pCountMax", countMax.Value));
+        }
+
+        var revenueExpr =
+            "SUM(CAST(s.[Qty] AS DECIMAL(18,6)) * ISNULL(s.[Ppd], 0) * " +
+            "CASE WHEN ISNULL(s.[ExchangeRate], 0) = 0 THEN 1 ELSE s.[ExchangeRate] END)";
+
+        if (revenueMin.HasValue)
+        {
+            havingConditions.Add($"{revenueExpr} >= @pRevenueMin");
+            parameters.Add(new SqlParameter("@pRevenueMin", revenueMin.Value));
+        }
+        if (revenueMax.HasValue)
+        {
+            havingConditions.Add($"{revenueExpr} <= @pRevenueMax");
+            parameters.Add(new SqlParameter("@pRevenueMax", revenueMax.Value));
+        }
+
+        var havingClause = havingConditions.Count > 0
+            ? "HAVING " + string.Join(" AND ", havingConditions)
+            : "";
+
         // ORDER BY
+        var dir2 = sortDirection.Equals("desc", StringComparison.OrdinalIgnoreCase) ? "DESC" : "ASC";
         string orderByClause;
         if (!string.IsNullOrWhiteSpace(sortBy))
         {
             if (sortBy.Equals("Count", StringComparison.OrdinalIgnoreCase))
-            {
-                orderByClause = sortDirection.Equals("desc", StringComparison.OrdinalIgnoreCase)
-                    ? "ORDER BY COUNT(*) DESC"
-                    : "ORDER BY COUNT(*) ASC";
-            }
+                orderByClause = $"ORDER BY COUNT(*) {dir2}";
+            else if (sortBy.Equals("RevenueRub", StringComparison.OrdinalIgnoreCase))
+                orderByClause = $"ORDER BY {revenueExpr} {dir2}";
             else if (allowed.ContainsKey(sortBy))
-            {
-                var dir = sortDirection.Equals("desc", StringComparison.OrdinalIgnoreCase) ? "DESC" : "ASC";
-                orderByClause = $"ORDER BY {allowed[sortBy]} {dir}";
-            }
+                orderByClause = $"ORDER BY {allowed[sortBy]} {dir2}";
             else
-            {
                 orderByClause = "ORDER BY COUNT(*) DESC";
-            }
         }
         else
         {
@@ -196,6 +229,7 @@ public static class GroupingSqlBuilder
             {fromClause}
             {whereClause}
             {groupByClause}
+            {havingClause}
             {orderByClause}
             OFFSET @pOffset ROWS FETCH NEXT @pPageSize ROWS ONLY
             """;
@@ -210,6 +244,7 @@ public static class GroupingSqlBuilder
                 {fromClause}
                 {whereClause}
                 {groupByClause}
+                {havingClause}
             ) AS grouped
             """;
 

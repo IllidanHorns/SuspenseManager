@@ -50,4 +50,10 @@ public interface IAuditService
     /// </summary>
     Task<PagedResponse<AuditLogEntryDto>> GetLineLogsAsync(
         int lineId, PagedRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Хронологическая лента действий аккаунта: переходы статусов по группам и строкам (из логов аудита).
+    /// </summary>
+    Task<PagedResponse<AccountActivityItemDto>> GetAccountActivityAsync(
+        int accountId, PagedRequest request, CancellationToken ct = default);
 }

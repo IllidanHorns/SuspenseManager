@@ -93,6 +93,18 @@ public class GroupProcessingServiceTests : IDisposable
         return p;
     }
 
+    private async Task FillRequiredMetadataAsync(int groupId)
+    {
+        await _service.UpdateMetadataAsync(groupId, new UpdateGroupMetadataDto
+        {
+            Title = "Album Title",
+            Artist = "Album Artist",
+            Isrc = "ISRC-REQ-001",
+            Barcode = "5901234123457",
+            CatalogNumber = "CAT-REQ-001",
+        });
+    }
+
     private async Task<CatalogProductType> CreateProductTypeAsync(string code = "DIGI")
     {
         var t = new CatalogProductType
@@ -216,8 +228,9 @@ public class GroupProcessingServiceTests : IDisposable
     [Fact]
     public async Task SendToBackOffice_Status16_TransitionsTo_320()
     {
-        var group = await CreateGroupAsync((int)BusinessStatus.InGroupNoRights);
-        await CreateSuspenseInGroupAsync(group.Id, (int)BusinessStatus.InGroupNoRights);
+        var product = await CreateProductAsync();
+        var group = await CreateGroupAsync((int)BusinessStatus.InGroupNoRights, productId: product.Id);
+        await CreateSuspenseInGroupAsync(group.Id, (int)BusinessStatus.InGroupNoRights, productId: product.Id);
 
         await _service.SendToBackOfficeAsync(group.Id, new SendToBackOfficeDto { ProblemDescription = "test" }, accountId: 1);
 
@@ -355,14 +368,28 @@ public class GroupProcessingServiceTests : IDisposable
         ex.BusinessCode.Should().Be("INVALID_STATUS");
     }
 
+    [Fact]
+    public async Task LinkProduct_CatalogProductIncomplete_Throws_CATALOG_PRODUCT_INCOMPLETE()
+    {
+        var group = await CreateGroupAsync((int)BusinessStatus.InGroupNoProduct);
+        var product = await CreateProductAsync(barcode: "");
+        await CreateSuspenseInGroupAsync(group.Id, (int)BusinessStatus.InGroupNoProduct);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            _service.LinkProductAsync(group.Id, new LinkProductDto { ProductId = product.Id }));
+
+        ex.BusinessCode.Should().Be("CATALOG_PRODUCT_INCOMPLETE");
+    }
+
     // ──────────────── QuickCatalogAsync ───────────────────────────────────────
 
     [Fact]
     public async Task QuickCatalog_Status15_CreatesProduct_And_TransitionsTo_16()
     {
-        var productType = await CreateProductTypeAsync("DIGI");
+        await CreateProductTypeAsync("DIGI");
         var group = await CreateGroupAsync((int)BusinessStatus.InGroupNoProduct);
         await CreateSuspenseInGroupAsync(group.Id, (int)BusinessStatus.InGroupNoProduct);
+        await FillRequiredMetadataAsync(group.Id);
 
         var product = await _service.QuickCatalogAsync(group.Id);
 
@@ -383,6 +410,23 @@ public class GroupProcessingServiceTests : IDisposable
             _service.QuickCatalogAsync(group.Id));
 
         ex.BusinessCode.Should().Be("INVALID_STATUS");
+    }
+
+    [Fact]
+    public async Task QuickCatalog_IncompleteMetadata_Throws_METADATA_INCOMPLETE()
+    {
+        var group = await CreateGroupAsync((int)BusinessStatus.InGroupNoProduct);
+        await CreateSuspenseInGroupAsync(group.Id, (int)BusinessStatus.InGroupNoProduct);
+        await _service.UpdateMetadataAsync(group.Id, new UpdateGroupMetadataDto
+        {
+            Title = "Only Title",
+            Artist = "Artist",
+        });
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            _service.QuickCatalogAsync(group.Id));
+
+        ex.BusinessCode.Should().Be("METADATA_INCOMPLETE");
     }
 
     // ──────────────── UpdateMetadataAsync ─────────────────────────────────────

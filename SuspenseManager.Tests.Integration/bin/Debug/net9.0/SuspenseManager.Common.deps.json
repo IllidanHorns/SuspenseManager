@@ -9,6 +9,7 @@
       "SuspenseManager.Common/1.0.0": {
         "dependencies": {
           "Microsoft.EntityFrameworkCore": "9.0.12",
+          "SonarAnalyzer.CSharp": "9.32.0.97167",
           "SuspenseManager.Models": "1.0.0"
         },
         "runtime": {
@@ -127,6 +128,7 @@
           }
         }
       },
+      "SonarAnalyzer.CSharp/9.32.0.97167": {},
       "SuspenseManager.Models/1.0.0": {
         "runtime": {
           "SuspenseManager.Models.dll": {
@@ -219,6 +221,13 @@
       "sha512": "sha512-nmGbgxTfuvuEdcQ9NH5DEwAKDKB+c39dAcKQ4+sb8WpGA3pMIgAJfowC+aRH/6gFmdRq2ssRp031Uvv7rTrOMg==",
       "path": "microsoft.extensions.primitives/9.0.12",
       "hashPath": "microsoft.extensions.primitives.9.0.12.nupkg.sha512"
+    },
+    "SonarAnalyzer.CSharp/9.32.0.97167": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Yxk86RV+8ynJpUhku1Yw2hITFmnmXKkXJ73cIFSy85ol5SnWREQg9RuTyV8nI7V7+pyLKpCfRmD7P0widsgjkg==",
+      "path": "sonaranalyzer.csharp/9.32.0.97167",
+      "hashPath": "sonaranalyzer.csharp.9.32.0.97167.nupkg.sha512"
     },
     "SuspenseManager.Models/1.0.0": {
       "type": "project",

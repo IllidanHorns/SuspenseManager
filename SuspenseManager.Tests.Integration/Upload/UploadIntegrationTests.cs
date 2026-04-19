@@ -60,6 +60,10 @@ public class UploadIntegrationTests : IClassFixture<CustomWebApplicationFactory>
         ws.Cell(1, 11).Value = "Qty";
         ws.Cell(1, 12).Value = "ExchangeCurrency";
         ws.Cell(1, 13).Value = "ExchangeRate";
+        ws.Cell(1, 14).Value = "Operator";
+        ws.Cell(1, 15).Value = "AgreementType";
+        ws.Cell(1, 16).Value = "Ppd";
+        ws.Cell(1, 17).Value = "Genre";
 
         for (var i = 0; i < rowCount; i++)
         {
@@ -77,6 +81,10 @@ public class UploadIntegrationTests : IClassFixture<CustomWebApplicationFactory>
             ws.Cell(row, 11).Value = 100;
             ws.Cell(row, 12).Value = "RUB";
             ws.Cell(row, 13).Value = 1.0;
+            ws.Cell(row, 14).Value = "Test Operator";
+            ws.Cell(row, 15).Value = "License";
+            ws.Cell(row, 16).Value = 0.01;
+            ws.Cell(row, 17).Value = "Pop";
         }
 
         using var ms = new MemoryStream();
@@ -177,6 +185,27 @@ public class UploadIntegrationTests : IClassFixture<CustomWebApplicationFactory>
         var response = await _client.PostAsync("/api/upload", formData);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Upload_IncompleteHeaders_Returns400_EXCEL_MISSING_HEADERS()
+    {
+        var token = await AuthorizeAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        using var wb = new XLWorkbook();
+        var ws = wb.AddWorksheet("Report");
+        ws.Cell(1, 1).Value = "ISRC";
+        ws.Cell(2, 1).Value = "RU-A00-00-00001";
+        using var ms = new MemoryStream();
+        wb.SaveAs(ms);
+
+        var formData = BuildFormData(ms.ToArray());
+        var response = await _client.PostAsync("/api/upload", formData);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("businessCode").GetString().Should().Be("EXCEL_MISSING_HEADERS");
     }
 
     [Fact]

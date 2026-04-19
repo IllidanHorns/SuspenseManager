@@ -1,10 +1,8 @@
 using Application.Interfaces;
 using Common.DTOs;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-
 namespace SuspenseManager.Controllers;
 
 [ApiController]
@@ -13,6 +11,7 @@ public class UploadController : ControllerBase
 {
     private readonly IExcelParsingService _excelParsingService;
     private readonly IValidationService _validationService;
+    private readonly IValidator<SuspenseLineDto> _suspenseLineValidator;
     private readonly ILogger<UploadController> _logger;
 
     private static readonly string[] AllowedExtensions = [".xlsx", ".xls"];
@@ -21,10 +20,12 @@ public class UploadController : ControllerBase
     public UploadController(
         IExcelParsingService excelParsingService,
         IValidationService validationService,
+        IValidator<SuspenseLineDto> suspenseLineValidator,
         ILogger<UploadController> logger)
     {
         _excelParsingService = excelParsingService;
         _validationService = validationService;
+        _suspenseLineValidator = suspenseLineValidator;
         _logger = logger;
     }
 
@@ -37,6 +38,16 @@ public class UploadController : ControllerBase
         if (dto == null)
             return BadRequest(ApiResponse<object>.Fail(400, "Данные не переданы", "BODY_EMPTY"));
 
+        var fv = await _suspenseLineValidator.ValidateAsync(dto);
+        if (!fv.IsValid)
+        {
+            var errors = fv.Errors
+                .Select(e => new ApiError { Field = e.PropertyName, Message = e.ErrorMessage })
+                .ToList();
+            return BadRequest(ApiResponse<object>.Fail(
+                400, "Ошибки валидации входных данных", "VALIDATION_ERROR", errors));
+        }
+
         if (string.IsNullOrWhiteSpace(dto.Isrc) &&
             string.IsNullOrWhiteSpace(dto.Barcode) &&
             string.IsNullOrWhiteSpace(dto.CatalogNumber))
@@ -46,7 +57,7 @@ public class UploadController : ControllerBase
                 "IDENTIFIER_REQUIRED"));
         }
 
-        var result = await _validationService.ValidateBatchAsync([dto]);
+        var result = await _validationService.ValidateBatchAsync([dto], numberRowsAsInExcel: false);
         return Ok(ApiResponse<ValidationResultDto>.Success(result, "Строка добавлена", "UPLOAD_COMPLETED"));
     }
 
@@ -77,14 +88,23 @@ public class UploadController : ControllerBase
         _logger.LogInformation("Загрузка файла: {FileName}, размер: {FileSize} байт", file.FileName, file.Length);
 
         using var stream = file.OpenReadStream();
-        var lines = _excelParsingService.ParseExcel(stream);
+        var parseResult = _excelParsingService.ParseExcel(stream);
 
-        if (lines.Count == 0)
+        if (!parseResult.HeadersValid)
+        {
+            var detail = string.Join(" | ", parseResult.MissingRequiredHeaders);
+            return BadRequest(ApiResponse<object>.Fail(400,
+                "В первой строке файла должны быть заголовки всех столбцов шаблона. Отсутствуют колонки (допустимые подписи): "
+                + detail,
+                "EXCEL_MISSING_HEADERS"));
+        }
+
+        if (parseResult.Lines.Count == 0)
         {
             return BadRequest(ApiResponse<object>.Fail(400, "Файл не содержит данных", "FILE_NO_DATA"));
         }
 
-        var result = await _validationService.ValidateBatchAsync(lines);
+        var result = await _validationService.ValidateBatchAsync(parseResult.Lines);
 
         _logger.LogInformation(
             "Файл обработан: {FileName}, всего: {Total}, валидных: {Validated}, нет продукта: {NoProduct}, нет прав: {NoRights}",

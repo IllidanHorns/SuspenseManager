@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,81 +17,61 @@ public class ExcelParsingService : IExcelParsingService
 {
     private static readonly Dictionary<string, string> ColumnAliases = new(StringComparer.OrdinalIgnoreCase)
 {
-    // ISRC — оставляем один вариант (регистр не важен благодаря StringComparer.OrdinalIgnoreCase)
     { "ISRC", nameof(SuspenseLineDto.Isrc) },
-    
-    // Barcode — разные строки (рус/англ), не конфликтуют
     { "Баркод", nameof(SuspenseLineDto.Barcode) },
     { "Barcode", nameof(SuspenseLineDto.Barcode) },
-    
-    // CatalogNumber
     { "Каталожный номер", nameof(SuspenseLineDto.CatalogNumber) },
     { "CatalogNumber", nameof(SuspenseLineDto.CatalogNumber) },
-    
-    // ProductFormatCode
     { "Формат продукта", nameof(SuspenseLineDto.ProductFormatCode) },
     { "ProductFormatCode", nameof(SuspenseLineDto.ProductFormatCode) },
     { "TTkey", nameof(SuspenseLineDto.ProductFormatCode) },
-    
-    // SenderCompany
     { "Компания отправитель", nameof(SuspenseLineDto.SenderCompany) },
     { "SenderCompany", nameof(SuspenseLineDto.SenderCompany) },
-    
-    // RecipientCompany
     { "Компания получатель", nameof(SuspenseLineDto.RecipientCompany) },
     { "RecipientCompany", nameof(SuspenseLineDto.RecipientCompany) },
-    
-    // Operator
     { "Оператор", nameof(SuspenseLineDto.Operator) },
     { "Operator", nameof(SuspenseLineDto.Operator) },
-    
-    // Artist
     { "Артист", nameof(SuspenseLineDto.Artist) },
     { "Artist", nameof(SuspenseLineDto.Artist) },
-    
-    // TrackTitle
     { "Название", nameof(SuspenseLineDto.TrackTitle) },
     { "TrackTitle", nameof(SuspenseLineDto.TrackTitle) },
-    
-    // AgreementType
     { "Тип договора", nameof(SuspenseLineDto.AgreementType) },
     { "AgreementType", nameof(SuspenseLineDto.AgreementType) },
-    
-    // AgreementNumber
     { "Номер договора", nameof(SuspenseLineDto.AgreementNumber) },
     { "AgreementNumber", nameof(SuspenseLineDto.AgreementNumber) },
-    
-    // TerritoryCode
     { "Код территории", nameof(SuspenseLineDto.TerritoryCode) },
     { "TerritoryCode", nameof(SuspenseLineDto.TerritoryCode) },
-    
-    // Qty
     { "Количество", nameof(SuspenseLineDto.Qty) },
     { "Qty", nameof(SuspenseLineDto.Qty) },
-    
-    // Ppd
     { "Цена за стрим", nameof(SuspenseLineDto.Ppd) },
     { "Ppd", nameof(SuspenseLineDto.Ppd) },
-    
-    // ExchangeCurrency
     { "Валюта", nameof(SuspenseLineDto.ExchangeCurrency) },
     { "ExchangeCurrency", nameof(SuspenseLineDto.ExchangeCurrency) },
-    
-    // ExchangeRate
     { "Курс обмена", nameof(SuspenseLineDto.ExchangeRate) },
     { "ExchangeRate", nameof(SuspenseLineDto.ExchangeRate) },
-    
-    // Genre
     { "Жанр", nameof(SuspenseLineDto.Genre) },
     { "Genre", nameof(SuspenseLineDto.Genre) },
 };
 
-    public List<SuspenseLineDto> ParseExcel(Stream fileStream)
+    /// <summary>
+    /// Свойство DTO → допустимые подписи столбца в первой строке.
+    /// </summary>
+    private static readonly Lazy<Dictionary<string, string[]>> PropertyToAliases = new(() =>
+        ColumnAliases
+            .GroupBy(kv => kv.Value)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.Key).Distinct().ToArray()));
+
+    public ExcelParseResult ParseExcel(Stream fileStream)
     {
         using var workbook = new XLWorkbook(fileStream);
         var worksheet = workbook.Worksheets.First();
 
-        // Считываем заголовки из первой строки
+        var missing = GetMissingRequiredHeaders(worksheet);
+        if (missing.Count > 0)
+        {
+            return new ExcelParseResult { MissingRequiredHeaders = missing, Lines = [] };
+        }
+
         var columnMap = BuildColumnMap(worksheet);
 
         var result = new List<SuspenseLineDto>();
@@ -105,7 +86,38 @@ public class ExcelParsingService : IExcelParsingService
             }
         }
 
-        return result;
+        return new ExcelParseResult { MissingRequiredHeaders = [], Lines = result };
+    }
+
+    /// <summary>
+    /// Для каждого поля импорта должна быть хотя бы одна колонка с подписью из списка синонимов.
+    /// </summary>
+    private static List<string> GetMissingRequiredHeaders(IXLWorksheet worksheet)
+    {
+        var lastCol = worksheet.LastColumnUsed()?.ColumnNumber() ?? 0;
+        var headerSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        for (var col = 1; col <= lastCol; col++)
+        {
+            var header = worksheet.Cell(1, col).GetString().Trim();
+            if (string.IsNullOrEmpty(header))
+            {
+                continue;
+            }
+
+            headerSet.Add(header);
+        }
+
+        var missing = new List<string>();
+        foreach (var kv in PropertyToAliases.Value.OrderBy(x => x.Key, StringComparer.Ordinal))
+        {
+            var aliases = kv.Value;
+            if (!aliases.Any(headerSet.Contains))
+            {
+                missing.Add($"{string.Join(" · ", aliases)}");
+            }
+        }
+
+        return missing;
     }
 
     /// <summary>
@@ -138,7 +150,6 @@ public class ExcelParsingService : IExcelParsingService
     /// </summary>
     private static SuspenseLineDto? ParseRow(IXLWorksheet ws, int row, Dictionary<string, int> columnMap)
     {
-        // Пропускаем полностью пустые строки
         if (ws.Row(row).IsEmpty())
         {
             return null;
@@ -206,10 +217,22 @@ public class ExcelParsingService : IExcelParsingService
             return 0;
         }
 
-        // ClosedXML не имеет TryGetValue<decimal>, поэтому через double
-        if (ws.Cell(row, col).TryGetValue(out double value))
+        var cell = ws.Cell(row, col);
+        if (cell.TryGetValue(out double value))
         {
             return (decimal)value;
+        }
+
+        var text = cell.GetString()?.Trim();
+        if (string.IsNullOrEmpty(text))
+        {
+            return 0;
+        }
+
+        if (decimal.TryParse(text, NumberStyles.Number, CultureInfo.GetCultureInfo("ru-RU"), out var ru) ||
+            decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out ru))
+        {
+            return ru;
         }
 
         return 0;

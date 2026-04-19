@@ -15,6 +15,7 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
         builder.Property(x => x.Login).IsRequired().HasMaxLength(100);
         builder.Property(x => x.PasswordHash).IsRequired().HasMaxLength(500);
         builder.Property(x => x.Description).HasMaxLength(1000);
+        builder.Property(x => x.UiPreferencesJson).HasColumnType("nvarchar(max)");
         builder.Property(x => x.CreateTime).IsRequired();
         builder.Property(x => x.ArchiveLevel).IsRequired();
 

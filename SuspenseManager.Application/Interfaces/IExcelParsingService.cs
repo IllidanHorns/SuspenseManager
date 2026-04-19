@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.IO;
 using Common.DTOs;
 
@@ -10,7 +9,7 @@ namespace Application.Interfaces;
 public interface IExcelParsingService
 {
     /// <summary>
-    /// Парсинг Excel-файла в список DTO суспенсов
+    /// Парсинг Excel-файла: проверка обязательных заголовков и разбор строк в DTO.
     /// </summary>
-    List<SuspenseLineDto> ParseExcel(Stream fileStream);
+    ExcelParseResult ParseExcel(Stream fileStream);
 }

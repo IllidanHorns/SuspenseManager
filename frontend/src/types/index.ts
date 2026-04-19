@@ -80,10 +80,13 @@ export interface SuspenseLine {
   agreementNumber: string | null;
   territoryCode: string | null;
   qty: number;
-  ppd: number;
-  exchangeCurrency: string | null;
+  ppd: number | null;
+  /** Код/значение валюты отчёта (decimal с API) */
+  exchangeCurrency: number;
   exchangeRate: number;
   businessStatus: BusinessStatus;
+  /** Причина попадания в суспенс (из БД; приходит с GET по ID) */
+  causeSuspense?: string | null;
   groupId: number | null;
   productId: number | null;
   createTime: string;
@@ -120,7 +123,9 @@ export interface SuspenseGroup {
   createTime: string;
   changeTime: string | null;
   archiveLevel: number;
+  postponeReason: string | null;
   suspenseCount?: number;
+  revenueRub?: number;
   groupMetaData?: GroupMetadata | null;
   groupMetaRights?: GroupMetaRights | null;
   catalogProduct?: CatalogProduct | null;
@@ -219,6 +224,7 @@ export interface CatalogProductRights {
 export interface GroupingPreviewItem {
   key: Record<string, string>;
   count: number;
+  revenueRub: number;
 }
 
 export interface GroupingCommitRequest {
@@ -226,6 +232,26 @@ export interface GroupingCommitRequest {
   groupByColumns: string[];
   keyValues: Record<string, string>;
   accountId: number;
+}
+
+export interface SuspenseLinePreviewDto {
+  id: number;
+  isrc?: string;
+  barcode?: string;
+  catalogNumber?: string;
+  artist?: string;
+  trackTitle?: string;
+  genre?: string;
+  operator?: string;
+  senderCompany?: string;
+  recipientCompany?: string;
+  territoryCode?: string;
+  agreementType?: string;
+  agreementNumber?: string;
+  qty: number;
+  ppd?: number;
+  exchangeCurrency: number;
+  exchangeRate: number;
 }
 
 // ─── Upload ──────────────────────────────────────────────────────────────────
@@ -255,10 +281,85 @@ export interface Company {
   createTime: string;
 }
 
+export interface UserProfile {
+  id: number;
+  name: string;
+  surname: string;
+  middleName: string | null;
+  email: string;
+  phoneNumber: string;
+  position: string;
+  archiveLevel: number;
+  createTime: string;
+  changeTime: string | null;
+}
+
+export interface Right {
+  id: number;
+  rightCode: string;
+  rightDescription: string | null;
+}
+
+export interface AccountProfile {
+  id: number;
+  login: string;
+  description: string | null;
+  userId: number | null;
+  user: UserProfile | null;
+  rights: Right[];
+  archiveLevel: number;
+  createTime: string;
+  changeTime: string | null;
+}
+
+/** Настройки UI в Account.UiPreferencesJson (GET/PUT /api/me/settings). Универсальные для всех ролей. */
+export type ColorSchemePreference = 'light' | 'dark' | 'auto';
+
+export type NotificationsPositionPreference =
+  | 'top-right'
+  | 'top-left'
+  | 'bottom-right'
+  | 'bottom-left'
+  | 'top-center'
+  | 'bottom-center';
+
+export interface UserUiPreferences {
+  defaultTablePageSize: number;
+  filtersExpandedByDefault: boolean;
+  colorScheme: ColorSchemePreference;
+  notificationsPosition: NotificationsPositionPreference;
+}
+
+export interface MeUserProfile {
+  id: number;
+  name: string;
+  surname: string;
+  middleName: string | null;
+  email: string;
+  phoneNumber: string;
+  position: string;
+}
+
+export interface MeSettingsResponse {
+  accountId: number;
+  login: string;
+  description: string | null;
+  preferences: UserUiPreferences;
+  user: MeUserProfile | null;
+}
+
+export interface UpdateMeSettingsDto {
+  description?: string | null;
+  preferences?: UserUiPreferences;
+  user?: Partial<Pick<MeUserProfile, 'name' | 'surname' | 'middleName' | 'email' | 'phoneNumber' | 'position'>>;
+  currentPassword?: string;
+  newPassword?: string;
+}
+
 export interface Territory {
   id: number;
-  code: string;
-  description: string | null;
+  territoryCode: string;
+  territoryName: string | null;
 }
 
 // ─── Paging ──────────────────────────────────────────────────────────────────

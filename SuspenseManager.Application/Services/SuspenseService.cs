@@ -17,11 +17,18 @@ public class SuspenseService : ISuspenseService
         _db = db;
     }
 
-    public async Task<PagedResponse<SuspenseLine>> GetSuspensesAsync(PagedRequest request, CancellationToken ct = default)
+    public async Task<PagedResponse<SuspenseLine>> GetSuspensesAsync(SuspenseListRequest request, int currentAccountId, CancellationToken ct = default)
     {
         var query = _db.SuspenseLines
             .AsNoTracking()
             .Where(s => s.ArchiveLevel == 0);
+
+        if (request.OnlyMine && currentAccountId > 0)
+        {
+            query = query.Where(s => s.GroupId != null &&
+                _db.SuspenseGroups.Any(g =>
+                    g.Id == s.GroupId && g.ArchiveLevel == 0 && g.AccountId == currentAccountId));
+        }
 
         return await query.ToPagedResponseAsync(request, ct);
     }
@@ -61,6 +68,26 @@ public class SuspenseService : ISuspenseService
 
         await _db.SaveChangesAsync(ct);
         return entity;
+    }
+
+    public async Task ArchiveAsync(int id, CancellationToken ct = default)
+    {
+        var entity = await _db.SuspenseLines
+            .FirstOrDefaultAsync(s => s.Id == id && s.ArchiveLevel == 0, ct)
+            ?? throw new KeyNotFoundException($"Суспенс с ID {id} не найден");
+
+        if (entity.BusinessStatus != 0 && entity.BusinessStatus != 1)
+        {
+            throw new BusinessException(
+                "Удаление доступно только для строк со статусом 0 (нет продукта) или 1 (нет прав)",
+                "INVALID_STATUS_FOR_ARCHIVE");
+        }
+
+        entity.ArchiveLevel = 1;
+        entity.ArchiveTime = DateTime.UtcNow;
+        entity.ChangeTime = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync(ct);
     }
 
     public async Task<PagedResponse<SuspenseLine>> GetUngroupedAsync(int businessStatus, PagedRequest request, CancellationToken ct = default)

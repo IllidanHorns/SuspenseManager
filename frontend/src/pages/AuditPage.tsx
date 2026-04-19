@@ -33,6 +33,7 @@ import {
   IconSearch,
   IconFolderOpen,
   IconList,
+  IconUserCircle,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
@@ -45,8 +46,12 @@ import {
 import { fmtDateTime } from '../utils/format';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { PageSizeSelect } from '../components/common/PageSizeSelect';
+import { ResizableTh } from '../components/common/ResizableTh';
+import { CollapsibleFilters } from '../components/common/CollapsibleFilters';
 import { STATUS_LABELS } from '../types';
 import type { AuditGroupDto, AuditLineDto, AuditLogEntryDto, BusinessStatus } from '../types';
+import { UserProfileModal } from '../components/common/UserProfileModal';
+import { useDefaultPageSize } from '../hooks/useDefaultPageSize';
 
 // ── Status transition arrow ───────────────────────────────────────────────────
 
@@ -138,7 +143,7 @@ const STATUS_OPTIONS = [
 
 function GroupsTab() {
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useDefaultPageSize();
   const handlePageSizeChange = (v: number) => { setPageSize(v); setPage(1); };
   const [onlyMine, setOnlyMine] = useState(false);
   const [pendingStatus, setPendingStatus] = useState('');
@@ -149,6 +154,7 @@ function GroupsTab() {
   const [appliedTo, setAppliedTo] = useState<string | null>(null);
 
   const [selectedGroup, setSelectedGroup] = useState<AuditGroupDto | null>(null);
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
   const [logsPage, setLogsPage] = useState(1);
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -188,6 +194,8 @@ function GroupsTab() {
   };
 
   const hasActive = appliedStatus !== null || !!appliedFrom || !!appliedTo;
+  const groupsFilterActiveCount =
+    (appliedStatus !== null ? 1 : 0) + (appliedFrom ? 1 : 0) + (appliedTo ? 1 : 0);
 
   return (
     <Stack gap="md">
@@ -206,46 +214,47 @@ function GroupsTab() {
         </Tooltip>
       </Group>
 
-      {/* Filters */}
-      <Paper withBorder radius="md" p="sm">
-        <Group gap="sm" align="flex-end" wrap="wrap">
-          <Select
-            size="xs"
-            label="Статус"
-            data={STATUS_OPTIONS}
-            value={pendingStatus}
-            onChange={(v) => setPendingStatus(v ?? '')}
-            style={{ width: 220 }}
-            clearable
-          />
-          <TextInput
-            size="xs"
-            label="Изменено от"
-            type="date"
-            value={pendingFrom}
-            onChange={(e) => setPendingFrom(e.target.value)}
-            style={{ width: 160 }}
-          />
-          <TextInput
-            size="xs"
-            label="Изменено до"
-            type="date"
-            value={pendingTo}
-            onChange={(e) => setPendingTo(e.target.value)}
-            style={{ width: 160 }}
-          />
-          <Group gap="xs">
-            <Button size="xs" leftSection={<IconSearch size={12} />} onClick={applyFilters}>
-              Найти
-            </Button>
-            {hasActive && (
-              <Button size="xs" variant="subtle" color="gray" leftSection={<IconX size={12} />} onClick={resetFilters}>
-                Сбросить
+      <CollapsibleFilters activeCount={groupsFilterActiveCount}>
+        <Paper withBorder radius="md" p="sm">
+          <Group gap="sm" align="flex-end" wrap="wrap">
+            <Select
+              size="xs"
+              label="Статус"
+              data={STATUS_OPTIONS}
+              value={pendingStatus}
+              onChange={(v) => setPendingStatus(v ?? '')}
+              style={{ width: 220 }}
+              clearable
+            />
+            <TextInput
+              size="xs"
+              label="Изменено от"
+              type="date"
+              value={pendingFrom}
+              onChange={(e) => setPendingFrom(e.target.value)}
+              style={{ width: 160 }}
+            />
+            <TextInput
+              size="xs"
+              label="Изменено до"
+              type="date"
+              value={pendingTo}
+              onChange={(e) => setPendingTo(e.target.value)}
+              style={{ width: 160 }}
+            />
+            <Group gap="xs">
+              <Button size="xs" leftSection={<IconSearch size={12} />} onClick={applyFilters}>
+                Найти
               </Button>
-            )}
+              {hasActive && (
+                <Button size="xs" variant="subtle" color="gray" leftSection={<IconX size={12} />} onClick={resetFilters}>
+                  Сбросить
+                </Button>
+              )}
+            </Group>
           </Group>
-        </Group>
-      </Paper>
+        </Paper>
+      </CollapsibleFilters>
 
       {/* Table */}
       <Paper withBorder radius="md">
@@ -265,14 +274,14 @@ function GroupsTab() {
             <Table striped highlightOnHover>
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th>ID</Table.Th>
-                  <Table.Th>Статус</Table.Th>
-                  <Table.Th>Продукт</Table.Th>
-                  <Table.Th>Создана</Table.Th>
-                  <Table.Th>Создатель</Table.Th>
-                  <Table.Th>Посл. изменение</Table.Th>
-                  <Table.Th>Переход</Table.Th>
-                  <Table.Th style={{ textAlign: 'center' }}>Лог</Table.Th>
+                  <ResizableTh>ID</ResizableTh>
+                  <ResizableTh>Статус</ResizableTh>
+                  <ResizableTh>Продукт</ResizableTh>
+                  <ResizableTh>Создана</ResizableTh>
+                  <ResizableTh>Создатель</ResizableTh>
+                  <ResizableTh>Посл. изменение</ResizableTh>
+                  <ResizableTh>Переход</ResizableTh>
+                  <ResizableTh style={{ textAlign: 'center' }}>Лог</ResizableTh>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
@@ -291,7 +300,24 @@ function GroupsTab() {
                       <Text size="xs" c="dimmed">{fmtDateTime(g.createTime)}</Text>
                     </Table.Td>
                     <Table.Td>
-                      <Text size="xs">{g.createdByName ?? g.createdByLogin}</Text>
+                      <Group gap={6}>
+                        <ActionIcon
+                          variant="subtle"
+                          color="gray"
+                          size="sm"
+                          onClick={() => setSelectedAccountId(g.createdByAccountId)}
+                          aria-label="Открыть профиль пользователя"
+                        >
+                          <IconUserCircle size={14} />
+                        </ActionIcon>
+                        <Text
+                          size="xs"
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => setSelectedAccountId(g.createdByAccountId)}
+                        >
+                          {g.createdByName ?? g.createdByLogin}
+                        </Text>
+                      </Group>
                     </Table.Td>
                     <Table.Td>
                       <Text size="xs" c="dimmed">{fmtDateTime(g.lastChangeTime)}</Text>
@@ -347,6 +373,11 @@ function GroupsTab() {
         logs={logsData?.items ?? []}
         loading={logsLoading}
       />
+      <UserProfileModal
+        opened={!!selectedAccountId}
+        onClose={() => setSelectedAccountId(null)}
+        accountId={selectedAccountId}
+      />
     </Stack>
   );
 }
@@ -355,9 +386,10 @@ function GroupsTab() {
 
 function LinesTab() {
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useDefaultPageSize();
   const handlePageSizeChange = (v: number) => { setPageSize(v); setPage(1); };
   const [onlyMine, setOnlyMine] = useState(false);
+
   const [pendingStatus, setPendingStatus] = useState('');
   const [pendingGroupId, setPendingGroupId] = useState('');
   const [pendingFrom, setPendingFrom] = useState('');
@@ -411,6 +443,8 @@ function LinesTab() {
   };
 
   const hasActive = appliedStatus !== null || appliedGroupId !== null || !!appliedFrom || !!appliedTo;
+  const linesFilterActiveCount =
+    (appliedStatus !== null ? 1 : 0) + (appliedGroupId !== null ? 1 : 0) + (appliedFrom ? 1 : 0) + (appliedTo ? 1 : 0);
 
   return (
     <Stack gap="md">
@@ -429,54 +463,55 @@ function LinesTab() {
         </Tooltip>
       </Group>
 
-      {/* Filters */}
-      <Paper withBorder radius="md" p="sm">
-        <Group gap="sm" align="flex-end" wrap="wrap">
-          <Select
-            size="xs"
-            label="Статус"
-            data={STATUS_OPTIONS}
-            value={pendingStatus}
-            onChange={(v) => setPendingStatus(v ?? '')}
-            style={{ width: 220 }}
-            clearable
-          />
-          <TextInput
-            size="xs"
-            label="ID группы"
-            placeholder="Например: 42"
-            value={pendingGroupId}
-            onChange={(e) => setPendingGroupId(e.target.value)}
-            style={{ width: 130 }}
-          />
-          <TextInput
-            size="xs"
-            label="Изменено от"
-            type="date"
-            value={pendingFrom}
-            onChange={(e) => setPendingFrom(e.target.value)}
-            style={{ width: 160 }}
-          />
-          <TextInput
-            size="xs"
-            label="Изменено до"
-            type="date"
-            value={pendingTo}
-            onChange={(e) => setPendingTo(e.target.value)}
-            style={{ width: 160 }}
-          />
-          <Group gap="xs">
-            <Button size="xs" leftSection={<IconSearch size={12} />} onClick={applyFilters}>
-              Найти
-            </Button>
-            {hasActive && (
-              <Button size="xs" variant="subtle" color="gray" leftSection={<IconX size={12} />} onClick={resetFilters}>
-                Сбросить
+      <CollapsibleFilters activeCount={linesFilterActiveCount}>
+        <Paper withBorder radius="md" p="sm">
+          <Group gap="sm" align="flex-end" wrap="wrap">
+            <Select
+              size="xs"
+              label="Статус"
+              data={STATUS_OPTIONS}
+              value={pendingStatus}
+              onChange={(v) => setPendingStatus(v ?? '')}
+              style={{ width: 220 }}
+              clearable
+            />
+            <TextInput
+              size="xs"
+              label="ID группы"
+              placeholder="Например: 42"
+              value={pendingGroupId}
+              onChange={(e) => setPendingGroupId(e.target.value)}
+              style={{ width: 130 }}
+            />
+            <TextInput
+              size="xs"
+              label="Изменено от"
+              type="date"
+              value={pendingFrom}
+              onChange={(e) => setPendingFrom(e.target.value)}
+              style={{ width: 160 }}
+            />
+            <TextInput
+              size="xs"
+              label="Изменено до"
+              type="date"
+              value={pendingTo}
+              onChange={(e) => setPendingTo(e.target.value)}
+              style={{ width: 160 }}
+            />
+            <Group gap="xs">
+              <Button size="xs" leftSection={<IconSearch size={12} />} onClick={applyFilters}>
+                Найти
               </Button>
-            )}
+              {hasActive && (
+                <Button size="xs" variant="subtle" color="gray" leftSection={<IconX size={12} />} onClick={resetFilters}>
+                  Сбросить
+                </Button>
+              )}
+            </Group>
           </Group>
-        </Group>
-      </Paper>
+        </Paper>
+      </CollapsibleFilters>
 
       {/* Table */}
       <Paper withBorder radius="md">
@@ -496,16 +531,16 @@ function LinesTab() {
             <Table striped highlightOnHover>
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th>ID</Table.Th>
-                  <Table.Th>Статус</Table.Th>
-                  <Table.Th>Группа</Table.Th>
-                  <Table.Th>ISRC</Table.Th>
-                  <Table.Th>Исполнитель</Table.Th>
-                  <Table.Th>Трек</Table.Th>
-                  <Table.Th>Оператор</Table.Th>
-                  <Table.Th>Посл. изменение</Table.Th>
-                  <Table.Th>Переход</Table.Th>
-                  <Table.Th style={{ textAlign: 'center' }}>Лог</Table.Th>
+                  <ResizableTh>ID</ResizableTh>
+                  <ResizableTh>Статус</ResizableTh>
+                  <ResizableTh>Группа</ResizableTh>
+                  <ResizableTh>ISRC</ResizableTh>
+                  <ResizableTh>Исполнитель</ResizableTh>
+                  <ResizableTh>Трек</ResizableTh>
+                  <ResizableTh>Оператор</ResizableTh>
+                  <ResizableTh>Посл. изменение</ResizableTh>
+                  <ResizableTh>Переход</ResizableTh>
+                  <ResizableTh style={{ textAlign: 'center' }}>Лог</ResizableTh>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>

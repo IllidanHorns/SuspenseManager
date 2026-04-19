@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using Models;
 using Models.Enums;
 using SuspenseManager.Tests.Integration.Fixtures;
 
@@ -230,7 +231,7 @@ public class GroupProcessingIntegrationTests : IClassFixture<CustomWebApplicatio
 
         var response = await _client.PostAsJsonAsync(
             $"/api/groups/{groupId}/send-to-backoffice",
-            new { comment = "Complex case" });
+            new { problemDescription = "Complex case" });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -455,6 +456,35 @@ public class GroupProcessingIntegrationTests : IClassFixture<CustomWebApplicatio
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    [Fact]
+    public async Task LinkProduct_IncompleteCatalogProduct_Returns400()
+    {
+        var token = await AuthorizeAsync("linkprodInc");
+        SetBearer(token);
+
+        int groupId = 0;
+        int productId = 0;
+
+        await _factory.WithDbAsync(async db =>
+        {
+            var builder = new TestDataBuilder(db);
+            var account = await builder.CreateAccountAsync($"acc_{Guid.NewGuid():N}", "P123!");
+            var product = await builder.CreateProductAsync(catalogNumber: "");
+            var group = await builder.CreateGroupAsync(
+                (int)BusinessStatus.InGroupNoProduct, account.Id);
+            await builder.CreateSuspenseLineAsync(
+                (int)BusinessStatus.InGroupNoProduct, groupId: group.Id);
+            groupId = group.Id;
+            productId = product.Id;
+        });
+
+        var response = await _client.PostAsJsonAsync(
+            $"/api/groups/{groupId}/link-product",
+            new { productId });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
     // ─────────────────── POST /api/groups/{id}/catalog-fast ──────────────────
 
     [Fact]
@@ -474,6 +504,20 @@ public class GroupProcessingIntegrationTests : IClassFixture<CustomWebApplicatio
                 (int)BusinessStatus.InGroupNoProduct,
                 artist: "New Artist",
                 groupId: group.Id);
+            var meta = new GroupMetadata
+            {
+                SuspenseGroupId = group.Id,
+                Title = "Quick Cat Title",
+                Artist = "Quick Cat Artist",
+                Isrc = "ISRC-QC-INT",
+                Barcode = "5900000000002",
+                CatalogNumber = "CAT-QC-INT",
+                CreateTime = DateTime.UtcNow,
+                ChangeTime = DateTime.UtcNow,
+                ArchiveLevel = 0,
+            };
+            db.GroupMetadata.Add(meta);
+            await db.SaveChangesAsync();
             groupId = group.Id;
         });
 

@@ -1,3 +1,4 @@
+using Application.Helpers;
 using Application.Interfaces;
 using ClosedXML.Excel;
 using Data;
@@ -17,10 +18,23 @@ public class ExcelExportService : IExcelExportService
 
     public async Task<byte[]> ExportGroupSuspensesAsync(int groupId, CancellationToken ct = default)
     {
+        var group = await _db.SuspenseGroups
+            .AsNoTracking()
+            .Include(g => g.GroupMetaData)
+            .Include(g => g.CatalogProduct)
+            .FirstOrDefaultAsync(g => g.Id == groupId && g.ArchiveLevel == 0, ct)
+            ?? throw new KeyNotFoundException($"Группа с ID {groupId} не найдена");
+
         var suspenses = await _db.SuspenseLines
             .AsNoTracking()
             .Where(s => s.GroupId == groupId && s.ArchiveLevel == 0)
             .ToListAsync(ct);
+
+        foreach (var s in suspenses)
+        {
+            GroupMetadataSuspenseDisplay.ApplyToSuspenseLine(
+                s, group.GroupMetaData, group.CatalogProduct, group.BusinessStatus);
+        }
 
         using var workbook = new XLWorkbook();
         var ws = workbook.Worksheets.Add("Суспенсы");
@@ -79,6 +93,7 @@ public class ExcelExportService : IExcelExportService
             .AsNoTracking()
             .Include(g => g.Account)
             .Include(g => g.GroupMetaData)
+            .Include(g => g.CatalogProduct)
             .Where(g => g.ArchiveLevel == 0 && g.BusinessStatus == businessStatus)
             .ToListAsync(ct);
 
@@ -119,11 +134,13 @@ public class ExcelExportService : IExcelExportService
 
             ws.Cell(r, 1).Value = g.Id;
             ws.Cell(r, 2).Value = g.BusinessStatus;
-            ws.Cell(r, 3).Value = g.GroupMetaData?.Isrc;
-            ws.Cell(r, 4).Value = g.GroupMetaData?.Title;
-            ws.Cell(r, 5).Value = g.GroupMetaData?.Artist;
-            ws.Cell(r, 6).Value = g.GroupMetaData?.Barcode;
-            ws.Cell(r, 7).Value = g.GroupMetaData?.CatalogNumber;
+            var disp = GroupMetadataSuspenseDisplay.GetEffectiveProductDisplay(
+                g.GroupMetaData, g.CatalogProduct, g.BusinessStatus);
+            ws.Cell(r, 3).Value = disp.Isrc;
+            ws.Cell(r, 4).Value = disp.Title;
+            ws.Cell(r, 5).Value = disp.Artist;
+            ws.Cell(r, 6).Value = disp.Barcode;
+            ws.Cell(r, 7).Value = disp.CatalogNumber;
             ws.Cell(r, 8).Value = stats?.Count ?? 0;
             ws.Cell(r, 9).Value = stats?.TotalRevenue ?? 0;
             ws.Cell(r, 10).Value = g.CreateTime.ToString("yyyy-MM-dd HH:mm:ss");

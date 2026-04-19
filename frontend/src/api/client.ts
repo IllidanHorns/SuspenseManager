@@ -1,6 +1,76 @@
-import axios from 'axios';
+import axios, { isAxiosError } from 'axios';
 import { getTokens, clearTokens, saveTokens } from '../utils/auth';
+import { ApiRequestError } from './apiError';
 import type { ApiResponse, TokenResponseDto } from '../types';
+
+/**
+ * Загрузка Excel: парсинг и пакетная валидация на сервере при большом файле могут идти минутами.
+ * Глобальный timeout axios (15 с) для этого не подходит.
+ */
+export const UPLOAD_REQUEST_TIMEOUT_MS = 600_000;
+
+/** Не показывать пользователю сырой текст axios вида «Request failed with status code 400». */
+function rejectAsUserFriendlyError(error: unknown): Promise<never> {
+  if (!isAxiosError(error)) {
+    return Promise.reject(error instanceof Error ? error : new Error('Не удалось выполнить запрос'));
+  }
+
+  if (error.code === 'ECONNABORTED' || /timeout/i.test(error.message ?? '')) {
+    return Promise.reject(
+      new Error(
+        'Истекло время ожидания ответа. Для большого отчёта обработка на сервере могла всё равно завершиться — проверьте список суспенсов. При необходимости загрузите файл ещё раз или разбейте отчёт на части.'
+      )
+    );
+  }
+
+  const status = error.response?.status;
+  const raw = error.response?.data;
+
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    const o = raw as Record<string, unknown>;
+    if (typeof o.message === 'string' && o.message.length > 0) {
+      return Promise.reject(
+        new ApiRequestError(o.message, {
+          statusCode: status,
+          businessCode: typeof o.businessCode === 'string' ? o.businessCode : undefined,
+          fieldErrors: [],
+        })
+      );
+    }
+    const title = typeof o.title === 'string' ? o.title : '';
+    const detail = typeof o.detail === 'string' ? o.detail : '';
+    if (title || detail) {
+      const msg = [title, detail].filter(Boolean).join(' ');
+      return Promise.reject(new ApiRequestError(msg || 'Ошибка запроса', { statusCode: status, fieldErrors: [] }));
+    }
+  }
+
+  if (status === 400) {
+    return Promise.reject(
+      new ApiRequestError('Проверьте введённые данные и попробуйте снова.', {
+        statusCode: 400,
+        fieldErrors: [],
+      })
+    );
+  }
+  if (status === 404) {
+    return Promise.reject(new ApiRequestError('Данные не найдены.', { statusCode: 404, fieldErrors: [] }));
+  }
+  if (status != null && status >= 500) {
+    return Promise.reject(
+      new ApiRequestError('Сервер временно недоступен. Попробуйте позже.', {
+        statusCode: status,
+        fieldErrors: [],
+      })
+    );
+  }
+
+  const m = error.message ?? '';
+  if (/^Request failed with status code \d{3}$/i.test(m)) {
+    return Promise.reject(new Error('Не удалось выполнить запрос. Попробуйте ещё раз.'));
+  }
+  return Promise.reject(new Error(m || 'Не удалось выполнить запрос'));
+}
 
 const client = axios.create({
   baseURL: '/api',
@@ -36,12 +106,42 @@ client.interceptors.response.use(
       clearTokens();
       window.location.href = '/login';
     }
-    // Extract business error message from API response body if available
-    const apiMessage = error.response?.data?.message;
-    if (apiMessage) {
-      return Promise.reject(new Error(apiMessage));
+    // Разбор тела ApiResponse: детальные ошибки валидации по полям
+    const data = error.response?.data as
+      | {
+          message?: string;
+          statusCode?: number;
+          businessCode?: string;
+          errors?: { field?: string; message?: string }[];
+        }
+      | undefined;
+
+    if (data && typeof data === 'object') {
+      const raw = Array.isArray(data.errors) ? data.errors : [];
+      const fieldErrors = raw
+        .filter((e) => e && (e.field != null || e.message != null))
+        .map((e) => ({
+          field: e.field ?? '',
+          message: e.message ?? '',
+        }));
+
+      const msg =
+        typeof data.message === 'string' && data.message.length > 0
+          ? data.message
+          : 'Ошибка запроса';
+
+      if (fieldErrors.length > 0 || (typeof data.message === 'string' && data.message.length > 0)) {
+        return Promise.reject(
+          new ApiRequestError(fieldErrors.length > 0 ? msg : data.message ?? msg, {
+            statusCode: error.response?.status ?? data.statusCode,
+            businessCode: data.businessCode,
+            fieldErrors,
+          })
+        );
+      }
     }
-    return Promise.reject(error);
+
+    return rejectAsUserFriendlyError(error);
   }
 );
 
@@ -115,9 +215,15 @@ export async function apiGetBlob(url: string, params?: Record<string, unknown>):
   return res.data as Blob;
 }
 
+export async function apiPostBlob(url: string, data?: unknown): Promise<Blob> {
+  const res = await client.post(url, data, { responseType: 'blob' });
+  return res.data as Blob;
+}
+
 export async function apiPostForm<T>(url: string, form: FormData): Promise<T> {
   const res = await client.post<ApiResponse<T>>(url, form, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: UPLOAD_REQUEST_TIMEOUT_MS,
   });
   if (!res.data.data && res.data.statusCode >= 400) {
     throw new Error(res.data.message || 'Ошибка загрузки');

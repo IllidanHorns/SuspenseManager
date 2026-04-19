@@ -1,5 +1,6 @@
 using Application.Helpers;
 using Application.Interfaces;
+using ClosedXML.Excel;
 using Common.DTOs;
 using Common.Exceptions;
 using Data;
@@ -35,7 +36,11 @@ public class GroupingService : IGroupingService
             request.SortBy,
             request.SortDirection,
             offset,
-            request.PageSize);
+            request.PageSize,
+            request.CountMin,
+            request.CountMax,
+            request.RevenueMin,
+            request.RevenueMax);
 
         // Нужны отдельные параметры для count, т.к. SqlParameter нельзя использовать повторно
         var countParams = CloneParameters(parameters
@@ -78,6 +83,8 @@ public class GroupingService : IGroupingService
                 }
 
                 item.Count = reader.GetInt32(request.GroupByColumns.Count);
+                var revenueOrdinal = request.GroupByColumns.Count + 1;
+                item.RevenueRub = reader.IsDBNull(revenueOrdinal) ? 0m : Convert.ToDecimal(reader.GetValue(revenueOrdinal));
                 items.Add(item);
             }
         }
@@ -89,6 +96,189 @@ public class GroupingService : IGroupingService
             PageNumber = request.PageNumber,
             PageSize = request.PageSize
         };
+    }
+
+    public async Task<PagedResponse<SuspenseLinePreviewDto>> PreviewLinesAsync(
+        GroupLinesPreviewRequest request, CancellationToken ct = default)
+    {
+        GroupingSqlBuilder.ValidateRequest(request.BusinessStatus, request.GroupByColumns);
+
+        var (whereClause, whereParams) = GroupingSqlBuilder.BuildCommitWhereClause(
+            request.BusinessStatus, request.GroupByColumns, request.KeyValues);
+
+        var fromClause = request.BusinessStatus == 0
+            ? "FROM [SuspenseLines] s"
+            : "FROM [SuspenseLines] s INNER JOIN [CatalogProducts] cp ON s.[ProductId] = cp.[Id]";
+
+        var baseWhere =
+            $"s.[BusinessStatus] = {request.BusinessStatus} AND s.[ArchiveLevel] = 0 AND s.[GroupId] IS NULL" +
+            (whereClause.Length > 0 ? $" AND {whereClause}" : "");
+
+        var offset = (request.PageNumber - 1) * request.PageSize;
+
+        var sql = $"""
+            SELECT s.[Id], s.[Isrc], s.[Barcode], s.[CatalogNumber], s.[Artist], s.[TrackTitle],
+                   s.[Genre], s.[Operator], s.[SenderCompany], s.[RecipientCompany],
+                   s.[TerritoryCode], s.[AgreementType], s.[AgreementNumber],
+                   s.[Qty], s.[Ppd], s.[ExchangeCurrency], s.[ExchangeRate]
+            {fromClause}
+            WHERE {baseWhere}
+            ORDER BY s.[Id]
+            OFFSET {offset} ROWS FETCH NEXT {request.PageSize} ROWS ONLY
+            """;
+
+        var countSql = $"SELECT COUNT(*) {fromClause} WHERE {baseWhere}";
+
+        var connection = _db.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Open)
+            await connection.OpenAsync(ct);
+
+        int totalCount;
+        await using (var cmd = connection.CreateCommand())
+        {
+            cmd.CommandText = countSql;
+            cmd.Parameters.AddRange(CloneParameters(whereParams).ToArray());
+            totalCount = (int)await cmd.ExecuteScalarAsync(ct)!;
+        }
+
+        var items = new List<SuspenseLinePreviewDto>();
+        await using (var cmd = connection.CreateCommand())
+        {
+            cmd.CommandText = sql;
+            cmd.Parameters.AddRange(CloneParameters(whereParams).ToArray());
+            await using var reader = await cmd.ExecuteReaderAsync(ct);
+            while (await reader.ReadAsync(ct))
+            {
+                items.Add(new SuspenseLinePreviewDto
+                {
+                    Id              = reader.GetInt32(0),
+                    Isrc            = reader.IsDBNull(1)  ? null : reader.GetString(1),
+                    Barcode         = reader.IsDBNull(2)  ? null : reader.GetString(2),
+                    CatalogNumber   = reader.IsDBNull(3)  ? null : reader.GetString(3),
+                    Artist          = reader.IsDBNull(4)  ? null : reader.GetString(4),
+                    TrackTitle      = reader.IsDBNull(5)  ? null : reader.GetString(5),
+                    Genre           = reader.IsDBNull(6)  ? null : reader.GetString(6),
+                    Operator        = reader.IsDBNull(7)  ? null : reader.GetString(7),
+                    SenderCompany   = reader.IsDBNull(8)  ? null : reader.GetString(8),
+                    RecipientCompany= reader.IsDBNull(9)  ? null : reader.GetString(9),
+                    TerritoryCode   = reader.IsDBNull(10) ? null : reader.GetString(10),
+                    AgreementType   = reader.IsDBNull(11) ? null : reader.GetString(11),
+                    AgreementNumber = reader.IsDBNull(12) ? null : reader.GetString(12),
+                    Qty             = reader.GetInt32(13),
+                    Ppd             = reader.IsDBNull(14) ? null : reader.GetDouble(14),
+                    ExchangeCurrency= reader.IsDBNull(15) ? 0m   : Convert.ToDecimal(reader.GetValue(15)),
+                    ExchangeRate    = reader.IsDBNull(16) ? 0m   : Convert.ToDecimal(reader.GetValue(16)),
+                });
+            }
+        }
+
+        return new PagedResponse<SuspenseLinePreviewDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize
+        };
+    }
+
+    public async Task<byte[]> ExportPreviewLinesAsync(
+        GroupLinesPreviewRequest request, CancellationToken ct = default)
+    {
+        GroupingSqlBuilder.ValidateRequest(request.BusinessStatus, request.GroupByColumns);
+
+        var (whereClause, whereParams) = GroupingSqlBuilder.BuildCommitWhereClause(
+            request.BusinessStatus, request.GroupByColumns, request.KeyValues);
+
+        var fromClause = request.BusinessStatus == 0
+            ? "FROM [SuspenseLines] s"
+            : "FROM [SuspenseLines] s INNER JOIN [CatalogProducts] cp ON s.[ProductId] = cp.[Id]";
+
+        var baseWhere =
+            $"s.[BusinessStatus] = {request.BusinessStatus} AND s.[ArchiveLevel] = 0 AND s.[GroupId] IS NULL" +
+            (whereClause.Length > 0 ? $" AND {whereClause}" : "");
+
+        var sql = $"""
+            SELECT s.[Id], s.[Isrc], s.[Barcode], s.[CatalogNumber], s.[Artist], s.[TrackTitle],
+                   s.[Genre], s.[Operator], s.[SenderCompany], s.[RecipientCompany],
+                   s.[TerritoryCode], s.[AgreementType], s.[AgreementNumber],
+                   s.[Qty], s.[Ppd], s.[ExchangeCurrency], s.[ExchangeRate]
+            {fromClause}
+            WHERE {baseWhere}
+            ORDER BY s.[Id]
+            """;
+
+        var connection = _db.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Open)
+            await connection.OpenAsync(ct);
+
+        var items = new List<SuspenseLinePreviewDto>();
+        await using (var cmd = connection.CreateCommand())
+        {
+            cmd.CommandText = sql;
+            cmd.Parameters.AddRange(CloneParameters(whereParams).ToArray());
+            await using var reader = await cmd.ExecuteReaderAsync(ct);
+            while (await reader.ReadAsync(ct))
+            {
+                items.Add(new SuspenseLinePreviewDto
+                {
+                    Id               = reader.GetInt32(0),
+                    Isrc             = reader.IsDBNull(1)  ? null : reader.GetString(1),
+                    Barcode          = reader.IsDBNull(2)  ? null : reader.GetString(2),
+                    CatalogNumber    = reader.IsDBNull(3)  ? null : reader.GetString(3),
+                    Artist           = reader.IsDBNull(4)  ? null : reader.GetString(4),
+                    TrackTitle       = reader.IsDBNull(5)  ? null : reader.GetString(5),
+                    Genre            = reader.IsDBNull(6)  ? null : reader.GetString(6),
+                    Operator         = reader.IsDBNull(7)  ? null : reader.GetString(7),
+                    SenderCompany    = reader.IsDBNull(8)  ? null : reader.GetString(8),
+                    RecipientCompany = reader.IsDBNull(9)  ? null : reader.GetString(9),
+                    TerritoryCode    = reader.IsDBNull(10) ? null : reader.GetString(10),
+                    AgreementType    = reader.IsDBNull(11) ? null : reader.GetString(11),
+                    AgreementNumber  = reader.IsDBNull(12) ? null : reader.GetString(12),
+                    Qty              = reader.GetInt32(13),
+                    Ppd              = reader.IsDBNull(14) ? null  : reader.GetDouble(14),
+                    ExchangeCurrency = reader.IsDBNull(15) ? 0m    : Convert.ToDecimal(reader.GetValue(15)),
+                    ExchangeRate     = reader.IsDBNull(16) ? 0m    : Convert.ToDecimal(reader.GetValue(16)),
+                });
+            }
+        }
+
+        using var workbook = new XLWorkbook();
+        var ws = workbook.Worksheets.Add("Суспенсы");
+        var headers = new[]
+        {
+            "ID", "ISRC", "Баркод", "Каталожный номер", "Артист", "Название трека",
+            "Жанр", "Оператор", "Отправитель", "Получатель",
+            "Территория", "Тип договора", "Номер договора", "Кол-во", "PPD", "Валюта", "Курс обмена"
+        };
+        for (var i = 0; i < headers.Length; i++)
+            ws.Cell(1, i + 1).Value = headers[i];
+        for (var row = 0; row < items.Count; row++)
+        {
+            var s = items[row];
+            var r = row + 2;
+            ws.Cell(r, 1).Value = s.Id;
+            ws.Cell(r, 2).Value = s.Isrc;
+            ws.Cell(r, 3).Value = s.Barcode;
+            ws.Cell(r, 4).Value = s.CatalogNumber;
+            ws.Cell(r, 5).Value = s.Artist;
+            ws.Cell(r, 6).Value = s.TrackTitle;
+            ws.Cell(r, 7).Value = s.Genre;
+            ws.Cell(r, 8).Value = s.Operator;
+            ws.Cell(r, 9).Value = s.SenderCompany;
+            ws.Cell(r, 10).Value = s.RecipientCompany;
+            ws.Cell(r, 11).Value = s.TerritoryCode;
+            ws.Cell(r, 12).Value = s.AgreementType;
+            ws.Cell(r, 13).Value = s.AgreementNumber;
+            ws.Cell(r, 14).Value = s.Qty;
+            ws.Cell(r, 15).Value = s.Ppd;
+            ws.Cell(r, 16).Value = s.ExchangeCurrency;
+            ws.Cell(r, 17).Value = s.ExchangeRate;
+        }
+        ws.Columns().AdjustToContents();
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        return stream.ToArray();
     }
 
     public async Task<SuspenseGroup> CommitAsync(

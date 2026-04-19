@@ -26,6 +26,11 @@ public class SuspenseGroup
     public DateTime ChangeTime { get; set; }
 
     /// <summary>
+    /// Причина откладывания группы (заполняется при переходе в статус 30/32)
+    /// </summary>
+    public string? PostponeReason { get; set; }
+
+    /// <summary>
     /// Время мягкого удаления
     /// </summary>
     public DateTime ArchiveTime { get; set; }
@@ -68,6 +73,13 @@ public class SuspenseGroup
     /// </summary>
     [NotMapped]
     public int SuspenseCount { get; set; }
+
+    /// <summary>
+    /// Выручка по строкам группы в рублях: SUM(Qty * Ppd * ExchangeRate)
+    /// Не хранится в БД, заполняется в сервисе
+    /// </summary>
+    [NotMapped]
+    public decimal RevenueRub { get; set; }
 
     /// <summary>
     /// Коллекция суспенсов в группе

@@ -53,6 +53,21 @@ public class GroupingController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Preview([FromQuery] GroupingPreviewRequest request, CancellationToken ct)
     {
+        // Читаем произвольные query-параметры как фильтры (все кроме известных системных)
+        var knownParams = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "pageNumber", "pageSize", "sortBy", "sortDirection",
+            "businessStatus", "groupByColumns",
+            "countMin", "countMax", "revenueMin", "revenueMax"
+        };
+
+        var filters = HttpContext.Request.Query
+            .Where(kv => !knownParams.Contains(kv.Key) && !string.IsNullOrEmpty(kv.Value))
+            .ToDictionary(kv => kv.Key + "_contains", kv => kv.Value.ToString());
+
+        if (filters.Count > 0)
+            request.Filters = filters;
+
         var result = await _groupingService.PreviewAsync(request, ct);
         return Ok(ApiResponse<PagedResponse<GroupingPreviewItem>>.Success(result, "Группировка выполнена"));
     }
@@ -85,6 +100,25 @@ public class GroupingController : ControllerBase
     /// <returns>Информация о созданной группе</returns>
     /// <response code="200">Группа успешно зафиксирована</response>
     /// <response code="400">Невалидный запрос или не найдено суспенсов</response>
+    /// <summary>
+    /// Предпросмотр строк суспенса внутри потенциальной группы (без фиксации).
+    /// </summary>
+    [HttpPost("preview-lines")]
+    public async Task<IActionResult> PreviewLines([FromBody] GroupLinesPreviewRequest request, CancellationToken ct)
+    {
+        var result = await _groupingService.PreviewLinesAsync(request, ct);
+        return Ok(ApiResponse<PagedResponse<SuspenseLinePreviewDto>>.Success(result, "Строки группы"));
+    }
+
+    [HttpPost("export-lines")]
+    public async Task<IActionResult> ExportLines([FromBody] GroupLinesPreviewRequest request, CancellationToken ct)
+    {
+        var bytes = await _groupingService.ExportPreviewLinesAsync(request, ct);
+        return File(bytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "suspenses_preview.xlsx");
+    }
+
     [HttpPost("commit")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]

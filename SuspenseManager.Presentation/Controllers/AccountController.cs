@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Application.Interfaces;
 using Common.DTOs;
 using Microsoft.AspNetCore.Authorization;
@@ -20,8 +21,15 @@ public class AccountController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] PagedRequest request, CancellationToken ct)
+    public async Task<IActionResult> GetAll([FromQuery] PagedRequest request, [FromQuery] string? userLink, CancellationToken ct)
     {
+        // Явный query userLink=linked|unlinked: вложенный Filters[UserProfile] из строки запроса к Dictionary в PagedRequest на практике не биндится.
+        if (userLink is "linked" or "unlinked")
+        {
+            request.Filters ??= new Dictionary<string, string>();
+            request.Filters["UserProfile"] = userLink;
+        }
+
         var result = await _accountService.GetAccountsAsync(request, ct);
         return Ok(ApiResponse<PagedResponse<Models.Account>>.Success(result));
     }
@@ -85,5 +93,14 @@ public class AccountController : ControllerBase
         await _accountService.RemoveRightsAsync(id, dto.RightIds, ct);
         _logger.LogInformation("Права удалены: AccountId={Id}, RightIds={RightIds}", id, string.Join(",", dto.RightIds));
         return Ok(ApiResponse<object>.Success(new { id, removedRights = dto.RightIds }, "Права удалены", "RIGHTS_REMOVED"));
+    }
+
+    /// <summary>Полная замена набора прав аккаунта (админка).</summary>
+    [HttpPut("{id:int}/rights")]
+    public async Task<IActionResult> ReplaceRights(int id, [FromBody] ReplaceAccountRightsDto dto, CancellationToken ct)
+    {
+        await _accountService.ReplaceRightsAsync(id, dto.RightIds, ct);
+        _logger.LogInformation("Права заменены: AccountId={Id}, Count={Count}", id, dto.RightIds.Count);
+        return Ok(ApiResponse<object>.Success(new { id }, "Права обновлены", "RIGHTS_REPLACED"));
     }
 }

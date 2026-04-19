@@ -12,6 +12,7 @@
           "ClosedXML": "0.105.0",
           "FluentValidation.DependencyInjectionExtensions": "12.1.1",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "9.0.0",
+          "SonarAnalyzer.CSharp": "9.32.0.97167",
           "SuspenseManager.Common": "1.0.0",
           "SuspenseManager.Data": "1.0.0",
           "SuspenseManager.Models": "1.0.0"
@@ -498,6 +499,7 @@
           }
         }
       },
+      "SonarAnalyzer.CSharp/9.32.0.97167": {},
       "System.ClientModel/1.0.0": {
         "dependencies": {
           "System.Memory.Data": "1.0.2",
@@ -1007,6 +1009,13 @@
       "sha512": "sha512-LFQsCZlV0xlUyXAOMUo5kkSl+8zAQXXbbdwWchtk0B4o7zotZhQsQOcJUELGHdfPfm/xDAsz6hONAuV25bJaAg==",
       "path": "sixlabors.fonts/1.0.0",
       "hashPath": "sixlabors.fonts.1.0.0.nupkg.sha512"
+    },
+    "SonarAnalyzer.CSharp/9.32.0.97167": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Yxk86RV+8ynJpUhku1Yw2hITFmnmXKkXJ73cIFSy85ol5SnWREQg9RuTyV8nI7V7+pyLKpCfRmD7P0widsgjkg==",
+      "path": "sonaranalyzer.csharp/9.32.0.97167",
+      "hashPath": "sonaranalyzer.csharp.9.32.0.97167.nupkg.sha512"
     },
     "System.ClientModel/1.0.0": {
       "type": "package",

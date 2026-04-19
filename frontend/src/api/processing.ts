@@ -83,13 +83,25 @@ export async function exportGroupsByStatus(status: 15 | 16): Promise<Blob> {
   return apiGetBlob('/groups/export', { status });
 }
 
-export async function validateGroup(groupId: number): Promise<SuspenseGroup> {
-  return apiPost<SuspenseGroup>(`/groups/${groupId}/validate`);
+export async function createGroupRights(groupId: number): Promise<SuspenseGroup> {
+  return apiPost<SuspenseGroup>(`/groups/${groupId}/create-rights`);
+}
+
+/** Параметры GET /groups/{id}/search-rights */
+export interface SearchCatalogRightsParams {
+  artist?: string;
+  isrc?: string;
+  productName?: string;
+  barcode?: string;
+  rightsTerritoryCode?: string;
+  rightsDocNumber?: string;
+  /** and — все непустые поля продукта одновременно; or — любое (по умолчанию). */
+  combineMode?: 'and' | 'or';
 }
 
 export async function searchCatalogRights(
   groupId: number,
-  params: { artist?: string; isrc?: string; productName?: string; barcode?: string }
+  params: SearchCatalogRightsParams
 ): Promise<CatalogProductRights[]> {
   return apiGet<CatalogProductRights[]>(
     `/groups/${groupId}/search-rights`,

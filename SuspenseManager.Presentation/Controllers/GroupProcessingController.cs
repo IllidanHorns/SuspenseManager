@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Application.Interfaces;
 using Common.DTOs;
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Models;
@@ -12,21 +13,32 @@ namespace SuspenseManager.Controllers;
 /// бэк-офис, откладывание, разгруппировка, экспорт, отложенные
 /// </summary>
 [ApiController]
+[Authorize]
 [Route("api/groups")]
 public class GroupProcessingController : ControllerBase
 {
     private readonly IGroupProcessingService _processingService;
     private readonly IExcelExportService _excelExportService;
     private readonly ILogger<GroupProcessingController> _logger;
+    private readonly IValidator<SendToBackOfficeDto> _sendToBackOfficeValidator;
 
     public GroupProcessingController(
         IGroupProcessingService processingService,
         IExcelExportService excelExportService,
-        ILogger<GroupProcessingController> logger)
+        ILogger<GroupProcessingController> logger,
+        IValidator<SendToBackOfficeDto> sendToBackOfficeValidator)
     {
         _processingService = processingService;
         _excelExportService = excelExportService;
         _logger = logger;
+        _sendToBackOfficeValidator = sendToBackOfficeValidator;
+    }
+
+    private int GetCurrentAccountId()
+    {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? User.FindFirstValue("account_id");
+        return int.TryParse(value, out var id) ? id : 0;
     }
 
     // --- п.22 Выгрузка метаданных группы ---
@@ -116,6 +128,15 @@ public class GroupProcessingController : ControllerBase
     [Authorize]
     public async Task<IActionResult> SendToBackOffice(int groupId, [FromBody] SendToBackOfficeDto dto, CancellationToken ct)
     {
+        var validationResult = await _sendToBackOfficeValidator.ValidateAsync(dto, ct);
+        if (!validationResult.IsValid)
+        {
+            var errors = validationResult.Errors
+                .Select(e => new ApiError { Field = e.PropertyName, Message = e.ErrorMessage })
+                .ToList();
+            return BadRequest(ApiResponse<object>.Fail(400, "Ошибки валидации", "VALIDATION_ERROR", errors));
+        }
+
         var accountId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var group = await _processingService.SendToBackOfficeAsync(groupId, dto, accountId, ct);
         _logger.LogInformation("Группа отправлена в бэк-офис: GroupId={GroupId}, AccountId={AccountId}", groupId, accountId);
@@ -169,12 +190,12 @@ public class GroupProcessingController : ControllerBase
     /// 1. Если у продукта есть права в каталоге — переводит в 88.
     /// 2. Если прав нет — создаёт права из GroupMetaRights и переводит в 88.
     /// </summary>
-    [HttpPost("{groupId:int}/validate")]
-    public async Task<IActionResult> ValidateGroup(int groupId, CancellationToken ct)
+    [HttpPost("{groupId:int}/create-rights")]
+    public async Task<IActionResult> CreateRights(int groupId, CancellationToken ct)
     {
-        var group = await _processingService.ValidateGroupAsync(groupId, ct);
-        _logger.LogInformation("Группа валидирована: GroupId={GroupId}", groupId);
-        return Ok(ApiResponse<Models.SuspenseGroup>.Success(group, "Группа переведена в статус 88 (валидирована)", "VALIDATED"));
+        var group = await _processingService.CreateRightsAsync(groupId, ct);
+        _logger.LogInformation("Права созданы: GroupId={GroupId}", groupId);
+        return Ok(ApiResponse<Models.SuspenseGroup>.Success(group, "Права созданы, группа переведена в статус 88", "RIGHTS_CREATED"));
     }
 
     // --- Поиск прав в каталоге для копирования ---
@@ -190,9 +211,15 @@ public class GroupProcessingController : ControllerBase
         [FromQuery] string? isrc,
         [FromQuery] string? productName,
         [FromQuery] string? barcode,
+        [FromQuery] string? rightsTerritoryCode,
+        [FromQuery] string? rightsDocNumber,
+        [FromQuery] string? combineMode,
         CancellationToken ct)
     {
-        var rights = await _processingService.SearchCatalogRightsAsync(groupId, artist, isrc, productName, barcode, ct);
+        var combineAnd = string.Equals(combineMode, "and", StringComparison.OrdinalIgnoreCase);
+        var rights = await _processingService.SearchCatalogRightsAsync(
+            groupId, artist, isrc, productName, barcode,
+            rightsTerritoryCode, rightsDocNumber, combineAnd, ct);
         return Ok(ApiResponse<List<Models.CatalogProductRights>>.Success(rights));
     }
 
@@ -213,9 +240,9 @@ public class GroupProcessingController : ControllerBase
     // --- Отложенные группы ---
 
     [HttpGet("/api/postponed")]
-    public async Task<IActionResult> GetPostponed([FromQuery] PagedRequest request, CancellationToken ct)
+    public async Task<IActionResult> GetPostponed([FromQuery] GroupListRequest request, CancellationToken ct)
     {
-        var result = await _processingService.GetPostponedGroupsAsync(request, ct);
+        var result = await _processingService.GetPostponedGroupsAsync(request, GetCurrentAccountId(), ct);
         return Ok(ApiResponse<PagedResponse<Models.SuspenseGroup>>.Success(result));
     }
 

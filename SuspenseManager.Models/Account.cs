@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Models;
 
 public class Account
@@ -35,12 +37,18 @@ public class Account
     /// <summary>
     /// Хеш пароля
     /// </summary>
+    [JsonIgnore]
     public string PasswordHash { get; set; }
 
     /// <summary>
     /// Описание для аккаунта
     /// </summary>
     public string? Description { get; set; }
+
+    /// <summary>
+    /// Пользовательские настройки интерфейса (JSON), привязаны к аккаунту.
+    /// </summary>
+    public string? UiPreferencesJson { get; set; }
 
     /// <summary>
     /// FK для таблицы пользовательских данных

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo, useCallback } from 'react';
 import {
   Stack,
   Title,
@@ -19,6 +19,10 @@ import {
   TextInput,
   NumberInput,
   Grid,
+  Select,
+  ActionIcon,
+  Loader,
+  Center,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
@@ -30,12 +34,65 @@ import {
   IconAlertTriangle,
   IconX,
   IconPencilPlus,
+  IconPackage,
+  IconListDetails,
+  IconInfoCircle,
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
+import { isApiRequestError, propertyNameToFormKey } from '../api/apiError';
 import { uploadFile, uploadManual } from '../api/upload';
 import type { ManualSuspenseLineInput } from '../api/upload';
+import { getCatalogProduct } from '../api/catalog';
+import { getSuspenseById } from '../api/suspenses';
+import { ResizableTh } from '../components/common/ResizableTh';
 import { STATUS_LABELS, STATUS_COLORS } from '../types';
-import type { ValidationResultDto } from '../types';
+import type { ValidationResultDto, CatalogProduct, SuspenseLine, BusinessStatus } from '../types';
+import { fmtDateTime, fmtNumber } from '../utils/format';
+import { DbMax, optMaxLen } from '../utils/fieldValidation';
+import { UploadReportRequirementsModal } from '../components/upload/UploadReportRequirementsModal';
+
+/** Подписи полей (имена свойств DTO в PascalCase, как в ответе API). */
+const MANUAL_FIELD_LABELS: Record<string, string> = {
+  Isrc: 'ISRC',
+  Barcode: 'Баркод',
+  CatalogNumber: 'Каталожный номер',
+  ProductFormatCode: 'Формат (TTkey)',
+  SenderCompany: 'Компания отправитель',
+  RecipientCompany: 'Компания получатель',
+  Operator: 'Оператор',
+  Artist: 'Артист',
+  TrackTitle: 'Название трека',
+  AgreementType: 'Тип договора',
+  AgreementNumber: 'Номер договора',
+  TerritoryCode: 'Код территории',
+  Genre: 'Жанр',
+  Qty: 'Количество прослушиваний',
+  Ppd: 'PPD',
+  ExchangeCurrency: 'Валюта',
+  ExchangeRate: 'Курс обмена',
+  SenderCompanyId: 'ID компании отправителя',
+  RecipientCompanyId: 'ID компании получателя',
+};
+
+const RESULT_STATUS_FILTER: { value: string; label: string }[] = [
+  { value: 'all', label: 'Все статусы' },
+  { value: '0', label: STATUS_LABELS[0] },
+  { value: '1', label: STATUS_LABELS[1] },
+  { value: '88', label: STATUS_LABELS[88] },
+];
+
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <Group gap="xs" align="flex-start" wrap="nowrap">
+      <Text size="sm" c="dimmed" w={170} style={{ flexShrink: 0 }}>
+        {label}
+      </Text>
+      <Text size="sm" style={{ wordBreak: 'break-word' }}>
+        {value ?? '—'}
+      </Text>
+    </Group>
+  );
+}
 
 export function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -45,8 +102,67 @@ export function UploadPage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [manualOpened, { open: openManual, close: closeManual }] = useDisclosure(false);
+  const [requirementsOpened, { open: openRequirements, close: closeRequirements }] = useDisclosure(false);
   const [manualLoading, setManualLoading] = useState(false);
 
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  const [productModalId, setProductModalId] = useState<number | null>(null);
+  const [productDetail, setProductDetail] = useState<CatalogProduct | null>(null);
+  const [productLoading, setProductLoading] = useState(false);
+
+  const [suspenseModalId, setSuspenseModalId] = useState<number | null>(null);
+  const [suspenseDetail, setSuspenseDetail] = useState<SuspenseLine | null>(null);
+  const [suspenseLoading, setSuspenseLoading] = useState(false);
+
+  const openProductModal = useCallback(async (id: number) => {
+    setProductModalId(id);
+    setProductDetail(null);
+    setProductLoading(true);
+    try {
+      const p = await getCatalogProduct(id);
+      setProductDetail(p);
+    } catch (e: unknown) {
+      notifications.show({
+        title: 'Не удалось загрузить продукт',
+        message: e instanceof Error ? e.message : 'Ошибка запроса',
+        color: 'red',
+      });
+      setProductModalId(null);
+    } finally {
+      setProductLoading(false);
+    }
+  }, []);
+
+  const openSuspenseModal = useCallback(async (id: number) => {
+    if (id <= 0) {
+      notifications.show({
+        title: 'ID строки недоступен',
+        message: 'Обновите бэкенд и повторите загрузку — после сохранения строки должен приходить корректный идентификатор.',
+        color: 'yellow',
+        icon: <IconAlertTriangle size={16} />,
+      });
+      return;
+    }
+    setSuspenseModalId(id);
+    setSuspenseDetail(null);
+    setSuspenseLoading(true);
+    try {
+      const s = await getSuspenseById(id);
+      setSuspenseDetail(s);
+    } catch (e: unknown) {
+      notifications.show({
+        title: 'Не удалось загрузить строку',
+        message: e instanceof Error ? e.message : 'Ошибка запроса',
+        color: 'red',
+      });
+      setSuspenseModalId(null);
+    } finally {
+      setSuspenseLoading(false);
+    }
+  }, []);
+
+  const m = DbMax.suspenseLine;
   const manualForm = useForm<ManualSuspenseLineInput>({
     initialValues: {
       isrc: '',
@@ -67,13 +183,52 @@ export function UploadPage() {
       exchangeCurrency: undefined,
       exchangeRate: undefined,
     },
+    validate: {
+      isrc: optMaxLen(m.isrc, 'ISRC'),
+      barcode: optMaxLen(m.barcode, 'Баркод'),
+      catalogNumber: optMaxLen(m.catalogNumber, 'Каталожный номер'),
+      productFormatCode: optMaxLen(m.productFormatCode, 'Формат (TTkey)'),
+      artist: optMaxLen(m.artist, 'Артист'),
+      trackTitle: optMaxLen(m.trackTitle, 'Название трека'),
+      genre: optMaxLen(m.genre, 'Жанр'),
+      senderCompany: optMaxLen(m.senderCompany, 'Компания отправитель'),
+      recipientCompany: optMaxLen(m.recipientCompany, 'Компания получатель'),
+      operator: optMaxLen(m.operator, 'Оператор'),
+      agreementType: optMaxLen(m.agreementType, 'Тип договора'),
+      agreementNumber: optMaxLen(m.agreementNumber, 'Номер договора'),
+      territoryCode: optMaxLen(m.territoryCode, 'Код территории'),
+      qty: (v) => (v != null && v < 1 ? 'Количество не менее 1' : null),
+    },
   });
 
+  const filteredResultLines = useMemo(() => {
+    if (!result) return [];
+    if (statusFilter === 'all') return result.lines;
+    const code = Number(statusFilter) as BusinessStatus;
+    return result.lines.filter((l) => l.businessStatus === code);
+  }, [result, statusFilter]);
+
   const handleManualSubmit = async (values: ManualSuspenseLineInput) => {
+    const hasIdentifier =
+      (values.isrc != null && String(values.isrc).trim() !== '') ||
+      (values.barcode != null && String(values.barcode).trim() !== '') ||
+      (values.catalogNumber != null && String(values.catalogNumber).trim() !== '');
+    if (!hasIdentifier) {
+      notifications.show({
+        title: 'Заполните обязательные поля',
+        message: 'Укажите хотя бы одно из полей: ISRC, баркод или каталожный номер — иначе строку нельзя сохранить.',
+        color: 'yellow',
+        icon: <IconAlertTriangle size={16} />,
+      });
+      return;
+    }
+
+    manualForm.clearErrors();
     setManualLoading(true);
     try {
       const res = await uploadManual(values);
       setResult(res);
+      setStatusFilter('all');
       closeManual();
       manualForm.reset();
       notifications.show({
@@ -83,11 +238,47 @@ export function UploadPage() {
         icon: <IconCircleCheck size={16} />,
       });
     } catch (e: unknown) {
-      notifications.show({
-        title: 'Ошибка',
-        message: e instanceof Error ? e.message : 'Ошибка при добавлении строки',
-        color: 'red',
-      });
+      if (isApiRequestError(e)) {
+        const formErr: Record<string, string> = {};
+        for (const fe of e.fieldErrors) {
+          if (!fe.field) continue;
+          const key = propertyNameToFormKey(fe.field);
+          formErr[key] = formErr[key] ? `${formErr[key]} ${fe.message}` : fe.message;
+        }
+        manualForm.setErrors(formErr);
+
+        if (e.fieldErrors.length > 0) {
+          notifications.show({
+            title: e.message,
+            message: (
+              <Stack gap={6}>
+                {e.fieldErrors.map((fe) => (
+                  <Text key={`${fe.field}-${fe.message}`} size="sm">
+                    <Text span fw={600} inherit>
+                      {MANUAL_FIELD_LABELS[fe.field] ?? fe.field}:
+                    </Text>{' '}
+                    {fe.message}
+                  </Text>
+                ))}
+              </Stack>
+            ),
+            color: 'red',
+            autoClose: 12_000,
+          });
+        } else {
+          notifications.show({
+            title: 'Ошибка',
+            message: e.message,
+            color: 'red',
+          });
+        }
+      } else {
+        notifications.show({
+          title: 'Ошибка',
+          message: e instanceof Error ? e.message : 'Ошибка при добавлении строки',
+          color: 'red',
+        });
+      }
     } finally {
       setManualLoading(false);
     }
@@ -112,6 +303,7 @@ export function UploadPage() {
     try {
       const res = await uploadFile(file);
       setResult(res);
+      setStatusFilter('all');
       notifications.show({
         title: 'Загрузка завершена',
         message: `Обработано ${res.totalRows} строк`,
@@ -119,7 +311,12 @@ export function UploadPage() {
         icon: <IconCircleCheck size={16} />,
       });
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Ошибка загрузки');
+      if (isApiRequestError(e) && e.fieldErrors.length > 0) {
+        const detail = e.fieldErrors.map((fe) => fe.message).join('\n');
+        setError(`${e.message}\n\n${detail}`);
+      } else {
+        setError(e instanceof Error ? e.message : 'Ошибка загрузки');
+      }
     } finally {
       setLoading(false);
     }
@@ -206,18 +403,111 @@ export function UploadPage() {
         </form>
       </Modal>
 
-      <Group justify="space-between" align="flex-end">
-        <Box>
+      <Modal
+        opened={productModalId !== null}
+        onClose={() => {
+          setProductModalId(null);
+          setProductDetail(null);
+        }}
+        title="Продукт каталога"
+        size="lg"
+      >
+        {productLoading ? (
+          <Center py="xl">
+            <Loader />
+          </Center>
+        ) : productDetail ? (
+          <Stack gap="xs">
+            <DetailRow label="ID" value={productDetail.id} />
+            <DetailRow label="ISRC" value={productDetail.isrc} />
+            <DetailRow label="Баркод" value={productDetail.barcode} />
+            <DetailRow label="Каталожный номер" value={productDetail.catalogNumber} />
+            <DetailRow label="Название" value={productDetail.productName} />
+            <DetailRow label="Артист" value={productDetail.artist} />
+            <DetailRow label="Жанр" value={productDetail.genre} />
+            <DetailRow label="Длительность" value={productDetail.duration} />
+            <DetailRow label="Дата релиза" value={productDetail.releaseDate ? fmtDateTime(productDetail.releaseDate) : null} />
+            <DetailRow label="Тип продукта (ID)" value={productDetail.productTypeId ?? '—'} />
+            <DetailRow label="Создан" value={fmtDateTime(productDetail.createTime)} />
+            <DetailRow label="Архив" value={productDetail.archiveLevel} />
+          </Stack>
+        ) : null}
+      </Modal>
+
+      <Modal
+        opened={suspenseModalId !== null}
+        onClose={() => {
+          setSuspenseModalId(null);
+          setSuspenseDetail(null);
+        }}
+        title="Данные строки суспенса"
+        size="lg"
+      >
+        {suspenseLoading ? (
+          <Center py="xl">
+            <Loader />
+          </Center>
+        ) : suspenseDetail ? (
+          <Stack gap="xs">
+            <DetailRow label="ID" value={suspenseDetail.id} />
+            <DetailRow label="Статус" value={STATUS_LABELS[suspenseDetail.businessStatus] ?? suspenseDetail.businessStatus} />
+            <DetailRow label="Причина суспенса" value={suspenseDetail.causeSuspense} />
+            <DetailRow label="ISRC" value={suspenseDetail.isrc} />
+            <DetailRow label="Баркод" value={suspenseDetail.barcode} />
+            <DetailRow label="Каталожный номер" value={suspenseDetail.catalogNumber} />
+            <DetailRow label="Формат (TTkey)" value={suspenseDetail.productFormatCode} />
+            <DetailRow label="Артист" value={suspenseDetail.artist} />
+            <DetailRow label="Название трека" value={suspenseDetail.trackTitle} />
+            <DetailRow label="Жанр" value={suspenseDetail.genre} />
+            <DetailRow label="Компания отправитель" value={suspenseDetail.senderCompany} />
+            <DetailRow label="Компания получатель" value={suspenseDetail.recipientCompany} />
+            <DetailRow label="Оператор" value={suspenseDetail.operator} />
+            <DetailRow label="Тип договора" value={suspenseDetail.agreementType} />
+            <DetailRow label="Номер договора" value={suspenseDetail.agreementNumber} />
+            <DetailRow label="Территория" value={suspenseDetail.territoryCode} />
+            <DetailRow label="Кол-во прослушиваний" value={fmtNumber(suspenseDetail.qty)} />
+            <DetailRow label="PPD" value={suspenseDetail.ppd != null ? String(suspenseDetail.ppd) : '—'} />
+            <DetailRow
+              label="Валюта / курс"
+              value={
+                suspenseDetail.exchangeCurrency != null || suspenseDetail.exchangeRate != null
+                  ? `${String(suspenseDetail.exchangeCurrency ?? '—')} / ${fmtNumber(suspenseDetail.exchangeRate)}`
+                  : '—'
+              }
+            />
+            <DetailRow label="ID продукта в каталоге" value={suspenseDetail.productId ?? '—'} />
+            <DetailRow label="ID группы" value={suspenseDetail.groupId ?? '—'} />
+            <DetailRow label="Создана" value={fmtDateTime(suspenseDetail.createTime)} />
+            <DetailRow label="Изменена" value={fmtDateTime(suspenseDetail.changeTime)} />
+            <DetailRow label="Архив" value={suspenseDetail.archiveLevel} />
+          </Stack>
+        ) : null}
+      </Modal>
+
+      <UploadReportRequirementsModal opened={requirementsOpened} onClose={closeRequirements} />
+
+      <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
+        <Box style={{ flex: '1 1 220px' }}>
           <Title order={3} fw={600}>Загрузка отчёта</Title>
           <Text c="dimmed" size="sm">Загрузите Excel-файл со стриминговым отчётом для валидации</Text>
         </Box>
-        <Button
-          variant="light"
-          leftSection={<IconPencilPlus size={16} />}
-          onClick={openManual}
-        >
-          Ввести вручную
-        </Button>
+        <Group gap="xs" wrap="wrap" justify="flex-end">
+          <Button
+            variant="light"
+            color="gray"
+            leftSection={<IconInfoCircle size={18} />}
+            onClick={openRequirements}
+          >
+            Справка по файлу
+          </Button>
+          <Button
+            variant="light"
+            leftSection={<IconPencilPlus size={16} />}
+            onClick={openManual}
+          >
+            Ввести вручную
+          </Button>
+        </Group>
       </Group>
 
       <Paper
@@ -259,8 +549,8 @@ export function UploadPage() {
       </Paper>
 
       {error && (
-        <Alert icon={<IconAlertCircle size={16} />} color="red" radius="md">
-          {error}
+        <Alert icon={<IconAlertCircle size={16} />} color="red" radius="md" title="Не удалось обработать файл">
+          <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>{error}</Text>
         </Alert>
       )}
 
@@ -314,23 +604,56 @@ export function UploadPage() {
           </SimpleGrid>
 
           <Paper withBorder radius="md">
-            <Box p="md" style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
-              <Text fw={600}>Результаты валидации ({result.lines.length} строк)</Text>
-            </Box>
+            <Group
+              justify="space-between"
+              align="center"
+              wrap="wrap"
+              gap="sm"
+              p="md"
+              style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
+            >
+              <Text fw={600}>
+                Результаты валидации ({filteredResultLines.length}
+                {filteredResultLines.length !== result.lines.length ? ` из ${result.lines.length}` : ''} строк)
+              </Text>
+              <Select
+                w={280}
+                placeholder="Фильтр по статусу"
+                data={RESULT_STATUS_FILTER}
+                value={statusFilter}
+                onChange={(v) => setStatusFilter(v ?? 'all')}
+                clearable={false}
+              />
+            </Group>
             <ScrollArea h={400}>
               <Table striped highlightOnHover>
                 <Table.Thead>
                   <Table.Tr>
-                    <Table.Th>ID строки</Table.Th>
-                    <Table.Th>Статус</Table.Th>
-                    <Table.Th>Причина</Table.Th>
-                    <Table.Th>ID продукта</Table.Th>
+                    <ResizableTh>ID строки</ResizableTh>
+                    <ResizableTh>Статус</ResizableTh>
+                    <ResizableTh>Причина</ResizableTh>
+                    <ResizableTh>ID продукта</ResizableTh>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
-                  {result.lines.map((line) => (
-                    <Table.Tr key={line.suspenseLineId}>
-                      <Table.Td>{line.suspenseLineId}</Table.Td>
+                  {filteredResultLines.map((line, idx) => (
+                    <Table.Tr key={`${line.suspenseLineId}-${idx}`}>
+                      <Table.Td>
+                        <Group gap={6} wrap="nowrap">
+                          <Text size="sm" component="span">
+                            {line.suspenseLineId}
+                          </Text>
+                          <ActionIcon
+                            variant="subtle"
+                            color="indigo"
+                            size="sm"
+                            aria-label="Данные строки"
+                            onClick={() => void openSuspenseModal(line.suspenseLineId)}
+                          >
+                            <IconListDetails size={16} />
+                          </ActionIcon>
+                        </Group>
+                      </Table.Td>
                       <Table.Td>
                         <Badge color={STATUS_COLORS[line.businessStatus] ?? 'gray'} variant="light" size="sm">
                           {STATUS_LABELS[line.businessStatus] ?? line.businessStatus}
@@ -339,7 +662,24 @@ export function UploadPage() {
                       <Table.Td>
                         <Text size="sm" c="dimmed">{line.causeSuspense ?? '—'}</Text>
                       </Table.Td>
-                      <Table.Td>{line.productId ?? '—'}</Table.Td>
+                      <Table.Td>
+                        <Group gap={6} wrap="nowrap">
+                          <Text size="sm" component="span">
+                            {line.productId ?? '—'}
+                          </Text>
+                          {line.productId != null && (
+                            <ActionIcon
+                              variant="subtle"
+                              color="teal"
+                              size="sm"
+                              aria-label="Карточка продукта"
+                              onClick={() => void openProductModal(line.productId!)}
+                            >
+                              <IconPackage size={16} />
+                            </ActionIcon>
+                          )}
+                        </Group>
+                      </Table.Td>
                     </Table.Tr>
                   ))}
                 </Table.Tbody>

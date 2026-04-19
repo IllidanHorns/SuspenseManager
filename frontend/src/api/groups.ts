@@ -1,15 +1,34 @@
 import { apiGet } from './client';
 import type { PagedResponse, SuspenseGroup, SuspenseLine, PagedRequest } from '../types';
 
-export async function getNoProductGroups(params: PagedRequest): Promise<PagedResponse<SuspenseGroup>> {
+export interface GroupListRequest {
+  pageNumber?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
+  /** Только группы, созданные текущим аккаунтом */
+  onlyMine?: boolean;
+  artist?: string;
+  isrc?: string;
+  barcode?: string;
+  title?: string;
+  territoryCode?: string;
+  docNumber?: string;
+  countMin?: number;
+  countMax?: number;
+  revenueMin?: number;
+  revenueMax?: number;
+}
+
+export async function getNoProductGroups(params: GroupListRequest): Promise<PagedResponse<SuspenseGroup>> {
   return apiGet<PagedResponse<SuspenseGroup>>('/group/no-product', params as Record<string, unknown>);
 }
 
-export async function getNoRightsGroups(params: PagedRequest): Promise<PagedResponse<SuspenseGroup>> {
+export async function getNoRightsGroups(params: GroupListRequest): Promise<PagedResponse<SuspenseGroup>> {
   return apiGet<PagedResponse<SuspenseGroup>>('/group/no-rights', params as Record<string, unknown>);
 }
 
-export async function getSavedGroups(params: PagedRequest): Promise<PagedResponse<SuspenseGroup>> {
+export async function getSavedGroups(params: GroupListRequest): Promise<PagedResponse<SuspenseGroup>> {
   return apiGet<PagedResponse<SuspenseGroup>>('/group/saved', params as Record<string, unknown>);
 }
 
@@ -24,6 +43,6 @@ export async function getGroupSuspenses(
   return apiGet<PagedResponse<SuspenseLine>>(`/group/${id}/suspenses`, params as Record<string, unknown>);
 }
 
-export async function getPostponedGroups(params: PagedRequest): Promise<PagedResponse<SuspenseGroup>> {
+export async function getPostponedGroups(params: GroupListRequest): Promise<PagedResponse<SuspenseGroup>> {
   return apiGet<PagedResponse<SuspenseGroup>>('/postponed', params as Record<string, unknown>);
 }

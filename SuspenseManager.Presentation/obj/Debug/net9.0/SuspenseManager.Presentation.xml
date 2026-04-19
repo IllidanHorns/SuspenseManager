@@ -4,6 +4,12 @@
         <name>SuspenseManager.Presentation</name>
     </assembly>
     <members>
+        <member name="M:SuspenseManager.Controllers.AccountController.ReplaceRights(System.Int32,Common.DTOs.ReplaceAccountRightsDto,System.Threading.CancellationToken)">
+            <summary>Полная замена набора прав аккаунта (админка).</summary>
+        </member>
+        <member name="T:SuspenseManager.Controllers.AdminController">
+            <summary>Сводные метрики для экрана администрирования.</summary>
+        </member>
         <member name="M:SuspenseManager.Controllers.AnalyticsController.GetDashboard(System.Threading.CancellationToken)">
             <summary>
             Дашборд аналитики: общая статистика, топ операторов, распределение по статусам
@@ -36,6 +42,11 @@
             <summary>
             История переходов статусов конкретной строки суспенса (от новых к старым).
             Открывается по клику на строку в списке аудита.
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.AuditController.GetAccountActivity(System.Int32,Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
+            <summary>
+            Лента последних действий аккаунта (переходы статусов по группам и строкам из логов аудита).
             </summary>
         </member>
         <member name="M:SuspenseManager.Controllers.AuthController.Login(Common.DTOs.LoginDto,System.Threading.CancellationToken)">
@@ -87,7 +98,7 @@
             Если прав нет → 320, задание остаётся открытым.
             </summary>
         </member>
-        <member name="M:SuspenseManager.Controllers.BackOfficeController.Validate(System.Int32,System.Threading.CancellationToken)">
+        <member name="M:SuspenseManager.Controllers.BackOfficeController.CompleteTask(System.Int32,System.Threading.CancellationToken)">
             <summary>
             Валидировать группу 320 (нет прав в BO).
             Проверяет права продукта в каталоге; если нет — создаёт из метаправ группы.
@@ -97,7 +108,7 @@
         <member name="M:SuspenseManager.Controllers.BackOfficeController.GetPossibleProducts(System.Int32,Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
             <summary>Поиск возможных продуктов для привязки к группе 120.</summary>
         </member>
-        <member name="M:SuspenseManager.Controllers.BackOfficeController.SearchRights(System.Int32,System.String,System.String,System.String,System.String,System.Threading.CancellationToken)">
+        <member name="M:SuspenseManager.Controllers.BackOfficeController.SearchRights(System.Int32,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.Threading.CancellationToken)">
             <summary>Поиск прав в каталоге для копирования в группу 320.</summary>
         </member>
         <member name="M:SuspenseManager.Controllers.BackOfficeController.CopyRights(System.Int32,Common.DTOs.BoCopyRightsDto,System.Threading.CancellationToken)">
@@ -119,7 +130,7 @@
             </summary>
         </member>
         <member name="M:SuspenseManager.Controllers.CatalogController.GetProducts(Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
-            <summary>Список продуктов каталога с пагинацией.</summary>
+            <summary>Список продуктов каталога с пагинацией. Фильтр <c>Filters[IdentityIncomplete]=true</c> — только продукты без полного набора полей (название, исполнитель, ISRC, баркод, каталожный номер).</summary>
         </member>
         <member name="M:SuspenseManager.Controllers.CatalogController.GetProduct(System.Int32,System.Threading.CancellationToken)">
             <summary>Продукт по ID со всеми правами.</summary>
@@ -131,7 +142,7 @@
             <summary>Обновить продукт каталога (частичное обновление — передаются только изменяемые поля).</summary>
         </member>
         <member name="M:SuspenseManager.Controllers.CatalogController.GetRights(Common.DTOs.PagedRequest,System.Nullable{System.Int32},System.Threading.CancellationToken)">
-            <summary>Список прав. Опциональный фильтр productId — права конкретного продукта.</summary>
+            <summary>Список прав. Опциональный фильтр productId — права конкретного продукта. Фильтр <c>Filters[RightsIncomplete]=true</c> — только записи с незаполненными обязательными полями.</summary>
         </member>
         <member name="M:SuspenseManager.Controllers.CatalogController.CreateRights(Common.DTOs.CreateCatalogProductRightsDto,System.Threading.CancellationToken)">
             <summary>Добавить права на продукт каталога.</summary>
@@ -163,17 +174,17 @@
             Контроллер групп: просмотр сохранённых групп, нет продукта, нет прав, суспенсы группы
             </summary>
         </member>
-        <member name="M:SuspenseManager.Controllers.GroupController.GetNoProduct(Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
+        <member name="M:SuspenseManager.Controllers.GroupController.GetNoProduct(Common.DTOs.GroupListRequest,System.Threading.CancellationToken)">
             <summary>
             Группы "нет продукта" (статус 15) — п.8
             </summary>
         </member>
-        <member name="M:SuspenseManager.Controllers.GroupController.GetNoRights(Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
+        <member name="M:SuspenseManager.Controllers.GroupController.GetNoRights(Common.DTOs.GroupListRequest,System.Threading.CancellationToken)">
             <summary>
             Группы "нет прав" (статус 16) — п.8
             </summary>
         </member>
-        <member name="M:SuspenseManager.Controllers.GroupController.GetSaved(Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
+        <member name="M:SuspenseManager.Controllers.GroupController.GetSaved(Common.DTOs.GroupListRequest,System.Threading.CancellationToken)">
             <summary>
             Все сохранённые группы (статус 15 и 16) — п.10
             </summary>
@@ -224,7 +235,7 @@
              <response code="200">Группировка выполнена успешно</response>
              <response code="400">Невалидный запрос (неверный статус, столбец, отсутствует ProductId для статуса 1)</response>
         </member>
-        <member name="M:SuspenseManager.Controllers.GroupingController.Commit(Common.DTOs.GroupingCommitRequest,System.Threading.CancellationToken)">
+        <member name="M:SuspenseManager.Controllers.GroupingController.PreviewLines(Common.DTOs.GroupLinesPreviewRequest,System.Threading.CancellationToken)">
              <summary>
              Фиксация (сохранение) динамической группы.
              </summary>
@@ -253,6 +264,9 @@
              <returns>Информация о созданной группе</returns>
              <response code="200">Группа успешно зафиксирована</response>
              <response code="400">Невалидный запрос или не найдено суспенсов</response>
+             <summary>
+             Предпросмотр строк суспенса внутри потенциальной группы (без фиксации).
+             </summary>
         </member>
         <member name="T:SuspenseManager.Controllers.GroupProcessingController">
             <summary>
@@ -266,14 +280,14 @@
             Группа переводится в статус 16 (нет прав). Body не требуется.
             </summary>
         </member>
-        <member name="M:SuspenseManager.Controllers.GroupProcessingController.ValidateGroup(System.Int32,System.Threading.CancellationToken)">
+        <member name="M:SuspenseManager.Controllers.GroupProcessingController.CreateRights(System.Int32,System.Threading.CancellationToken)">
             <summary>
             Валидирует группу со статусом 16:
             1. Если у продукта есть права в каталоге — переводит в 88.
             2. Если прав нет — создаёт права из GroupMetaRights и переводит в 88.
             </summary>
         </member>
-        <member name="M:SuspenseManager.Controllers.GroupProcessingController.SearchRights(System.Int32,System.String,System.String,System.String,System.String,System.Threading.CancellationToken)">
+        <member name="M:SuspenseManager.Controllers.GroupProcessingController.SearchRights(System.Int32,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.Threading.CancellationToken)">
             <summary>
             Ищет записи прав (CatalogProductRights) у других продуктов каталога по заданным критериям.
             Используется оператором для выбора прав с похожего продукта.
@@ -285,12 +299,21 @@
             и переводит группу в статус 88 (валидирована).
             </summary>
         </member>
+        <member name="T:SuspenseManager.Controllers.RightsController">
+            <summary>Справочник прав и готовые пресеты ролей для админки.</summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.RightsController.GetCatalog(System.Threading.CancellationToken)">
+            <summary>Все активные права (id, код, название, модуль).</summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.RightsController.GetPresets(System.Threading.CancellationToken)">
+            <summary>Четыре дефолтных набора: полный доступ, админ, оператор, бэк-офис.</summary>
+        </member>
         <member name="T:SuspenseManager.Controllers.SuspenseController">
             <summary>
             Контроллер суспенсов: ручной ввод, просмотр списка, обновление
             </summary>
         </member>
-        <member name="M:SuspenseManager.Controllers.SuspenseController.GetAll(Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
+        <member name="M:SuspenseManager.Controllers.SuspenseController.GetAll(Common.DTOs.SuspenseListRequest,System.Threading.CancellationToken)">
             <summary>
             Список суспенсов с пагинацией, фильтрацией, сортировкой
             </summary>
@@ -313,6 +336,11 @@
         <member name="M:SuspenseManager.Controllers.SuspenseController.Update(System.Int32,Common.DTOs.SuspenseLineDto)">
             <summary>
             Обновление суспенса (п.26)
+            </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.SuspenseController.Archive(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Мягкая архивация суспенс-строки (доступно только для статусов 0 и 1)
             </summary>
         </member>
         <member name="T:SuspenseManager.Controllers.TerritoryController">

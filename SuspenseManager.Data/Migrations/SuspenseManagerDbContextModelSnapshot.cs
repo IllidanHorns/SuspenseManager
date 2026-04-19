@@ -56,6 +56,9 @@ namespace Data.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("UiPreferencesJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int?>("UserId")
                         .HasColumnType("int");
 
@@ -105,6 +108,55 @@ namespace Data.Migrations
                         .IsUnique();
 
                     b.ToTable("AccountRightsLinks", (string)null);
+                });
+
+            modelBuilder.Entity("Models.BackOfficeTask", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ArchiveLevel")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime?>("ArchiveTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ChangeTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedByAccountId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GroupId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProblemDescription")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("TaskStatus")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArchiveLevel");
+
+                    b.HasIndex("CreatedByAccountId");
+
+                    b.HasIndex("GroupId");
+
+                    b.HasIndex("TaskStatus");
+
+                    b.ToTable("BackOfficeTasks", (string)null);
                 });
 
             modelBuilder.Entity("Models.CatalogProduct", b =>
@@ -338,7 +390,6 @@ namespace Data.Migrations
                         .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("Bic")
-                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
@@ -359,7 +410,6 @@ namespace Data.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Inn")
-                        .IsRequired()
                         .HasMaxLength(12)
                         .HasColumnType("nvarchar(12)");
 
@@ -708,6 +758,10 @@ namespace Data.Migrations
                     b.Property<int?>("MetaRightsId")
                         .HasColumnType("int");
 
+                    b.Property<string>("PostponeReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AccountId");
@@ -857,8 +911,8 @@ namespace Data.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("ExchangeCurrency")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(18, 6)
+                        .HasColumnType("decimal(18,6)");
 
                     b.Property<decimal>("ExchangeRate")
                         .HasPrecision(18, 6)
@@ -1084,52 +1138,23 @@ namespace Data.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Models.BackOfficeTask", b =>
+            modelBuilder.Entity("Models.AccountRightsLink", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                    b.HasOne("Models.Account", "Account")
+                        .WithMany("RightsLinks")
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.HasOne("Models.Rights", "Rights")
+                        .WithMany("AccountsLinks")
+                        .HasForeignKey("RightId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Property<int>("ArchiveLevel")
-                        .HasDefaultValue(0)
-                        .HasColumnType("int");
+                    b.Navigation("Account");
 
-                    b.Property<DateTime?>("ArchiveTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("ChangeTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("CreateTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("CreatedByAccountId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("GroupId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ProblemDescription")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<int>("TaskStatus")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ArchiveLevel");
-
-                    b.HasIndex("CreatedByAccountId");
-
-                    b.HasIndex("GroupId");
-
-                    b.HasIndex("TaskStatus");
-
-                    b.ToTable("BackOfficeTasks");
+                    b.Navigation("Rights");
                 });
 
             modelBuilder.Entity("Models.BackOfficeTask", b =>
@@ -1149,25 +1174,6 @@ namespace Data.Migrations
                     b.Navigation("CreatedBy");
 
                     b.Navigation("Group");
-                });
-
-            modelBuilder.Entity("Models.AccountRightsLink", b =>
-                {
-                    b.HasOne("Models.Account", "Account")
-                        .WithMany("RightsLinks")
-                        .HasForeignKey("AccountId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Models.Rights", "Rights")
-                        .WithMany("AccountsLinks")
-                        .HasForeignKey("RightId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Account");
-
-                    b.Navigation("Rights");
                 });
 
             modelBuilder.Entity("Models.CatalogProduct", b =>

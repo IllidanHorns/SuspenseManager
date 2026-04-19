@@ -13,6 +13,8 @@ public interface IAccountService
     Task AddRightsAsync(int accountId, List<int> rightIds, CancellationToken ct = default);
     Task RemoveRightsAsync(int accountId, List<int> rightIds, CancellationToken ct = default);
     Task<List<Rights>> GetAccountRightsAsync(int accountId, CancellationToken ct = default);
+    /// <summary>Снимает все текущие права и назначает переданный набор (полная замена).</summary>
+    Task ReplaceRightsAsync(int accountId, List<int> rightIds, CancellationToken ct = default);
 }
 
 public interface IUserService
