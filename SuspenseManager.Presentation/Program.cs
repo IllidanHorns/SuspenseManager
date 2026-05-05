@@ -55,7 +55,8 @@ builder.Services.AddControllers()
     });
 
 // JWT Authentication
-var jwtSecret = builder.Configuration["Jwt:SecretKey"] ?? "SuspenseManagerDefaultSecretKey_ChangeInProduction_32chars!";
+var jwtSecret = builder.Configuration["Jwt:SecretKey"]
+    ?? throw new InvalidOperationException("Jwt:SecretKey не настроен. Задайте переменную окружения Jwt__SecretKey.");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "SuspenseManager";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "SuspenseManagerClient";
 

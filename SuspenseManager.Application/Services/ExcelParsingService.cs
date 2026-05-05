@@ -64,6 +64,9 @@ public class ExcelParsingService : IExcelParsingService
     public ExcelParseResult ParseExcel(Stream fileStream)
     {
         using var workbook = new XLWorkbook(fileStream);
+        if (!workbook.Worksheets.Any())
+            throw new ArgumentException("Excel-файл не содержит листов.", nameof(fileStream));
+
         var worksheet = workbook.Worksheets.First();
 
         var missing = GetMissingRequiredHeaders(worksheet);
@@ -220,7 +223,8 @@ public class ExcelParsingService : IExcelParsingService
         var cell = ws.Cell(row, col);
         if (cell.TryGetValue(out double value))
         {
-            return (decimal)value;
+            try { return (decimal)value; }
+            catch (OverflowException) { return 0; }
         }
 
         var text = cell.GetString()?.Trim();

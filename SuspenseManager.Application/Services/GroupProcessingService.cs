@@ -194,7 +194,8 @@ public class GroupProcessingService : IGroupProcessingService
         {
             var productType = await _db.CatalogProductTypes
                 .FirstOrDefaultAsync(t => t.Code == formatCode, ct)
-                ?? await _db.CatalogProductTypes.FirstAsync(ct);
+                ?? await _db.CatalogProductTypes.FirstOrDefaultAsync(ct)
+                ?? throw new BusinessException("В системе не настроены типы продуктов.", "NO_PRODUCT_TYPES");
             productTypeId = productType.Id;
         }
 
@@ -864,11 +865,13 @@ public class GroupProcessingService : IGroupProcessingService
     {
         var sender = await _db.Companies
             .AsNoTracking()
-            .FirstAsync(c => c.Id == meta.SenderCompanyId!.Value, ct);
+            .FirstOrDefaultAsync(c => c.Id == meta.SenderCompanyId!.Value, ct)
+            ?? throw new BusinessException("Компания-отправитель не найдена.", "COMPANY_NOT_FOUND");
 
         var receiver = await _db.Companies
             .AsNoTracking()
-            .FirstAsync(c => c.Id == meta.ReceiverCompanyId!.Value, ct);
+            .FirstOrDefaultAsync(c => c.Id == meta.ReceiverCompanyId!.Value, ct)
+            ?? throw new BusinessException("Компания-получатель не найдена.", "COMPANY_NOT_FOUND");
 
         _db.CatalogProductRights.Add(new CatalogProductRights
         {

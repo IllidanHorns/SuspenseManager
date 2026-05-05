@@ -60,7 +60,7 @@ public class GroupingService : IGroupingService
             countCmd.CommandText = countSql;
             countCmd.Parameters.AddRange(countParams.ToArray());
             var countResult = await countCmd.ExecuteScalarAsync(ct);
-            totalCount = Convert.ToInt32(countResult);
+            totalCount = countResult is null or DBNull ? 0 : Convert.ToInt32(countResult);
         }
 
         // Основной запрос с данными
@@ -517,7 +517,7 @@ public class GroupingService : IGroupingService
                 "AgreementType" => value == null ? query.Where(s => s.AgreementType == null) : query.Where(s => s.AgreementType == value),
                 "AgreementNumber" => value == null ? query.Where(s => s.AgreementNumber == null) : query.Where(s => s.AgreementNumber == value),
                 "TerritoryCode" => value == null ? query.Where(s => s.TerritoryCode == null) : query.Where(s => s.TerritoryCode == value),
-                "ProductId" => value == null ? query.Where(s => s.ProductId == null) : query.Where(s => s.ProductId == int.Parse(value)),
+                "ProductId" => value == null ? query.Where(s => s.ProductId == null) : int.TryParse(value, out var pid) ? query.Where(s => s.ProductId == pid) : query,
                 _ => query
             };
         }

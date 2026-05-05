@@ -487,11 +487,13 @@ public class BackOfficeService : IBackOfficeService
     {
         var sender = await _db.Companies
             .AsNoTracking()
-            .FirstAsync(c => c.Id == meta.SenderCompanyId!.Value, ct);
+            .FirstOrDefaultAsync(c => c.Id == meta.SenderCompanyId!.Value, ct)
+            ?? throw new BusinessException("Компания-отправитель не найдена.", "COMPANY_NOT_FOUND");
 
         var receiver = await _db.Companies
             .AsNoTracking()
-            .FirstAsync(c => c.Id == meta.ReceiverCompanyId!.Value, ct);
+            .FirstOrDefaultAsync(c => c.Id == meta.ReceiverCompanyId!.Value, ct)
+            ?? throw new BusinessException("Компания-получатель не найдена.", "COMPANY_NOT_FOUND");
 
         _db.CatalogProductRights.Add(new CatalogProductRights
         {

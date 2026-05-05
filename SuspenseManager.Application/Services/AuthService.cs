@@ -120,7 +120,8 @@ public class AuthService : IAuthService
 
     private (string Token, DateTime ExpiresAt) GenerateJwtToken(Account account, List<string> permissions)
     {
-        var secretKey = _config["Jwt:SecretKey"] ?? "SuspenseManagerDefaultSecretKey_ChangeInProduction_32chars!";
+        var secretKey = _config["Jwt:SecretKey"]
+            ?? throw new InvalidOperationException("Jwt:SecretKey не настроен.");
         var issuer = _config["Jwt:Issuer"] ?? "SuspenseManager";
         var audience = _config["Jwt:Audience"] ?? "SuspenseManagerClient";
         var expirationMinutes = int.TryParse(_config["Jwt:AccessExpirationMinutes"], out var mins) ? mins : 15;
