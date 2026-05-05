@@ -88,7 +88,18 @@ public class UploadController : ControllerBase
         _logger.LogInformation("Загрузка файла: {FileName}, размер: {FileSize} байт", file.FileName, file.Length);
 
         using var stream = file.OpenReadStream();
-        var parseResult = _excelParsingService.ParseExcel(stream);
+        ExcelParseResult parseResult;
+        try
+        {
+            parseResult = _excelParsingService.ParseExcel(stream);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Не удалось прочитать Excel-файл: {FileName}", file.FileName);
+            return BadRequest(ApiResponse<object>.Fail(400,
+                "Файл повреждён или не является корректным Excel-документом.",
+                "FILE_CORRUPT"));
+        }
 
         if (!parseResult.HeadersValid)
         {
@@ -104,15 +115,44 @@ public class UploadController : ControllerBase
             return BadRequest(ApiResponse<object>.Fail(400, "Файл не содержит данных", "FILE_NO_DATA"));
         }
 
-        var result = await _validationService.ValidateBatchAsync(parseResult.Lines);
+        var validLines = new List<SuspenseLineDto>();
+        var rowFormatErrors = new List<RowFormatError>();
+        for (var i = 0; i < parseResult.Lines.Count; i++)
+        {
+            var fv = await _suspenseLineValidator.ValidateAsync(parseResult.Lines[i]);
+            if (fv.IsValid)
+            {
+                validLines.Add(parseResult.Lines[i]);
+            }
+            else
+            {
+                rowFormatErrors.Add(new RowFormatError
+                {
+                    RowNumber = i + 2,
+                    Isrc = parseResult.Lines[i].Isrc,
+                    Errors = fv.Errors.Select(e => e.ErrorMessage).ToList(),
+                });
+            }
+        }
+
+        if (validLines.Count == 0)
+        {
+            return BadRequest(ApiResponse<object>.Fail(400,
+                "Все строки файла содержат ошибки формата данных.",
+                "ALL_ROWS_INVALID"));
+        }
+
+        var result = await _validationService.ValidateBatchAsync(validLines);
+        result.RowFormatErrors = rowFormatErrors;
 
         _logger.LogInformation(
-            "Файл обработан: {FileName}, всего: {Total}, валидных: {Validated}, нет продукта: {NoProduct}, нет прав: {NoRights}",
-            file.FileName, result.TotalRows, result.ValidatedCount, result.NoProductCount, result.NoRightsCount);
+            "Файл обработан: {FileName}, всего: {Total}, валидных: {Validated}, нет продукта: {NoProduct}, нет прав: {NoRights}, ошибки формата: {FormatErrors}",
+            file.FileName, result.TotalRows, result.ValidatedCount, result.NoProductCount, result.NoRightsCount, rowFormatErrors.Count);
 
-        return Ok(ApiResponse<ValidationResultDto>.Success(
-            result,
-            $"Файл обработан: {result.TotalRows} строк",
-            "UPLOAD_COMPLETED"));
+        var message = rowFormatErrors.Count > 0
+            ? $"Файл обработан: {result.TotalRows} строк, пропущено (ошибки формата): {rowFormatErrors.Count}"
+            : $"Файл обработан: {result.TotalRows} строк";
+
+        return Ok(ApiResponse<ValidationResultDto>.Success(result, message, "UPLOAD_COMPLETED"));
     }
 }

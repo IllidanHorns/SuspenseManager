@@ -5,6 +5,9 @@ namespace Application.Interfaces;
 
 public interface ICatalogService
 {
+    // ── Типы продуктов ──────────────────────────────────────────────────────────
+    Task<List<CatalogProductType>> GetProductTypesAsync(CancellationToken ct = default);
+
     // ── Продукты ────────────────────────────────────────────────────────────────
     Task<PagedResponse<CatalogProduct>> GetProductsAsync(PagedRequest request, CancellationToken ct = default);
     Task<CatalogProduct> GetProductByIdAsync(int id, CancellationToken ct = default);

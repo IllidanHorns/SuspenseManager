@@ -7,10 +7,11 @@ import {
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconAlertCircle, IconAlertTriangle, IconPencil, IconPlus, IconSearch, IconX } from '@tabler/icons-react';
+import { IconAlertCircle, IconAlertTriangle, IconInfoCircle, IconPencil, IconPlus, IconSearch, IconX } from '@tabler/icons-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getCatalogProducts, createCatalogProduct, updateCatalogProduct,
+  getCatalogProductTypes,
   getCatalogRights, createCatalogRights, updateCatalogRights,
   getCatalogCompanies, createCompany, updateCompany,
   getCatalogTerritories, createTerritory, updateTerritory,
@@ -30,14 +31,18 @@ import {
 } from '../utils/requiredProductIdentity';
 import {
   DbMax,
+  bicOptional,
   combine,
   dateIsoOptional,
   innOptional,
   maxLen,
   optMaxLen,
+  phoneOptional,
   required,
   sharePercent,
 } from '../utils/fieldValidation';
+import { PhoneRequirementsModal } from '../components/common/PhoneRequirementsModal';
+import { CompanyIdentifiersModal } from '../components/common/CompanyIdentifiersModal';
 import type {
   CatalogProduct, CatalogProductRights, Company, Territory,
   CreateCatalogProductDto, UpdateCatalogProductDto,
@@ -103,6 +108,17 @@ function ProductsTab() {
       releaseDate: (v) => dateIsoOptional('Дата релиза')(v as string | null | undefined),
     },
   });
+
+  const { data: productTypes } = useQuery({
+    queryKey: ['catalog-product-types'],
+    queryFn: getCatalogProductTypes,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const productTypeOptions = (productTypes ?? []).map((t) => ({
+    value: String(t.id),
+    label: `${t.code} — ${t.description}`,
+  }));
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['catalog-products', page, pageSize, applied, incompleteOnly],
@@ -401,7 +417,15 @@ function ProductsTab() {
             <TextInput label="Каталожный номер" {...form.getInputProps('catalogNumber')} />
             <TextInput label="Жанр" {...form.getInputProps('genre')} />
             <TextInput label="Дата релиза" placeholder="YYYY-MM-DD" {...form.getInputProps('releaseDate')} />
-            <NumberInput label="Тип продукта (ID)" placeholder="Необязательно" {...form.getInputProps('productTypeId')} />
+            <Select
+              label="Тип продукта"
+              placeholder="Выберите тип"
+              data={productTypeOptions}
+              clearable
+              value={form.values.productTypeId != null ? String(form.values.productTypeId) : null}
+              onChange={(val) => form.setFieldValue('productTypeId', val ? Number(val) : null)}
+              error={form.errors.productTypeId}
+            />
           </SimpleGrid>
           <Group justify="flex-end" mt="md">
             <Button variant="subtle" onClick={close} disabled={isPending}>Отмена</Button>
@@ -972,6 +996,8 @@ function CompaniesTab() {
   const qc = useQueryClient();
   const [editItem, setEditItem] = useState<Company | null>(null);
   const [opened, { open, close }] = useDisclosure(false);
+  const [phoneHintOpened, { open: openPhoneHint, close: closePhoneHint }] = useDisclosure(false);
+  const [identHintOpened, { open: openIdentHint, close: closeIdentHint }] = useDisclosure(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useDefaultPageSize();
@@ -987,12 +1013,12 @@ function CompaniesTab() {
       shortName: combine(required('Укажите краткое наименование'), maxLen(DbMax.company.shortName, 'Краткое наименование')),
       companyCode: optMaxLen(DbMax.company.companyCode, 'Код компании'),
       bankName: optMaxLen(DbMax.company.bankName, 'Банк'),
-      phoneNumber: optMaxLen(DbMax.company.phoneNumber, 'Телефон'),
+      phoneNumber: phoneOptional('Телефон'),
       country: optMaxLen(DbMax.company.country, 'Страна'),
       legalAddress: optMaxLen(DbMax.company.legalAddress, 'Юр. адрес'),
       actualAddress: optMaxLen(DbMax.company.actualAddress, 'Факт. адрес'),
       inn: innOptional(),
-      bic: optMaxLen(DbMax.company.bic, 'БИК'),
+      bic: bicOptional(),
     },
   });
 
@@ -1124,9 +1150,39 @@ function CompaniesTab() {
             <TextInput label="Краткое наименование" required {...form.getInputProps('shortName')} />
             <TextInput label="Код компании" {...form.getInputProps('companyCode')} />
             <TextInput label="Страна" {...form.getInputProps('country')} />
-            <TextInput label="Телефон" {...form.getInputProps('phoneNumber')} />
-            <TextInput label="ИНН" {...form.getInputProps('inn')} />
-            <TextInput label="БИК" {...form.getInputProps('bic')} />
+            <TextInput
+              label={
+                <Group gap={4} align="center">
+                  <span>Телефон</span>
+                  <ActionIcon size="xs" variant="transparent" color="dimmed" onClick={openPhoneHint} title="Справка по формату телефона">
+                    <IconInfoCircle size={14} />
+                  </ActionIcon>
+                </Group>
+              }
+              {...form.getInputProps('phoneNumber')}
+            />
+            <TextInput
+              label={
+                <Group gap={4} align="center">
+                  <span>ИНН</span>
+                  <ActionIcon size="xs" variant="transparent" color="dimmed" onClick={openIdentHint} title="Справка по ИНН и БИК">
+                    <IconInfoCircle size={14} />
+                  </ActionIcon>
+                </Group>
+              }
+              {...form.getInputProps('inn')}
+            />
+            <TextInput
+              label={
+                <Group gap={4} align="center">
+                  <span>БИК</span>
+                  <ActionIcon size="xs" variant="transparent" color="dimmed" onClick={openIdentHint} title="Справка по ИНН и БИК">
+                    <IconInfoCircle size={14} />
+                  </ActionIcon>
+                </Group>
+              }
+              {...form.getInputProps('bic')}
+            />
             <TextInput label="Банк" {...form.getInputProps('bankName')} style={{ gridColumn: 'span 2' }} />
             <TextInput label="Юр. адрес" {...form.getInputProps('legalAddress')} style={{ gridColumn: 'span 2' }} />
             <TextInput label="Факт. адрес" {...form.getInputProps('actualAddress')} style={{ gridColumn: 'span 2' }} />
@@ -1137,6 +1193,9 @@ function CompaniesTab() {
           </Group>
         </form>
       </Modal>
+
+      <PhoneRequirementsModal opened={phoneHintOpened} onClose={closePhoneHint} />
+      <CompanyIdentifiersModal opened={identHintOpened} onClose={closeIdentHint} />
     </>
   );
 }

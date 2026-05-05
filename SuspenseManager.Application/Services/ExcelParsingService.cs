@@ -175,7 +175,7 @@ public class ExcelParsingService : IExcelParsingService
             Genre = GetString(ws, row, columnMap, nameof(SuspenseLineDto.Genre)),
             Qty = GetInt(ws, row, columnMap, nameof(SuspenseLineDto.Qty)),
             Ppd = GetDouble(ws, row, columnMap, nameof(SuspenseLineDto.Ppd)),
-            ExchangeCurrency = GetDecimal(ws, row, columnMap, nameof(SuspenseLineDto.ExchangeCurrency)),
+            ExchangeCurrency = GetString(ws, row, columnMap, nameof(SuspenseLineDto.ExchangeCurrency)),
             ExchangeRate = GetDecimal(ws, row, columnMap, nameof(SuspenseLineDto.ExchangeRate)),
         };
 

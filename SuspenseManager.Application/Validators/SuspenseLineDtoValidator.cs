@@ -14,12 +14,18 @@ public class SuspenseLineDtoValidator : AbstractValidator<SuspenseLineDto>
         RuleFor(x => x.Qty)
             .GreaterThanOrEqualTo(0).WithMessage("Количество стримов не может быть отрицательным");
 
+        // ISRC: CC-XXX-YY-NNNNN (два буквенных + три алфанумерных + 2 цифры года + 5 цифр), дефисы опциональны
         RuleFor(x => x.Isrc)
             .MaximumLength(15).WithMessage("ISRC не должен превышать 15 символов")
+            .Matches(@"^[A-Za-z]{2}-?[A-Za-z0-9]{3}-?\d{2}-?\d{5}$")
+            .WithMessage("Некорректный формат ISRC. Ожидается: CCXXXYYNNNN или CC-XXX-YY-NNNNN (например: RU-S1Z-24-00001)")
             .When(x => x.Isrc != null);
 
+        // Barcode: EAN-8 (8 цифр), UPC-A (12 цифр) или EAN-13 (13 цифр)
         RuleFor(x => x.Barcode)
             .MaximumLength(20).WithMessage("Баркод не должен превышать 20 символов")
+            .Matches(@"^\d{8}$|^\d{12}$|^\d{13}$")
+            .WithMessage("Баркод должен содержать 8 цифр (EAN-8), 12 цифр (UPC-A) или 13 цифр (EAN-13)")
             .When(x => x.Barcode != null);
 
         RuleFor(x => x.CatalogNumber)
@@ -66,10 +72,9 @@ public class SuspenseLineDtoValidator : AbstractValidator<SuspenseLineDto>
             .MaximumLength(100).WithMessage("Жанр не должен превышать 100 символов")
             .When(x => x.Genre != null);
 
-        // ExchangeCurrency / ExchangeRate — decimal(18,6) в конфигурации EF (в отчётах в колонке «валюта» часто курс с 4 знаками)
         RuleFor(x => x.ExchangeCurrency)
-            .PrecisionScale(18, 6, false)
-            .WithMessage("Валюта (числовое поле): не более 18 знаков, из них 6 после запятой");
+            .MaximumLength(10).WithMessage("Код валюты не должен превышать 10 символов")
+            .When(x => x.ExchangeCurrency != null);
 
         RuleFor(x => x.ExchangeRate)
             .PrecisionScale(18, 6, false)

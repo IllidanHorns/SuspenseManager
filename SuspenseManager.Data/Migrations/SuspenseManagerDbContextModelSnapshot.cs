@@ -910,9 +910,9 @@ namespace Data.Migrations
                     b.Property<DateTime>("CreateTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal>("ExchangeCurrency")
-                        .HasPrecision(18, 6)
-                        .HasColumnType("decimal(18,6)");
+                    b.Property<string>("ExchangeCurrency")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<decimal>("ExchangeRate")
                         .HasPrecision(18, 6)

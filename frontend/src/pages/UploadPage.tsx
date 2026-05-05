@@ -46,7 +46,7 @@ import { getCatalogProduct } from '../api/catalog';
 import { getSuspenseById } from '../api/suspenses';
 import { ResizableTh } from '../components/common/ResizableTh';
 import { STATUS_LABELS, STATUS_COLORS } from '../types';
-import type { ValidationResultDto, CatalogProduct, SuspenseLine, BusinessStatus } from '../types';
+import type { ValidationResultDto, CatalogProduct, SuspenseLine, BusinessStatus, RowFormatError } from '../types';
 import { fmtDateTime, fmtNumber } from '../utils/format';
 import { DbMax, optMaxLen } from '../utils/fieldValidation';
 import { UploadReportRequirementsModal } from '../components/upload/UploadReportRequirementsModal';
@@ -602,6 +602,31 @@ export function UploadPage() {
               </Card>
             ))}
           </SimpleGrid>
+
+          {result.rowFormatErrors && result.rowFormatErrors.length > 0 && (
+            <Alert
+              icon={<IconAlertTriangle size={16} />}
+              color="yellow"
+              radius="md"
+              title={`Пропущено строк из-за ошибок формата: ${result.rowFormatErrors.length}`}
+            >
+              <Text size="sm" c="dimmed" mb={6}>
+                Эти строки не сохранены в базе. Исправьте данные и загрузите файл повторно.
+              </Text>
+              <ScrollArea mah={160}>
+                <Stack gap={2}>
+                  {result.rowFormatErrors.map((fe: RowFormatError) => (
+                    <Text key={fe.rowNumber} size="sm">
+                      <Text span fw={600} inherit>Строка {fe.rowNumber}</Text>
+                      {fe.isrc ? <Text span c="dimmed" inherit> ({fe.isrc})</Text> : null}
+                      {': '}
+                      {fe.errors.join('; ')}
+                    </Text>
+                  ))}
+                </Stack>
+              </ScrollArea>
+            </Alert>
+          )}
 
           <Paper withBorder radius="md">
             <Group

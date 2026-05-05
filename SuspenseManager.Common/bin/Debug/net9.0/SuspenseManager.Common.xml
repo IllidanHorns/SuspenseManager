@@ -455,7 +455,7 @@
         </member>
         <member name="P:Common.DTOs.SuspenseLineDto.ExchangeCurrency">
             <summary>
-            Валюта
+            Валюта (код, например USD, RUB)
             </summary>
         </member>
         <member name="P:Common.DTOs.SuspenseLineDto.ExchangeRate">
@@ -518,6 +518,25 @@
             <summary>
             Детали по каждой строке
             </summary>
+        </member>
+        <member name="P:Common.DTOs.ValidationResultDto.RowFormatErrors">
+            <summary>
+            Строки, пропущенные из-за ошибок формата (ISRC, баркод и т.д.) — не сохранены в БД
+            </summary>
+        </member>
+        <member name="T:Common.DTOs.RowFormatError">
+            <summary>
+            Строка Excel, отклонённая из-за ошибок формата (до бизнес-валидации)
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.RowFormatError.RowNumber">
+            <summary>Номер строки в файле (с учётом заголовка: данные начинаются с 2)</summary>
+        </member>
+        <member name="P:Common.DTOs.RowFormatError.Isrc">
+            <summary>ISRC из строки — для идентификации проблемной записи</summary>
+        </member>
+        <member name="P:Common.DTOs.RowFormatError.Errors">
+            <summary>Список сообщений об ошибках формата</summary>
         </member>
         <member name="T:Common.DTOs.ValidationLineResultDto">
             <summary>

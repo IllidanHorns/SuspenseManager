@@ -166,7 +166,7 @@ public class GroupingService : IGroupingService
                     AgreementNumber = reader.IsDBNull(12) ? null : reader.GetString(12),
                     Qty             = reader.GetInt32(13),
                     Ppd             = reader.IsDBNull(14) ? null : reader.GetDouble(14),
-                    ExchangeCurrency= reader.IsDBNull(15) ? 0m   : Convert.ToDecimal(reader.GetValue(15)),
+                    ExchangeCurrency= reader.IsDBNull(15) ? null : reader.GetString(15),
                     ExchangeRate    = reader.IsDBNull(16) ? 0m   : Convert.ToDecimal(reader.GetValue(16)),
                 });
             }
@@ -236,7 +236,7 @@ public class GroupingService : IGroupingService
                     AgreementNumber  = reader.IsDBNull(12) ? null : reader.GetString(12),
                     Qty              = reader.GetInt32(13),
                     Ppd              = reader.IsDBNull(14) ? null  : reader.GetDouble(14),
-                    ExchangeCurrency = reader.IsDBNull(15) ? 0m    : Convert.ToDecimal(reader.GetValue(15)),
+                    ExchangeCurrency = reader.IsDBNull(15) ? null  : reader.GetString(15),
                     ExchangeRate     = reader.IsDBNull(16) ? 0m    : Convert.ToDecimal(reader.GetValue(16)),
                 });
             }
@@ -421,7 +421,8 @@ public class GroupingService : IGroupingService
         var query = _db.SuspenseLines
             .Where(s => s.BusinessStatus == (int)BusinessStatus.NoProduct
                         && s.ArchiveLevel == 0
-                        && s.GroupId == null);
+                        && s.GroupId == null
+                        && s.ProductId == null);
 
         query = ApplyKeyFilters(query, request.GroupByColumns, request.KeyValues);
 

@@ -189,6 +189,7 @@ public class BackOfficeService : IBackOfficeService
             s.ArchiveLevel = 1;
             s.ArchiveTime = now;
             s.ChangeTime = now;
+            s.GroupId = null;
         }
 
         await _db.SaveChangesAsync(ct);

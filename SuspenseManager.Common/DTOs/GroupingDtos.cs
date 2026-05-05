@@ -82,7 +82,7 @@ public class SuspenseLinePreviewDto
     public string? AgreementNumber { get; set; }
     public int Qty { get; set; }
     public double? Ppd { get; set; }
-    public decimal ExchangeCurrency { get; set; }
+    public string? ExchangeCurrency { get; set; }
     public decimal ExchangeRate { get; set; }
 }
 

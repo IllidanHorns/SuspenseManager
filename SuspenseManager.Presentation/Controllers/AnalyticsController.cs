@@ -18,12 +18,16 @@ public class AnalyticsController : ControllerBase
     }
 
     /// <summary>
-    /// Дашборд аналитики: общая статистика, топ операторов, распределение по статусам
+    /// Дашборд аналитики. Опциональные параметры <c>dateFrom</c> / <c>dateTo</c> (YYYY-MM-DD) фильтруют
+    /// суспенсы по дате создания. Без них возвращаются данные за всё время.
     /// </summary>
     [HttpGet("dashboard")]
-    public async Task<IActionResult> GetDashboard(CancellationToken ct)
+    public async Task<IActionResult> GetDashboard(
+        [FromQuery] DateTime? dateFrom,
+        [FromQuery] DateTime? dateTo,
+        CancellationToken ct)
     {
-        var result = await _analyticsService.GetDashboardAsync(ct);
-        return Ok(ApiResponse<Common.DTOs.DashboardDto>.Success(result));
+        var result = await _analyticsService.GetDashboardAsync(dateFrom, dateTo, ct);
+        return Ok(ApiResponse<DashboardDto>.Success(result));
     }
 }

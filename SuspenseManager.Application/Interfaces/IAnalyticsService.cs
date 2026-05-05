@@ -4,5 +4,5 @@ namespace Application.Interfaces;
 
 public interface IAnalyticsService
 {
-    Task<DashboardDto> GetDashboardAsync(CancellationToken ct = default);
+    Task<DashboardDto> GetDashboardAsync(DateTime? dateFrom = null, DateTime? dateTo = null, CancellationToken ct = default);
 }

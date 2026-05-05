@@ -1,6 +1,7 @@
 import { apiGet, apiPost, apiPut } from './client';
 import type {
   CatalogProduct,
+  CatalogProductType,
   CatalogProductRights,
   Company,
   Territory,
@@ -15,6 +16,13 @@ import type {
   CreateTerritoryDto,
   UpdateTerritoryDto,
 } from '../types';
+
+// ── Типы продуктов ────────────────────────────────────────────────────────────
+
+export async function getCatalogProductTypes(): Promise<CatalogProductType[]> {
+  const res = await apiGet<CatalogProductType[]>('/catalog/product-types');
+  return res;
+}
 
 // ── Продукты ──────────────────────────────────────────────────────────────────
 

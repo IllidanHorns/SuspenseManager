@@ -22,6 +22,16 @@ public class CatalogController : ControllerBase
         _logger = logger;
     }
 
+    // ── Типы продуктов ──────────────────────────────────────────────────────────
+
+    /// <summary>Справочник типов продуктов (CD, VINYL, DIGI, CASS). Используется для выпадающего списка.</summary>
+    [HttpGet("product-types")]
+    public async Task<IActionResult> GetProductTypes(CancellationToken ct)
+    {
+        var types = await _catalogService.GetProductTypesAsync(ct);
+        return Ok(ApiResponse<List<Models.CatalogProductType>>.Success(types));
+    }
+
     // ── Продукты ────────────────────────────────────────────────────────────────
 
     /// <summary>Список продуктов каталога с пагинацией. Фильтр <c>Filters[IdentityIncomplete]=true</c> — только продукты без полного набора полей (название, исполнитель, ISRC, баркод, каталожный номер).</summary>

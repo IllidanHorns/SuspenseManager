@@ -10,9 +10,10 @@
         <member name="T:SuspenseManager.Controllers.AdminController">
             <summary>Сводные метрики для экрана администрирования.</summary>
         </member>
-        <member name="M:SuspenseManager.Controllers.AnalyticsController.GetDashboard(System.Threading.CancellationToken)">
+        <member name="M:SuspenseManager.Controllers.AnalyticsController.GetDashboard(System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Threading.CancellationToken)">
             <summary>
-            Дашборд аналитики: общая статистика, топ операторов, распределение по статусам
+            Дашборд аналитики. Опциональные параметры <c>dateFrom</c> / <c>dateTo</c> (YYYY-MM-DD) фильтруют
+            суспенсы по дате создания. Без них возвращаются данные за всё время.
             </summary>
         </member>
         <member name="T:SuspenseManager.Controllers.AuditController">
@@ -128,6 +129,9 @@
             Управление каталогом продуктов и прав — доступно только сотрудникам бэк-офиса.
             Удаление не предусмотрено: используется мягкое удаление только через другие процессы.
             </summary>
+        </member>
+        <member name="M:SuspenseManager.Controllers.CatalogController.GetProductTypes(System.Threading.CancellationToken)">
+            <summary>Справочник типов продуктов (CD, VINYL, DIGI, CASS). Используется для выпадающего списка.</summary>
         </member>
         <member name="M:SuspenseManager.Controllers.CatalogController.GetProducts(Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
             <summary>Список продуктов каталога с пагинацией. Фильтр <c>Filters[IdentityIncomplete]=true</c> — только продукты без полного набора полей (название, исполнитель, ISRC, баркод, каталожный номер).</summary>

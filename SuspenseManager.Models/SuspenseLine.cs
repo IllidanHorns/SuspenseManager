@@ -83,9 +83,9 @@ public class SuspenseLine
     public double? Ppd { get; set; }
 
     /// <summary>
-    /// Валюта 
+    /// Валюта (код, например USD, RUB)
     /// </summary>
-    public decimal ExchangeCurrency { get; set; }
+    public string? ExchangeCurrency { get; set; }
 
     /// <summary>
     /// Курс обмена в рубли

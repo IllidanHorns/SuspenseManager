@@ -165,13 +165,49 @@ export function sharePercent(fieldLabel = 'Доля'): (v: number | null | undef
   };
 }
 
-/** ИНН: только цифры, не длиннее 12. */
+// +7 (900) 000-00-00, +79000000000, 8-800-555-35-35, etc.
+const phoneRe = /^\+?[\d\s()\-]{7,20}$/;
+
+export function phoneField(label = 'Телефон'): StringValidator {
+  return combine(
+    required(`Укажите ${label.toLowerCase()}`),
+    maxLen(DbMax.user.phoneNumber, label),
+    (value) => {
+      const s = (value ?? '').trim();
+      if (!phoneRe.test(s)) return 'Введите корректный номер телефона (например: +7 (900) 000-00-00)';
+      return null;
+    }
+  );
+}
+
+/** Телефон необязателен, но если указан — должен соответствовать формату. */
+export function phoneOptional(label = 'Телефон'): StringValidator {
+  return (value) => {
+    const s = (value ?? '').trim();
+    if (!s) return null;
+    if (!phoneRe.test(s)) return 'Введите корректный номер телефона (например: +7 (900) 000-00-00)';
+    if (s.length > DbMax.user.phoneNumber) return maxLen(DbMax.user.phoneNumber, label)(value);
+    return null;
+  };
+}
+
+/** ИНН: ровно 10 цифр (юр. лицо) или 12 цифр (физ. лицо). */
 export function innOptional(): StringValidator {
   return (value) => {
     const s = (value ?? '').trim();
     if (!s) return null;
     if (!/^\d+$/.test(s)) return 'ИНН: только цифры';
-    if (s.length > DbMax.company.inn) return maxLen(DbMax.company.inn, 'ИНН')(value);
+    if (s.length !== 10 && s.length !== 12) return 'ИНН должен содержать ровно 10 цифр (юр. лицо) или 12 цифр (физ. лицо)';
+    return null;
+  };
+}
+
+/** БИК: ровно 9 цифр. */
+export function bicOptional(): StringValidator {
+  return (value) => {
+    const s = (value ?? '').trim();
+    if (!s) return null;
+    if (!/^\d{9}$/.test(s)) return 'БИК должен содержать ровно 9 цифр';
     return null;
   };
 }

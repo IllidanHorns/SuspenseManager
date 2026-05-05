@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SuspenseManager.Common")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+322b9265ff413b3edcbb76c14de83bf163d64b15")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d4d11f269dac9a4791866b805426a8be9f621120")]
 [assembly: System.Reflection.AssemblyProductAttribute("SuspenseManager.Common")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SuspenseManager.Common")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

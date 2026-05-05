@@ -16,5 +16,7 @@ public class CatalogProductTypeConfiguration : IEntityTypeConfiguration<CatalogP
         builder.Property(x => x.Description).IsRequired().HasMaxLength(500);
         builder.Property(x => x.CreateTime).IsRequired();
         builder.Property(x => x.ArchiveLevel).IsRequired();
+
+        builder.HasIndex(x => x.Code).IsUnique();
     }
 }

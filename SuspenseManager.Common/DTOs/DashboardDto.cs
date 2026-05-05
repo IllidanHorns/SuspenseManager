@@ -17,6 +17,8 @@ public class DashboardDto
     public long TotalStreams { get; set; }
     public List<OperatorStatDto> TopOperators { get; set; } = [];
     public List<StatusCountDto> StatusDistribution { get; set; } = [];
+    public List<TerritoryStatDto> TopTerritories { get; set; } = [];
+    public List<CompanyStatDto> TopCompanies { get; set; } = [];
 }
 
 public class OperatorStatDto
@@ -29,5 +31,18 @@ public class OperatorStatDto
 public class StatusCountDto
 {
     public int Status { get; set; }
+    public int Count { get; set; }
+}
+
+public class TerritoryStatDto
+{
+    public string TerritoryCode { get; set; } = string.Empty;
+    public int Count { get; set; }
+    public decimal Revenue { get; set; }
+}
+
+public class CompanyStatDto
+{
+    public string CompanyName { get; set; } = string.Empty;
     public int Count { get; set; }
 }

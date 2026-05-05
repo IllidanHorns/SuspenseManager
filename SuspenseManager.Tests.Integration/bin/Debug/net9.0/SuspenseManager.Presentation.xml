@@ -98,7 +98,7 @@
             Если прав нет → 320, задание остаётся открытым.
             </summary>
         </member>
-        <member name="M:SuspenseManager.Controllers.BackOfficeController.Validate(System.Int32,System.Threading.CancellationToken)">
+        <member name="M:SuspenseManager.Controllers.BackOfficeController.CompleteTask(System.Int32,System.Threading.CancellationToken)">
             <summary>
             Валидировать группу 320 (нет прав в BO).
             Проверяет права продукта в каталоге; если нет — создаёт из метаправ группы.
@@ -130,7 +130,7 @@
             </summary>
         </member>
         <member name="M:SuspenseManager.Controllers.CatalogController.GetProducts(Common.DTOs.PagedRequest,System.Threading.CancellationToken)">
-            <summary>Список продуктов каталога с пагинацией.</summary>
+            <summary>Список продуктов каталога с пагинацией. Фильтр <c>Filters[IdentityIncomplete]=true</c> — только продукты без полного набора полей (название, исполнитель, ISRC, баркод, каталожный номер).</summary>
         </member>
         <member name="M:SuspenseManager.Controllers.CatalogController.GetProduct(System.Int32,System.Threading.CancellationToken)">
             <summary>Продукт по ID со всеми правами.</summary>
@@ -142,7 +142,7 @@
             <summary>Обновить продукт каталога (частичное обновление — передаются только изменяемые поля).</summary>
         </member>
         <member name="M:SuspenseManager.Controllers.CatalogController.GetRights(Common.DTOs.PagedRequest,System.Nullable{System.Int32},System.Threading.CancellationToken)">
-            <summary>Список прав. Опциональный фильтр productId — права конкретного продукта.</summary>
+            <summary>Список прав. Опциональный фильтр productId — права конкретного продукта. Фильтр <c>Filters[RightsIncomplete]=true</c> — только записи с незаполненными обязательными полями.</summary>
         </member>
         <member name="M:SuspenseManager.Controllers.CatalogController.CreateRights(Common.DTOs.CreateCatalogProductRightsDto,System.Threading.CancellationToken)">
             <summary>Добавить права на продукт каталога.</summary>
@@ -280,7 +280,7 @@
             Группа переводится в статус 16 (нет прав). Body не требуется.
             </summary>
         </member>
-        <member name="M:SuspenseManager.Controllers.GroupProcessingController.ValidateGroup(System.Int32,System.Threading.CancellationToken)">
+        <member name="M:SuspenseManager.Controllers.GroupProcessingController.CreateRights(System.Int32,System.Threading.CancellationToken)">
             <summary>
             Валидирует группу со статусом 16:
             1. Если у продукта есть права в каталоге — переводит в 88.

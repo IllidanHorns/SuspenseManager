@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "j0syFmdbAsI=",
+  "dgSpecHash": "uTl0GYXjhJM=",
   "success": true,
   "projectFilePath": "C:\\Users\\apakhtusov\\source\\repos\\SuspenseManager\\SuspenseManager.Tests.Load\\SuspenseManager.Tests.Load.csproj",
   "expectedPackageFiles": [
@@ -216,7 +216,10 @@
     "C:\\Users\\apakhtusov\\.nuget\\packages\\xunit.extensibility.core\\2.9.3\\xunit.extensibility.core.2.9.3.nupkg.sha512",
     "C:\\Users\\apakhtusov\\.nuget\\packages\\xunit.extensibility.execution\\2.9.3\\xunit.extensibility.execution.2.9.3.nupkg.sha512",
     "C:\\Users\\apakhtusov\\.nuget\\packages\\xunit.runner.visualstudio\\3.0.1\\xunit.runner.visualstudio.3.0.1.nupkg.sha512",
-    "C:\\Users\\apakhtusov\\.nuget\\packages\\zspitz.util\\0.1.113\\zspitz.util.0.1.113.nupkg.sha512"
+    "C:\\Users\\apakhtusov\\.nuget\\packages\\zspitz.util\\0.1.113\\zspitz.util.0.1.113.nupkg.sha512",
+    "C:\\Users\\apakhtusov\\.nuget\\packages\\microsoft.netcore.app.ref\\9.0.15\\microsoft.netcore.app.ref.9.0.15.nupkg.sha512",
+    "C:\\Users\\apakhtusov\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\9.0.15\\microsoft.windowsdesktop.app.ref.9.0.15.nupkg.sha512",
+    "C:\\Users\\apakhtusov\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\9.0.15\\microsoft.aspnetcore.app.ref.9.0.15.nupkg.sha512"
   ],
   "logs": []
 }

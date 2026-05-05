@@ -14,7 +14,14 @@
       "Bash(kill 22244)",
       "Bash(xargs ls *)",
       "Bash(sqlcmd *)",
-      "Bash(dotnet run *)"
+      "Bash(dotnet run *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\apakhtusov\\\\source\\\\repos\" -Directory)",
+      "Bash(Select-Object Name)",
+      "PowerShell(tree *)",
+      "PowerShell(ls \"C:\\\\Users\\\\apakhtusov\\\\source\\\\repos\\\\SuspenseHandlerFrontNewRepo\" | Where-Object { $_.PSIsContainer -eq $false } | Select-Object Name)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\apakhtusov\\\\source\\\\repos\\\\SuspenseManager\\\\frontend\" -Recurse -Directory | Where-Object { $_.Name -notmatch '^\\(node_modules|\\\\.next|dist|build|coverage\\)$' } | Sort-Object FullName | ForEach-Object { $_.FullName })",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\apakhtusov\\\\source\\\\repos\\\\SuspenseManager\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)"
     ]
   }
 }

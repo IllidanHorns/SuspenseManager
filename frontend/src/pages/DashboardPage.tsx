@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { DatePickerInput } from '@mantine/dates';
 import {
   Grid,
   Card,
@@ -14,7 +15,8 @@ import {
   Box,
   Paper,
   Alert,
-  Divider,
+  ActionIcon,
+  Tooltip,
 } from '@mantine/core';
 import { DonutChart, BarChart } from '@mantine/charts';
 import {
@@ -23,30 +25,28 @@ import {
   IconFolderOpen,
   IconClock,
   IconBuildingWarehouse,
-  IconUpload,
   IconLayersSubtract,
-  IconArrowRight,
   IconCheck,
   IconAlertCircle,
   IconDatabase,
   IconChartBar,
   IconFileTypePdf,
+  IconCalendar,
+  IconX,
 } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { notifications } from '@mantine/notifications';
 import { apiGet } from '../api/client';
 import { STATUS_LABELS, STATUS_COLORS } from '../types';
 
-interface OperatorStat {
-  operator: string;
-  count: number;
-  revenue: number;
-}
+// ─── Types ───────────────────────────────────────────────────────────────────
 
-interface StatusCount {
-  status: number;
-  count: number;
-}
+type DRange = [Date | null, Date | null];
+
+interface OperatorStat { operator: string; count: number; revenue: number; }
+interface StatusCount { status: number; count: number; }
+interface TerritoryStatDto { territoryCode: string; count: number; revenue: number; }
+interface CompanyStatDto { companyName: string; count: number; }
 
 interface DashboardDto {
   totalSuspenses: number;
@@ -64,17 +64,83 @@ interface DashboardDto {
   totalStreams: number;
   topOperators: OperatorStat[];
   statusDistribution: StatusCount[];
+  topTerritories: TerritoryStatDto[];
+  topCompanies: CompanyStatDto[];
+}
+
+// ─── Query helpers ────────────────────────────────────────────────────────────
+
+function toParams(dates: DRange): Record<string, unknown> {
+  const p: Record<string, unknown> = {};
+  if (dates[0]) p.dateFrom = dates[0].toISOString().slice(0, 10);
+  if (dates[1]) p.dateTo = dates[1].toISOString().slice(0, 10);
+  return p;
+}
+
+function dateKey(dates: DRange): string {
+  return `${dates[0]?.toISOString() ?? ''}_${dates[1]?.toISOString() ?? ''}`;
+}
+
+/** Если у графика задан свой диапазон — берём его, иначе наследуем глобальный */
+function eff(chart: DRange, global: DRange): DRange {
+  return (chart[0] !== null || chart[1] !== null) ? chart : global;
+}
+
+function buildQuery(dates: DRange) {
+  return {
+    queryKey: ['dashboard', dateKey(dates)] as const,
+    queryFn: () => apiGet<DashboardDto>('/analytics/dashboard', toParams(dates)),
+    staleTime: 2 * 60 * 1000,
+    retry: false as const,
+  };
+}
+
+function fmtDate(d: Date | null): string {
+  if (!d) return '...';
+  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function truncate(s: string, n: number): string {
+  return s.length > n ? s.slice(0, n) + '…' : s;
+}
+
+// ─── Small components ─────────────────────────────────────────────────────────
+
+function ChartDateFilter({ value, onChange }: { value: DRange; onChange: (v: DRange) => void }) {
+  const hasValue = value[0] !== null || value[1] !== null;
+  return (
+    <Group gap={4} wrap="nowrap">
+      <DatePickerInput
+        type="range"
+        size="xs"
+        placeholder="Свой период"
+        value={value}
+        onChange={onChange}
+        clearable
+        w={200}
+        leftSection={<IconCalendar size={12} />}
+        valueFormat="DD.MM.YY"
+      />
+      {hasValue && (
+        <Tooltip label="Сбросить фильтр этого графика">
+          <ActionIcon size="xs" variant="subtle" color="gray" onClick={() => onChange([null, null])}>
+            <IconX size={12} />
+          </ActionIcon>
+        </Tooltip>
+      )}
+    </Group>
+  );
 }
 
 const STAT_CARDS = [
-  { key: 'noProductCount',   label: 'Нет продукта',           icon: IconAlertTriangle, color: 'orange', path: '/suspenses?status=0' },
-  { key: 'noRightsCount',    label: 'Нет прав',               icon: IconLock,          color: 'red',    path: '/suspenses?status=1' },
-  { key: 'inGroupNoProduct', label: 'В группах (нет продукта)', icon: IconFolderOpen,  color: 'blue',   path: '/groups?tab=0' },
-  { key: 'inGroupNoRights',  label: 'В группах (нет прав)',    icon: IconFolderOpen,   color: 'violet', path: '/groups?tab=1' },
-  { key: 'postponedCount',   label: 'Отложено',               icon: IconClock,         color: 'yellow', path: '/postponed' },
-  { key: 'backOfficeCount',  label: 'Бэк-офис',               icon: IconBuildingWarehouse, color: 'gray', path: '/groups' },
-  { key: 'validatedCount',   label: 'Прошло валидацию',       icon: IconCheck,         color: 'green',  path: '/suspenses' },
-  { key: 'totalGroups',      label: 'Групп всего',            icon: IconLayersSubtract, color: 'cyan',  path: '/groups' },
+  { key: 'noProductCount',   label: 'Нет продукта',             icon: IconAlertTriangle,    color: 'orange', path: '/suspenses?status=0' },
+  { key: 'noRightsCount',    label: 'Нет прав',                 icon: IconLock,             color: 'red',    path: '/suspenses?status=1' },
+  { key: 'inGroupNoProduct', label: 'В группах (нет продукта)', icon: IconFolderOpen,       color: 'blue',   path: '/groups?tab=0' },
+  { key: 'inGroupNoRights',  label: 'В группах (нет прав)',     icon: IconFolderOpen,       color: 'violet', path: '/groups?tab=1' },
+  { key: 'postponedCount',   label: 'Отложено',                 icon: IconClock,            color: 'yellow', path: '/postponed' },
+  { key: 'backOfficeCount',  label: 'Бэк-офис',                 icon: IconBuildingWarehouse,color: 'gray',   path: '/groups' },
+  { key: 'validatedCount',   label: 'Прошло валидацию',         icon: IconCheck,            color: 'green',  path: '/suspenses' },
+  { key: 'totalGroups',      label: 'Групп всего',              icon: IconLayersSubtract,   color: 'cyan',   path: '/groups' },
 ];
 
 function StatCard({ label, value, icon: Icon, color, onClick }: {
@@ -90,55 +156,65 @@ function StatCard({ label, value, icon: Icon, color, onClick }: {
           {label}
         </Text>
       </Group>
-      {value === undefined ? (
-        <Skeleton height={28} width={60} radius="sm" mt={4} />
-      ) : (
-        <Text size="xl" fw={700}>{value.toLocaleString('ru-RU')}</Text>
-      )}
+      {value === undefined
+        ? <Skeleton height={28} width={60} radius="sm" mt={4} />
+        : <Text size="xl" fw={700}>{value.toLocaleString('ru-RU')}</Text>}
     </Card>
   );
 }
 
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export function DashboardPage() {
   const navigate = useNavigate();
-  const pdfExportRef = useRef<typeof import('../utils/dashboardPdfExport') | null>(null);
-  const htmlToImageRef = useRef<typeof import('html-to-image') | null>(null);
-  const statCardsCaptureRef = useRef<HTMLDivElement>(null);
-  const summaryCaptureRef = useRef<HTMLDivElement>(null);
-  const donutCaptureRef = useRef<HTMLDivElement>(null);
-  const barCaptureRef = useRef<HTMLDivElement>(null);
+
+  // PDF module refs
+  const pdfExportRef    = useRef<typeof import('../utils/dashboardPdfExport') | null>(null);
+  const htmlToImageRef  = useRef<typeof import('html-to-image') | null>(null);
+  const statCardsRef    = useRef<HTMLDivElement>(null);
+  const summaryRef      = useRef<HTMLDivElement>(null);
+  const donutRef        = useRef<HTMLDivElement>(null);
+  const opsCountRef     = useRef<HTMLDivElement>(null);
+  const opsRevRef       = useRef<HTMLDivElement>(null);
+  const terrRef         = useRef<HTMLDivElement>(null);
+  const compRef         = useRef<HTMLDivElement>(null);
   const [pdfReady, setPdfReady] = useState(false);
-  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfBusy, setPdfBusy]   = useState(false);
 
   useEffect(() => {
     let alive = true;
     void Promise.all([import('../utils/dashboardPdfExport'), import('html-to-image')])
-      .then(([pdfMod, hti]) => {
+      .then(([mod, hti]) => {
         if (!alive) return;
-        pdfExportRef.current = pdfMod;
+        pdfExportRef.current   = mod;
         htmlToImageRef.current = hti;
         setPdfReady(true);
       })
-      .catch((err: unknown) => {
-        console.error(err);
-        notifications.show({
-          color: 'red',
-          title: 'PDF',
-          message: 'Не удалось подгрузить модуль экспорта. Обновите страницу.',
-        });
+      .catch(() => {
+        notifications.show({ color: 'red', title: 'PDF', message: 'Не удалось подгрузить модуль экспорта.' });
       });
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, []);
 
-  const { data: stats, isLoading, error } = useQuery<DashboardDto>({
-    queryKey: ['dashboard'],
-    queryFn: () => apiGet<DashboardDto>('/analytics/dashboard'),
-    retry: false,
-  });
+  // Date filter state
+  const [globalDates,   setGlobalDates]   = useState<DRange>([null, null]);
+  const [donutDates,    setDonutDates]    = useState<DRange>([null, null]);
+  const [opsCountDates, setOpsCountDates] = useState<DRange>([null, null]);
+  const [opsRevDates,   setOpsRevDates]   = useState<DRange>([null, null]);
+  const [terrDates,     setTerrDates]     = useState<DRange>([null, null]);
+  const [compDates,     setCompDates]     = useState<DRange>([null, null]);
 
-  const donutData = (stats?.statusDistribution ?? [])
+  // Queries — React Query деduplicates по одному ключу, поэтому несколько графиков
+  // с одинаковым диапазоном делают только один сетевой запрос
+  const { data: mainStats, isLoading, error } = useQuery<DashboardDto>(buildQuery(globalDates));
+  const { data: donutStats,    isLoading: donutLoad    } = useQuery<DashboardDto>(buildQuery(eff(donutDates,    globalDates)));
+  const { data: opsCountStats, isLoading: opsCountLoad } = useQuery<DashboardDto>(buildQuery(eff(opsCountDates, globalDates)));
+  const { data: opsRevStats,   isLoading: opsRevLoad   } = useQuery<DashboardDto>(buildQuery(eff(opsRevDates,   globalDates)));
+  const { data: terrStats,     isLoading: terrLoad     } = useQuery<DashboardDto>(buildQuery(eff(terrDates,     globalDates)));
+  const { data: compStats,     isLoading: compLoad     } = useQuery<DashboardDto>(buildQuery(eff(compDates,     globalDates)));
+
+  // Chart data transforms
+  const donutData = (donutStats?.statusDistribution ?? [])
     .filter(s => s.count > 0)
     .map(s => ({
       name: STATUS_LABELS[s.status] ?? `Статус ${s.status}`,
@@ -146,73 +222,109 @@ export function DashboardPage() {
       color: STATUS_COLORS[s.status] ?? 'gray',
     }));
 
-  const barData = (stats?.topOperators ?? []).map(op => ({
-    operator: op.operator.length > 14 ? op.operator.slice(0, 14) + '…' : op.operator,
+  const opsCountData = (opsCountStats?.topOperators ?? []).map(op => ({
+    operator: truncate(op.operator, 14),
     count: op.count,
   }));
 
+  const opsRevData = (opsRevStats?.topOperators ?? []).map(op => ({
+    operator: truncate(op.operator, 14),
+    revenue: Math.round(Number(op.revenue)),
+  }));
+
+  const terrData = (terrStats?.topTerritories ?? []).map(t => ({
+    territory: t.territoryCode,
+    count: t.count,
+  }));
+
+  const compData = (compStats?.topCompanies ?? []).map(c => ({
+    company: truncate(c.companyName, 16),
+    count: c.count,
+  }));
+
+  const globalRangeLabel = (globalDates[0] || globalDates[1])
+    ? `${fmtDate(globalDates[0])} — ${fmtDate(globalDates[1])}`
+    : null;
+
+  // PDF export
+  const handlePdf = () => {
+    const mod = pdfExportRef.current;
+    const hti = htmlToImageRef.current;
+    if (!mainStats || !mod || !hti) return;
+    setPdfBusy(true);
+    const snap = async (el: HTMLElement | null) => {
+      if (!el) return undefined;
+      try { return await hti.toPng(el, { cacheBust: true, pixelRatio: 2, backgroundColor: '#ffffff' }); }
+      catch { return undefined; }
+    };
+    void (async () => {
+      try {
+        const [statCards, summary, donut, bar, revBar, terrBar, compBar] = await Promise.all([
+          snap(statCardsRef.current),
+          snap(summaryRef.current),
+          snap(donutRef.current),
+          snap(opsCountRef.current),
+          snap(opsRevRef.current),
+          snap(terrRef.current),
+          snap(compRef.current),
+        ]);
+        await mod.downloadDashboardPdf(
+          mainStats,
+          { statCards, summary, donut, bar, revBar, terrBar, compBar },
+          {
+            from: globalDates[0]?.toISOString().slice(0, 10),
+            to:   globalDates[1]?.toISOString().slice(0, 10),
+          }
+        );
+      } catch (err) {
+        notifications.show({
+          color: 'red', title: 'Ошибка PDF',
+          message: err instanceof Error ? err.message : 'Не удалось сформировать файл',
+        });
+      } finally {
+        setPdfBusy(false);
+      }
+    })();
+  };
+
   return (
     <Stack gap="xl">
+
+      {/* ── Header ── */}
       <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
         <Box>
           <Title order={3} fw={600}>Дашборд</Title>
-          <Text c="dimmed" size="sm">Обзор текущего состояния суспенсов</Text>
+          <Text c="dimmed" size="sm">Мониторинг входящих обращений</Text>
         </Box>
-        <Button
-          variant="light"
-          color="gray"
-          leftSection={<IconFileTypePdf size={18} />}
-          disabled={isLoading || !stats || !pdfReady || pdfBusy}
-          loading={pdfBusy || (!pdfReady && !isLoading)}
-          title={!pdfReady ? 'Подготовка модуля экспорта…' : undefined}
-          onClick={() => {
-            const mod = pdfExportRef.current;
-            const hti = htmlToImageRef.current;
-            if (!stats || !mod || !hti) return;
-            setPdfBusy(true);
-            const snap = async (el: HTMLElement | null) => {
-              if (!el) return undefined;
-              try {
-                return await hti.toPng(el, {
-                  cacheBust: true,
-                  pixelRatio: 2,
-                  backgroundColor: '#ffffff',
-                });
-              } catch (e) {
-                console.warn('Снимок блока для PDF не удался', e);
-                return undefined;
-              }
-            };
-            void (async () => {
-              try {
-                const [statCards, summary, donut, bar] = await Promise.all([
-                  snap(statCardsCaptureRef.current),
-                  snap(summaryCaptureRef.current),
-                  snap(donutCaptureRef.current),
-                  snap(barCaptureRef.current),
-                ]);
-                await mod.downloadDashboardPdf(stats, {
-                  statCards,
-                  summary,
-                  donut,
-                  bar,
-                });
-              } catch (err: unknown) {
-                console.error(err);
-                notifications.show({
-                  color: 'red',
-                  title: 'Ошибка PDF',
-                  message: err instanceof Error ? err.message : 'Не удалось сформировать файл',
-                });
-              } finally {
-                setPdfBusy(false);
-              }
-            })();
-          }}
-        >
-          Скачать PDF
-        </Button>
+        <Group gap="sm" wrap="wrap">
+          <DatePickerInput
+            type="range"
+            placeholder="Глобальный фильтр по периоду"
+            value={globalDates}
+            onChange={setGlobalDates}
+            clearable
+            w={280}
+            leftSection={<IconCalendar size={16} />}
+            valueFormat="DD.MM.YYYY"
+          />
+          <Button
+            variant="light"
+            color="gray"
+            leftSection={<IconFileTypePdf size={18} />}
+            disabled={isLoading || !mainStats || !pdfReady || pdfBusy}
+            loading={pdfBusy}
+            onClick={handlePdf}
+          >
+            Скачать PDF
+          </Button>
+        </Group>
       </Group>
+
+      {globalRangeLabel && (
+        <Alert color="blue" variant="light" radius="md" icon={<IconCalendar size={16} />} p="xs">
+          <Text size="sm">Данные за период: <b>{globalRangeLabel}</b>. Отдельные графики могут иметь свой диапазон.</Text>
+        </Alert>
+      )}
 
       {error && (
         <Alert icon={<IconAlertCircle size={16} />} color="red" radius="md">
@@ -220,14 +332,14 @@ export function DashboardPage() {
         </Alert>
       )}
 
-      {/* Stat cards — ref для снимка в PDF */}
-      <Box ref={statCardsCaptureRef} p="sm" style={{ borderRadius: 8 }}>
+      {/* ── Stat cards ── */}
+      <Box ref={statCardsRef} p="sm" style={{ borderRadius: 8 }}>
         <SimpleGrid cols={{ base: 2, sm: 3, lg: 4 }} spacing="md">
           {STAT_CARDS.map(({ key, label, icon, color, path }) => (
             <StatCard
               key={key}
               label={label}
-              value={stats?.[key as keyof DashboardDto] as number | undefined}
+              value={mainStats?.[key as keyof DashboardDto] as number | undefined}
               icon={icon}
               color={color}
               onClick={() => navigate(path)}
@@ -236,92 +348,83 @@ export function DashboardPage() {
         </SimpleGrid>
       </Box>
 
-      {/* Summary numbers — ref для снимка в PDF */}
-      {(isLoading || stats) && (
-        <Box ref={summaryCaptureRef} p="sm" style={{ borderRadius: 8 }}>
+      {/* ── Summary numbers ── */}
+      {(isLoading || mainStats) && (
+        <Box ref={summaryRef} p="sm" style={{ borderRadius: 8 }}>
           <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
             <Paper withBorder radius="md" p="md">
               <Group gap="xs" mb={4}>
                 <IconDatabase size={16} color="var(--mantine-color-dimmed)" />
-                <Text size="xs" c="dimmed" tt="uppercase" fw={600}>Всего суспенсов</Text>
+                <Text size="xs" c="dimmed" tt="uppercase" fw={600}>Всего записей</Text>
               </Group>
-              {isLoading ? <Skeleton height={28} width={80} /> : (
-                <Text size="xl" fw={700}>{stats!.totalSuspenses.toLocaleString('ru-RU')}</Text>
-              )}
+              {isLoading
+                ? <Skeleton height={28} width={80} />
+                : <Text size="xl" fw={700}>{mainStats!.totalSuspenses.toLocaleString('ru-RU')}</Text>}
             </Paper>
             <Paper withBorder radius="md" p="md">
               <Group gap="xs" mb={4}>
                 <IconChartBar size={16} color="var(--mantine-color-dimmed)" />
                 <Text size="xs" c="dimmed" tt="uppercase" fw={600}>Стримов</Text>
               </Group>
-              {isLoading ? <Skeleton height={28} width={80} /> : (
-                <Text size="xl" fw={700}>{stats!.totalStreams.toLocaleString('ru-RU')}</Text>
-              )}
+              {isLoading
+                ? <Skeleton height={28} width={80} />
+                : <Text size="xl" fw={700}>{mainStats!.totalStreams.toLocaleString('ru-RU')}</Text>}
             </Paper>
             <Paper withBorder radius="md" p="md">
               <Group gap="xs" mb={4}>
                 <IconCheck size={16} color="var(--mantine-color-dimmed)" />
-                <Text size="xs" c="dimmed" tt="uppercase" fw={600}>Выручка (суспенсы)</Text>
+                <Text size="xs" c="dimmed" tt="uppercase" fw={600}>Выручка к распределению</Text>
               </Group>
-              {isLoading ? <Skeleton height={28} width={80} /> : (
-                <Text size="xl" fw={700}>
-                  {stats!.totalRevenue.toLocaleString('ru-RU', { maximumFractionDigits: 0 })}
-                </Text>
-              )}
+              {isLoading
+                ? <Skeleton height={28} width={80} />
+                : <Text size="xl" fw={700}>
+                    {mainStats!.totalRevenue.toLocaleString('ru-RU', { maximumFractionDigits: 0 })} ₽
+                  </Text>}
             </Paper>
           </SimpleGrid>
         </Box>
       )}
 
-      {/* Charts row */}
+      {/* ── Row 1: Status donut + Operators by count ── */}
       <Grid>
-        {/* Status distribution donut */}
         <Grid.Col span={{ base: 12, md: 5 }}>
           <Card withBorder radius="md" p="lg" h="100%">
-            <Box ref={donutCaptureRef} style={{ borderRadius: 8 }} p="xs">
-              <Title order={5} mb="md">Распределение по статусам</Title>
-              {isLoading ? (
-                <Stack align="center" py="xl" gap="sm">
-                  <Skeleton height={200} width={200} circle />
-                </Stack>
+            <Group justify="space-between" mb="md" wrap="wrap" gap="xs">
+              <Title order={5}>Структура обращений по статусам</Title>
+              <ChartDateFilter value={donutDates} onChange={setDonutDates} />
+            </Group>
+            <Box ref={donutRef}>
+              {donutLoad ? (
+                <Stack align="center" py="xl"><Skeleton height={200} width={200} circle /></Stack>
               ) : donutData.length === 0 ? (
-                <Stack align="center" py="xl">
-                  <Text c="dimmed" size="sm">Нет данных</Text>
-                </Stack>
+                <Stack align="center" py="xl"><Text c="dimmed" size="sm">Нет данных</Text></Stack>
               ) : (
                 <DonutChart
                   data={donutData}
-                  withLabelsLine
-                  withLabels
-                  labelsType="value"
-                  size={220}
-                  thickness={40}
-                  mx="auto"
+                  withLabelsLine withLabels labelsType="value"
+                  size={220} thickness={40} mx="auto"
                 />
               )}
             </Box>
           </Card>
         </Grid.Col>
 
-        {/* Top operators bar chart */}
         <Grid.Col span={{ base: 12, md: 7 }}>
           <Card withBorder radius="md" p="lg" h="100%">
-            <Box ref={barCaptureRef} style={{ borderRadius: 8 }} p="xs">
-              <Title order={5} mb="md">Топ операторов по количеству суспенсов</Title>
-              {isLoading ? (
+            <Group justify="space-between" mb="md" wrap="wrap" gap="xs">
+              <Title order={5}>Операторы: объём входящих записей</Title>
+              <ChartDateFilter value={opsCountDates} onChange={setOpsCountDates} />
+            </Group>
+            <Box ref={opsCountRef}>
+              {opsCountLoad ? (
                 <Skeleton height={220} radius="sm" />
-              ) : barData.length === 0 ? (
-                <Stack align="center" py="xl">
-                  <Text c="dimmed" size="sm">Нет данных</Text>
-                </Stack>
+              ) : opsCountData.length === 0 ? (
+                <Stack align="center" py="xl"><Text c="dimmed" size="sm">Нет данных</Text></Stack>
               ) : (
                 <BarChart
-                  h={220}
-                  data={barData}
-                  dataKey="operator"
+                  h={220} data={opsCountData} dataKey="operator"
                   series={[{ name: 'count', label: 'Кол-во', color: 'indigo' }]}
-                  tickLine="y"
-                  gridAxis="y"
+                  tickLine="y" gridAxis="y"
                 />
               )}
             </Box>
@@ -329,84 +432,74 @@ export function DashboardPage() {
         </Grid.Col>
       </Grid>
 
-      {/* Quick actions */}
+      {/* ── Row 2: Operators by revenue + Territories ── */}
       <Grid>
-        <Grid.Col span={{ base: 12, md: 5 }}>
-          <Card withBorder radius="md" p="lg">
-            <Title order={5} mb="md">Быстрые действия</Title>
-            <Stack gap="sm">
-              <Button
-                variant="light"
-                color="indigo"
-                leftSection={<IconUpload size={16} />}
-                rightSection={<IconArrowRight size={14} />}
-                justify="space-between"
-                fullWidth
-                onClick={() => navigate('/upload')}
-              >
-                Загрузить отчёт
-              </Button>
-              <Button
-                variant="light"
-                color="blue"
-                leftSection={<IconLayersSubtract size={16} />}
-                rightSection={<IconArrowRight size={14} />}
-                justify="space-between"
-                fullWidth
-                onClick={() => navigate('/grouping')}
-              >
-                Создать группировку
-              </Button>
-              <Button
-                variant="light"
-                color="violet"
-                leftSection={<IconFolderOpen size={16} />}
-                rightSection={<IconArrowRight size={14} />}
-                justify="space-between"
-                fullWidth
-                onClick={() => navigate('/groups')}
-              >
-                Сохранённые группы
-              </Button>
-              <Button
-                variant="light"
-                color="yellow"
-                leftSection={<IconClock size={16} />}
-                rightSection={<IconArrowRight size={14} />}
-                justify="space-between"
-                fullWidth
-                onClick={() => navigate('/postponed')}
-              >
-                Отложенные группы
-              </Button>
-            </Stack>
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <Card withBorder radius="md" p="lg" h="100%">
+            <Group justify="space-between" mb="md" wrap="wrap" gap="xs">
+              <Title order={5}>Операторы: выручка к распределению</Title>
+              <ChartDateFilter value={opsRevDates} onChange={setOpsRevDates} />
+            </Group>
+            <Box ref={opsRevRef}>
+              {opsRevLoad ? (
+                <Skeleton height={220} radius="sm" />
+              ) : opsRevData.length === 0 ? (
+                <Stack align="center" py="xl"><Text c="dimmed" size="sm">Нет данных</Text></Stack>
+              ) : (
+                <BarChart
+                  h={220} data={opsRevData} dataKey="operator"
+                  series={[{ name: 'revenue', label: 'Выручка, ₽', color: 'teal' }]}
+                  tickLine="y" gridAxis="y"
+                />
+              )}
+            </Box>
           </Card>
         </Grid.Col>
 
-        {/* Catalog summary */}
-        <Grid.Col span={{ base: 12, md: 7 }}>
+        <Grid.Col span={{ base: 12, md: 6 }}>
           <Card withBorder radius="md" p="lg" h="100%">
-            <Title order={5} mb="md">Справочники</Title>
-            <Stack gap="xs">
-              <Divider />
-              <Group justify="space-between">
-                <Text size="sm" c="dimmed">Продуктов в каталоге</Text>
-                {isLoading
-                  ? <Skeleton height={18} width={40} />
-                  : <Text size="sm" fw={600}>{stats!.totalProducts.toLocaleString('ru-RU')}</Text>}
-              </Group>
-              <Divider />
-              <Group justify="space-between">
-                <Text size="sm" c="dimmed">Компаний</Text>
-                {isLoading
-                  ? <Skeleton height={18} width={40} />
-                  : <Text size="sm" fw={600}>{stats!.totalCompanies.toLocaleString('ru-RU')}</Text>}
-              </Group>
-              <Divider />
-            </Stack>
+            <Group justify="space-between" mb="md" wrap="wrap" gap="xs">
+              <Title order={5}>Территории: входящие обращения</Title>
+              <ChartDateFilter value={terrDates} onChange={setTerrDates} />
+            </Group>
+            <Box ref={terrRef}>
+              {terrLoad ? (
+                <Skeleton height={220} radius="sm" />
+              ) : terrData.length === 0 ? (
+                <Stack align="center" py="xl"><Text c="dimmed" size="sm">Нет данных</Text></Stack>
+              ) : (
+                <BarChart
+                  h={220} data={terrData} dataKey="territory"
+                  series={[{ name: 'count', label: 'Кол-во', color: 'orange' }]}
+                  tickLine="y" gridAxis="y"
+                />
+              )}
+            </Box>
           </Card>
         </Grid.Col>
       </Grid>
+
+      {/* ── Row 3: Top companies (full width) ── */}
+      <Card withBorder radius="md" p="lg">
+        <Group justify="space-between" mb="md" wrap="wrap" gap="xs">
+          <Title order={5}>Правообладатели: входящие обращения</Title>
+          <ChartDateFilter value={compDates} onChange={setCompDates} />
+        </Group>
+        <Box ref={compRef}>
+          {compLoad ? (
+            <Skeleton height={220} radius="sm" />
+          ) : compData.length === 0 ? (
+            <Stack align="center" py="xl"><Text c="dimmed" size="sm">Нет данных</Text></Stack>
+          ) : (
+            <BarChart
+              h={220} data={compData} dataKey="company"
+              series={[{ name: 'count', label: 'Кол-во', color: 'violet' }]}
+              tickLine="y" gridAxis="y"
+            />
+          )}
+        </Box>
+      </Card>
+
     </Stack>
   );
 }

@@ -94,6 +94,14 @@ export interface SuspenseLine {
   archiveLevel: number;
 }
 
+// ─── CatalogProductType ──────────────────────────────────────────────────────
+
+export interface CatalogProductType {
+  id: number;
+  code: string;
+  description: string;
+}
+
 // ─── CatalogProduct ──────────────────────────────────────────────────────────
 
 export interface CatalogProduct {
@@ -256,12 +264,19 @@ export interface SuspenseLinePreviewDto {
 
 // ─── Upload ──────────────────────────────────────────────────────────────────
 
+export interface RowFormatError {
+  rowNumber: number;
+  isrc: string | null;
+  errors: string[];
+}
+
 export interface ValidationResultDto {
   totalRows: number;
   validatedCount: number;
   noProductCount: number;
   noRightsCount: number;
   lines: ValidationLineResultDto[];
+  rowFormatErrors?: RowFormatError[];
 }
 
 export interface ValidationLineResultDto {

@@ -21,6 +21,7 @@ import {
   IconAlertCircle,
   IconSearch,
   IconX,
+  IconInfoCircle,
 } from '@tabler/icons-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getUsers, createUser, updateUser, deleteUser, type AppUser, type CreateUserDto } from '../api/users';
@@ -36,6 +37,9 @@ import {
 import { PageSizeSelect } from '../components/common/PageSizeSelect';
 import { AdminAccountRightsModal } from '../components/admin/AdminAccountRightsModal';
 import { AdminAccountActivityDrawer } from '../components/admin/AdminAccountActivityDrawer';
+import { PasswordRequirementsModal } from '../components/admin/PasswordRequirementsModal';
+import { PhoneRequirementsModal } from '../components/common/PhoneRequirementsModal';
+import { EmailRequirementsModal } from '../components/common/EmailRequirementsModal';
 import { getAdminMetrics } from '../api/adminMetrics';
 import { fmtDateTime } from '../utils/format';
 import {
@@ -44,8 +48,10 @@ import {
   emailField,
   maxLen,
   optMaxLen,
+  phoneField,
   required,
 } from '../utils/fieldValidation';
+import { requiredPassword, optionalPassword } from '../utils/passwordPolicy';
 
 type AdminUserFilters = {
   surname: string;
@@ -181,6 +187,8 @@ function UsersTab() {
   const [editUser, setEditUser] = useState<AppUser | null>(null);
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false);
   const [deleteUserObj, setDeleteUserObj] = useState<AppUser | null>(null);
+  const [emailHintOpened, { open: openEmailHint, close: closeEmailHint }] = useDisclosure(false);
+  const [phoneHintOpened, { open: openPhoneHint, close: closePhoneHint }] = useDisclosure(false);
 
   const activeUserFiltersCount = Object.keys(appliedUserFilters).length;
   const hasUserFilters = activeUserFiltersCount > 0;
@@ -215,7 +223,7 @@ function UsersTab() {
     surname: combine(required('Укажите фамилию'), maxLen(DbMax.user.surname, 'Фамилия')),
     middleName: optMaxLen(DbMax.user.middleName, 'Отчество'),
     email: emailField('Email'),
-    phoneNumber: combine(required('Укажите телефон'), maxLen(DbMax.user.phoneNumber, 'Телефон')),
+    phoneNumber: phoneField('Телефон'),
     position: combine(required('Укажите должность'), maxLen(DbMax.user.position, 'Должность')),
   };
 
@@ -475,8 +483,31 @@ function UsersTab() {
             <TextInput label="Имя" required {...createForm.getInputProps('name')} />
             <TextInput label="Фамилия" required {...createForm.getInputProps('surname')} />
             <TextInput label="Отчество" {...createForm.getInputProps('middleName')} />
-            <TextInput label="Email" required type="email" {...createForm.getInputProps('email')} />
-            <TextInput label="Телефон" required {...createForm.getInputProps('phoneNumber')} />
+            <TextInput
+              label={
+                <Group gap={4} align="center">
+                  <span>Email</span>
+                  <ActionIcon size="xs" variant="transparent" color="dimmed" onClick={openEmailHint} title="Справка по формату email">
+                    <IconInfoCircle size={14} />
+                  </ActionIcon>
+                </Group>
+              }
+              required
+              type="email"
+              {...createForm.getInputProps('email')}
+            />
+            <TextInput
+              label={
+                <Group gap={4} align="center">
+                  <span>Телефон</span>
+                  <ActionIcon size="xs" variant="transparent" color="dimmed" onClick={openPhoneHint} title="Справка по формату телефона">
+                    <IconInfoCircle size={14} />
+                  </ActionIcon>
+                </Group>
+              }
+              required
+              {...createForm.getInputProps('phoneNumber')}
+            />
             <TextInput label="Должность" required {...createForm.getInputProps('position')} />
             <Group justify="flex-end">
               <Button variant="default" onClick={closeCreate}>
@@ -504,8 +535,31 @@ function UsersTab() {
               <TextInput label="Имя" required {...editForm.getInputProps('name')} />
               <TextInput label="Фамилия" required {...editForm.getInputProps('surname')} />
               <TextInput label="Отчество" {...editForm.getInputProps('middleName')} />
-              <TextInput label="Email" required type="email" {...editForm.getInputProps('email')} />
-              <TextInput label="Телефон" required {...editForm.getInputProps('phoneNumber')} />
+              <TextInput
+                label={
+                  <Group gap={4} align="center">
+                    <span>Email</span>
+                    <ActionIcon size="xs" variant="transparent" color="dimmed" onClick={openEmailHint} title="Справка по формату email">
+                      <IconInfoCircle size={14} />
+                    </ActionIcon>
+                  </Group>
+                }
+                required
+                type="email"
+                {...editForm.getInputProps('email')}
+              />
+              <TextInput
+                label={
+                  <Group gap={4} align="center">
+                    <span>Телефон</span>
+                    <ActionIcon size="xs" variant="transparent" color="dimmed" onClick={openPhoneHint} title="Справка по формату телефона">
+                      <IconInfoCircle size={14} />
+                    </ActionIcon>
+                  </Group>
+                }
+                required
+                {...editForm.getInputProps('phoneNumber')}
+              />
               <TextInput label="Должность" required {...editForm.getInputProps('position')} />
               <Group justify="flex-end">
                 <Button variant="default" onClick={() => setEditUser(null)}>
@@ -537,6 +591,9 @@ function UsersTab() {
           </Button>
         </Group>
       </Modal>
+
+      <EmailRequirementsModal opened={emailHintOpened} onClose={closeEmailHint} />
+      <PhoneRequirementsModal opened={phoneHintOpened} onClose={closePhoneHint} />
     </Stack>
   );
 }
@@ -551,6 +608,7 @@ function AccountsTab() {
   const [rightsAccount, setRightsAccount] = useState<{ id: number; login: string } | null>(null);
   const [activityAccount, setActivityAccount] = useState<{ id: number; login: string } | null>(null);
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false);
+  const [pwHintOpened, { open: openPwHint, close: closePwHint }] = useDisclosure(false);
   const [editAcc, setEditAcc] = useState<AccountRow | null>(null);
   const [deleteAcc, setDeleteAcc] = useState<AccountRow | null>(null);
 
@@ -607,7 +665,7 @@ function AccountsTab() {
     },
     validate: {
       login: combine(required('Укажите логин'), maxLen(DbMax.account.login, 'Логин')),
-      password: combine(required('Задайте пароль'), maxLen(DbMax.account.password, 'Пароль')),
+      password: combine(requiredPassword('Пароль'), maxLen(DbMax.account.password, 'Пароль')),
       description: optMaxLen(DbMax.account.description, 'Описание'),
     },
   });
@@ -621,7 +679,7 @@ function AccountsTab() {
     },
     validate: {
       login: combine(required('Укажите логин'), maxLen(DbMax.account.login, 'Логин')),
-      password: (v) => optMaxLen(DbMax.account.password, 'Пароль')(v ?? ''),
+      password: (v) => optionalPassword('Пароль')(v),
       description: optMaxLen(DbMax.account.description, 'Описание'),
     },
   });
@@ -876,7 +934,20 @@ function AccountsTab() {
         >
           <Stack gap="sm">
             <TextInput label="Логин" required {...createForm.getInputProps('login')} />
-            <TextInput label="Пароль" type="password" required autoComplete="new-password" {...createForm.getInputProps('password')} />
+            <TextInput
+              label={
+                <Group gap={4} align="center">
+                  <span>Пароль</span>
+                  <ActionIcon size="xs" variant="transparent" color="dimmed" onClick={openPwHint} title="Справка по паролю">
+                    <IconInfoCircle size={14} />
+                  </ActionIcon>
+                </Group>
+              }
+              type="password"
+              required
+              autoComplete="new-password"
+              {...createForm.getInputProps('password')}
+            />
             <TextInput label="Описание" {...createForm.getInputProps('description')} />
             <Select
               label="Пользователь (карточка)"
@@ -914,7 +985,14 @@ function AccountsTab() {
             <Stack gap="sm">
               <TextInput label="Логин" required {...editForm.getInputProps('login')} />
               <TextInput
-                label="Новый пароль"
+                label={
+                  <Group gap={4} align="center">
+                    <span>Новый пароль</span>
+                    <ActionIcon size="xs" variant="transparent" color="dimmed" onClick={openPwHint} title="Справка по паролю">
+                      <IconInfoCircle size={14} />
+                    </ActionIcon>
+                  </Group>
+                }
                 description="Оставьте пустым, чтобы не менять"
                 type="password"
                 autoComplete="new-password"
@@ -971,6 +1049,8 @@ function AccountsTab() {
         accountId={activityAccount?.id ?? null}
         loginLabel={activityAccount?.login ?? ''}
       />
+
+      <PasswordRequirementsModal opened={pwHintOpened} onClose={closePwHint} />
     </Stack>
   );
 }

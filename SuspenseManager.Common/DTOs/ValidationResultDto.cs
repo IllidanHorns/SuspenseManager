@@ -31,6 +31,26 @@ public class ValidationResultDto
     /// Детали по каждой строке
     /// </summary>
     public List<ValidationLineResultDto> Lines { get; set; } = new();
+
+    /// <summary>
+    /// Строки, пропущенные из-за ошибок формата (ISRC, баркод и т.д.) — не сохранены в БД
+    /// </summary>
+    public List<RowFormatError> RowFormatErrors { get; set; } = [];
+}
+
+/// <summary>
+/// Строка Excel, отклонённая из-за ошибок формата (до бизнес-валидации)
+/// </summary>
+public class RowFormatError
+{
+    /// <summary>Номер строки в файле (с учётом заголовка: данные начинаются с 2)</summary>
+    public int RowNumber { get; set; }
+
+    /// <summary>ISRC из строки — для идентификации проблемной записи</summary>
+    public string? Isrc { get; set; }
+
+    /// <summary>Список сообщений об ошибках формата</summary>
+    public List<string> Errors { get; set; } = [];
 }
 
 /// <summary>

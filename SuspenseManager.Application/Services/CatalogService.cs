@@ -18,6 +18,17 @@ public class CatalogService : ICatalogService
         _db = db;
     }
 
+    // ── Типы продуктов ──────────────────────────────────────────────────────────
+
+    public async Task<List<CatalogProductType>> GetProductTypesAsync(CancellationToken ct = default)
+    {
+        return await _db.CatalogProductTypes
+            .AsNoTracking()
+            .Where(t => t.ArchiveLevel == 0)
+            .OrderBy(t => t.Code)
+            .ToListAsync(ct);
+    }
+
     // ── Продукты ────────────────────────────────────────────────────────────────
 
     public async Task<PagedResponse<CatalogProduct>> GetProductsAsync(PagedRequest request, CancellationToken ct = default)

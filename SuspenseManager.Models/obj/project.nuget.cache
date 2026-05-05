@@ -1,10 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "+F0O3nyzkwg=",
+  "dgSpecHash": "7gLZUFAVjDM=",
   "success": true,
   "projectFilePath": "C:\\Users\\apakhtusov\\source\\repos\\SuspenseManager\\SuspenseManager.Models\\SuspenseManager.Models.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\apakhtusov\\.nuget\\packages\\sonaranalyzer.csharp\\9.32.0.97167\\sonaranalyzer.csharp.9.32.0.97167.nupkg.sha512"
+    "C:\\Users\\apakhtusov\\.nuget\\packages\\sonaranalyzer.csharp\\9.32.0.97167\\sonaranalyzer.csharp.9.32.0.97167.nupkg.sha512",
+    "C:\\Users\\apakhtusov\\.nuget\\packages\\microsoft.netcore.app.ref\\9.0.15\\microsoft.netcore.app.ref.9.0.15.nupkg.sha512",
+    "C:\\Users\\apakhtusov\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\9.0.15\\microsoft.windowsdesktop.app.ref.9.0.15.nupkg.sha512",
+    "C:\\Users\\apakhtusov\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\9.0.15\\microsoft.aspnetcore.app.ref.9.0.15.nupkg.sha512"
   ],
   "logs": []
 }

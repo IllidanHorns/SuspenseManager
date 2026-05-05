@@ -601,7 +601,10 @@ public class GroupProcessingService : IGroupProcessingService
             s.BusinessStatus = revertStatus;
             s.GroupId = null;
             s.ChangeTime = DateTime.UtcNow;
-            // ProductId НЕ обнуляется — связь с продуктом сохраняется (бизнес-правило 5)
+            // Для NoProduct (0): продукт не был найден — обнуляем ProductId
+            // Для NoRights (1): продукт известен — ProductId сохраняется
+            if (revertStatus == (int)BusinessStatus.NoProduct)
+                s.ProductId = null;
         }
 
         await _db.SaveChangesAsync(ct);
