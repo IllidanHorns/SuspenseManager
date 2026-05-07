@@ -8,3 +8,7 @@ export async function getMeSettings(): Promise<MeSettingsResponse> {
 export async function updateMeSettings(dto: UpdateMeSettingsDto): Promise<MeSettingsResponse> {
   return apiPut<MeSettingsResponse>('/me/settings', dto);
 }
+
+export async function getMeProfile(): Promise<any> {
+  return apiGet<any>('/me/profile');
+}

@@ -275,6 +275,9 @@
             и переводит группу в статус 88 (валидирована).
             </summary>
         </member>
+        <member name="M:SuspenseManager.Controllers.MeController.GetProfile(System.Threading.CancellationToken)">
+            <summary>Профиль текущего пользователя — доступен любому авторизованному аккаунту</summary>
+        </member>
         <member name="M:SuspenseManager.Controllers.MonitorController.GetOperators(System.Threading.CancellationToken)">
             <summary>
             Сводная таблица по операторам: агрегированные показатели по всем их активным группам.

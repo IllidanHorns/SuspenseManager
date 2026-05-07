@@ -2,7 +2,7 @@ import { Alert, Center, Group, Loader, Modal, Paper, SimpleGrid, Stack, Text } f
 import { IconAlertCircle } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart, DonutChart } from '@mantine/charts';
-import { getAccountById } from '../../api/accounts';
+import { getMeProfile } from '../../api/me';
 import { getAuditGroups, getAuditLines } from '../../api/audit';
 import { fmtDateTime } from '../../utils/format';
 
@@ -20,7 +20,7 @@ function value(v: string | null | undefined) {
 export function MyProfileModal({ opened, onClose, accountId, loginName }: MyProfileModalProps) {
   const { data: account, isLoading: accountLoading, error: accountError } = useQuery({
     queryKey: ['my-account-profile', accountId],
-    queryFn: () => getAccountById(accountId),
+    queryFn: () => getMeProfile(),
     enabled: opened && accountId > 0,
   });
 
