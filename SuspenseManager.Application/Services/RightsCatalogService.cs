@@ -43,7 +43,9 @@ public class RightsCatalogService : IRightsCatalogService
         var op = all
             .Where(r =>
                 !r.Code.StartsWith("admin.", StringComparison.Ordinal) &&
-                !r.Code.StartsWith("backoffice.", StringComparison.Ordinal))
+                !r.Code.StartsWith("backoffice.", StringComparison.Ordinal) &&
+                !r.Code.StartsWith("catalog.", StringComparison.Ordinal) &&
+                r.Code != "monitor.view")
             .Select(r => r.Id)
             .Distinct()
             .ToList();
@@ -100,10 +102,6 @@ public class RightsCatalogService : IRightsCatalogService
     /// <summary>Права на просмотр разделов, нужные для открытия строк суспенсов и контекста.</summary>
     private static readonly string[] BackOfficeExtraViewCodes =
     [
-        "uploads.view",
-        "grouping.view",
-        "groups.no_product.view",
-        "groups.no_rights.view",
-        "postponed.view"
+        "monitor.view",
     ];
 }

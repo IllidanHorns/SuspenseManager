@@ -25,7 +25,11 @@ public static class DatabaseSeeder
         }
     }
 
-    public static async Task SeedAsync(SuspenseManagerDbContext db, string adminPasswordHash)
+    public static async Task SeedAsync(
+        SuspenseManagerDbContext db,
+        string adminPasswordHash,
+        string operatorPasswordHash,
+        string backOfficePasswordHash)
     {
         await SeedStatusDictionaryAsync(db);
         await SeedTerritoriesAsync(db);
@@ -36,6 +40,9 @@ public static class DatabaseSeeder
         await SeedAdminAccountAsync(db, adminPasswordHash);
         await SeedPermissionsAsync(db);
         await SeedAdminPermissionLinksAsync(db);
+        await SeedOperatorAccountAsync(db, operatorPasswordHash);
+        await SeedBackOfficeAccountAsync(db, backOfficePasswordHash);
+        await SeedDemoDataAsync(db);
     }
 
     // ── StatusDictionary ─────────────────────────────────────────────────────
@@ -349,6 +356,8 @@ public static class DatabaseSeeder
             new { Code = "catalog.territories.edit",            Name = "Редактирование территорий",      Module = "Каталог"             },
             // Экспорт
             new { Code = "groups.export",                       Name = "Экспорт групп и суспенсов",      Module = "Экспорт"             },
+            // Мониторинг
+            new { Code = "monitor.view",                        Name = "Мониторинг операторов",          Module = "Мониторинг"          },
             // Администрирование
             new { Code = "admin.users.manage",                  Name = "Управление пользователями",      Module = "Администрирование"   },
             new { Code = "admin.permissions.manage",            Name = "Управление правами",             Module = "Администрирование"   },
@@ -390,5 +399,257 @@ public static class DatabaseSeeder
             db.AccountRightsLinks.AddRange(newLinks);
             await db.SaveChangesAsync();
         }
+    }
+
+    // ── Operator account ─────────────────────────────────────────────────────
+    // Логин: operator / Пароль: Operator123!
+    // Права: всё кроме admin.*, backoffice.*, catalog.*, monitor.view
+
+    private static async Task SeedOperatorAccountAsync(SuspenseManagerDbContext db, string passwordHash)
+    {
+        if (await db.Accounts.AnyAsync(a => a.Login == "operator")) return;
+
+        var user = new User
+        {
+            Name = "Алексей", Surname = "Операторов", MiddleName = "Сергеевич",
+            Email = "operator@suspense.local", PhoneNumber = "+70009876543",
+            Position = "Оператор обработки суспенсов", CreateTime = DateTime.UtcNow
+        };
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
+
+        var hash = passwordHash;
+        var account = new Account
+        {
+            Login = "operator", PasswordHash = hash,
+            Description = "Тестовый аккаунт оператора",
+            UserId = user.Id, CreateTime = DateTime.UtcNow
+        };
+        db.Accounts.Add(account);
+        await db.SaveChangesAsync();
+
+        var allRights = await db.Rights.ToListAsync();
+        var operatorRights = allRights
+            .Where(r =>
+                !r.Code.StartsWith("admin.", StringComparison.Ordinal) &&
+                !r.Code.StartsWith("backoffice.", StringComparison.Ordinal) &&
+                !r.Code.StartsWith("catalog.", StringComparison.Ordinal) &&
+                r.Code != "monitor.view")
+            .Select(r => new AccountRightsLink { AccountId = account.Id, RightId = r.Id, CreateTime = DateTime.UtcNow })
+            .ToList();
+
+        db.AccountRightsLinks.AddRange(operatorRights);
+        await db.SaveChangesAsync();
+    }
+
+    // ── Back-office account ──────────────────────────────────────────────────
+    // Логин: backoffice / Пароль: Backoffice123!
+    // Права: backoffice.*, catalog.*, monitor.view
+
+    private static async Task SeedBackOfficeAccountAsync(SuspenseManagerDbContext db, string passwordHash)
+    {
+        if (await db.Accounts.AnyAsync(a => a.Login == "backoffice")) return;
+
+        var user = new User
+        {
+            Name = "Елена", Surname = "Бэкофисова", MiddleName = "Ивановна",
+            Email = "backoffice@suspense.local", PhoneNumber = "+70005554433",
+            Position = "Сотрудник бэк-офиса", CreateTime = DateTime.UtcNow
+        };
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
+
+        var hash = passwordHash;
+        var account = new Account
+        {
+            Login = "backoffice", PasswordHash = hash,
+            Description = "Тестовый аккаунт сотрудника бэк-офиса",
+            UserId = user.Id, CreateTime = DateTime.UtcNow
+        };
+        db.Accounts.Add(account);
+        await db.SaveChangesAsync();
+
+        var allRights = await db.Rights.ToListAsync();
+        var boRights = allRights
+            .Where(r =>
+                r.Code.StartsWith("backoffice.", StringComparison.Ordinal) ||
+                r.Code.StartsWith("catalog.", StringComparison.Ordinal) ||
+                r.Code == "monitor.view")
+            .Select(r => new AccountRightsLink { AccountId = account.Id, RightId = r.Id, CreateTime = DateTime.UtcNow })
+            .ToList();
+
+        db.AccountRightsLinks.AddRange(boRights);
+        await db.SaveChangesAsync();
+    }
+
+    // ── Demo suspense data ────────────────────────────────────────────────────
+    // Создаёт реалистичный набор данных для демонстрации всех функций системы.
+    // Запускается только один раз — пропускается если группы уже есть.
+
+    private static async Task SeedDemoDataAsync(SuspenseManagerDbContext db)
+    {
+        if (await db.SuspenseGroups.AnyAsync()) return;
+
+        var opAccount = await db.Accounts.FirstOrDefaultAsync(a => a.Login == "operator");
+        var adminAccount = await db.Accounts.FirstOrDefaultAsync(a => a.Login == "admin");
+        if (opAccount is null || adminAccount is null) return;
+
+        int opId = opAccount.Id;
+        int admId = adminAccount.Id;
+
+        var products = await db.CatalogProducts.ToDictionaryAsync(p => p.Isrc!, p => p.Id);
+
+        // ── Группа 1: статус 15 (в работе, нет продукта) — 4 суспенса ──────────
+        var g1 = await CreateGroupAsync(db, 15, opId, DateTime.UtcNow.AddDays(-8));
+        var lines1 = new[]
+        {
+            MakeLine(15, g1.Id, null, "XX-GRP1-25-001", null, "Неизвестная Группа", "Трек 1", "Яндекс Музыка", "Мелодия", "Звук", "Лицензионный", "DEMO-NP-001", "RU", "Pop", 8500, 0.004, "RUB", 1.0m, -8),
+            MakeLine(15, g1.Id, null, "XX-GRP1-25-002", null, "Неизвестная Группа", "Трек 2", "Яндекс Музыка", "Мелодия", "Звук", "Лицензионный", "DEMO-NP-001", "RU", "Pop", 6200, 0.004, "RUB", 1.0m, -7),
+            MakeLine(15, g1.Id, null, "XX-GRP1-25-003", null, "Неизвестная Группа", "Трек 3", "Яндекс Музыка", "Мелодия", "Звук", "Лицензионный", "DEMO-NP-001", "RU", "Pop", 9100, 0.004, "RUB", 1.0m, -7),
+            MakeLine(15, g1.Id, null, "XX-GRP1-25-004", null, "Неизвестная Группа", "Трек 4", "Яндекс Музыка", "Мелодия", "Звук", "Лицензионный", "DEMO-NP-001", "RU", "Pop", 4300, 0.004, "RUB", 1.0m, -6),
+        };
+        await SaveLinesAndLinksAsync(db, lines1, g1.Id, opId, 15);
+
+        // ── Группа 2: статус 16 (в работе, нет прав) — 3 суспенса ──────────────
+        int? productId21 = products.TryGetValue("RU-A0A-25-00021", out var pid21) ? pid21 : null;
+        var g2 = await CreateGroupAsync(db, 16, opId, DateTime.UtcNow.AddDays(-5), productId21);
+        var lines2 = new[]
+        {
+            MakeLine(16, g2.Id, productId21, "RU-A0A-25-00021", "4607011110016", "Серая Зона", "Туман", "Яндекс Музыка", "Мелодия", "Звук", "Лицензионный", "DEMO-NR-001", "RU", "Electronic", 3200, 0.003, "RUB", 1.0m, -5),
+            MakeLine(16, g2.Id, productId21, "RU-A0A-25-00021", "4607011110016", "Серая Зона", "Туман", "Spotify",       "Мелодия", "Звук", "Лицензионный", "DEMO-NR-001", "RU", "Electronic", 2800, 0.0032, "RUB", 1.0m, -4),
+            MakeLine(16, g2.Id, productId21, "RU-A0A-25-00021", "4607011110016", "Серая Зона", "Туман", "Apple Music",   "Мелодия", "Звук", "Лицензионный", "DEMO-NR-001", "RU", "Electronic", 1900, 0.0035, "RUB", 1.0m, -4),
+        };
+        await SaveLinesAndLinksAsync(db, lines2, g2.Id, opId, 16);
+
+        // ── Группа 3: статус 30 (отложено, нет продукта) — 2 суспенса ──────────
+        var g3 = await CreateGroupAsync(db, 30, opId, DateTime.UtcNow.AddDays(-12), postponeReason: "Ожидаем данные от дистрибьютора");
+        var lines3 = new[]
+        {
+            MakeLine(30, g3.Id, null, "XX-POST-25-001", null, "Отложенный Артист", "Трек A", "Яндекс Музыка", "Союз", "ПервоеМуз", "Лицензионный", "DEMO-POST-001", "RU", "Rock", 5500, 0.0038, "RUB", 1.0m, -12),
+            MakeLine(30, g3.Id, null, "XX-POST-25-002", null, "Отложенный Артист", "Трек B", "Spotify",       "Союз", "ПервоеМуз", "Лицензионный", "DEMO-POST-001", "RU", "Rock", 3800, 0.0038, "RUB", 1.0m, -11),
+        };
+        await SaveLinesAndLinksAsync(db, lines3, g3.Id, opId, 30);
+
+        // ── Группа 4: статус 120 (бэк-офис, нет продукта) — 2 суспенса ─────────
+        var g4 = await CreateGroupAsync(db, 120, opId, DateTime.UtcNow.AddDays(-15));
+        var lines4 = new[]
+        {
+            MakeLine(120, g4.Id, null, "XX-BO-25-001", null, "Сложный Кейс", "Трек X", "Яндекс Музыка", "НацМуз", "ЦифрЗвук", "Лицензионный", "DEMO-BO-001", "RU", "Pop", 12000, 0.005, "RUB", 1.0m, -15),
+            MakeLine(120, g4.Id, null, "XX-BO-25-002", null, "Сложный Кейс", "Трек Y", "Spotify",       "НацМуз", "ЦифрЗвук", "Лицензионный", "DEMO-BO-001", "RU", "Pop",  8700, 0.005, "RUB", 1.0m, -14),
+        };
+        await SaveLinesAndLinksAsync(db, lines4, g4.Id, admId, 120);
+
+        // ── Свободные суспенсы статус 0 (не в группах — для демонстрации группировки) ──
+        var freeNoProduct = new[]
+        {
+            MakeLine(0, null, null, "XX-FREE-25-001", null, "Группа Без Имени", "Сингл 1", "Яндекс Музыка", "Мелодия", "Звук", "Лицензионный", "FREE-NP-001", "RU", "Pop",  4200, 0.004, "RUB", 1.0m, -3),
+            MakeLine(0, null, null, "XX-FREE-25-002", null, "Группа Без Имени", "Сингл 2", "Яндекс Музыка", "Мелодия", "Звук", "Лицензионный", "FREE-NP-001", "RU", "Pop",  3700, 0.004, "RUB", 1.0m, -3),
+            MakeLine(0, null, null, "XX-FREE-25-003", null, "Группа Без Имени", "Сингл 3", "Яндекс Музыка", "Мелодия", "Звук", "Лицензионный", "FREE-NP-001", "RU", "Pop",  5100, 0.004, "RUB", 1.0m, -2),
+            MakeLine(0, null, null, "XX-FREE-25-004", null, "Группа Без Имени", "Сингл 4", "Spotify",       "Мелодия", "Звук", "Лицензионный", "FREE-NP-001", "RU", "Pop",  2900, 0.0042, "RUB", 1.0m, -2),
+            MakeLine(0, null, null, "XX-FREE-25-005", null, "Группа Без Имени", "Сингл 5", "Apple Music",   "Мелодия", "Звук", "Лицензионный", "FREE-NP-001", "RU", "Pop",  6600, 0.0038, "RUB", 1.0m, -1),
+        };
+        db.SuspenseLines.AddRange(freeNoProduct);
+
+        // ── Свободные суспенсы статус 1 (не в группах — для демонстрации группировки) ──
+        int? pid22 = products.TryGetValue("RU-A0A-25-00022", out var p22) ? p22 : null;
+        int? pid23 = products.TryGetValue("RU-A0A-25-00023", out var p23) ? p23 : null;
+        int? pidDe = products.TryGetValue("DE-A0D-25-00002", out var pDe) ? pDe : null;
+        int? pidFr = products.TryGetValue("FR-A0E-25-00002", out var pFr) ? pFr : null;
+        int? pid25 = products.TryGetValue("RU-A0A-25-00022", out var p25) ? p25 : null;
+
+        var freeNoRights = new[]
+        {
+            MakeLine(1, null, pid22, "RU-A0A-25-00022", "4607011110017", "Вакуум", "Пустота",         "Яндекс Музыка", "Мелодия",  "Звук",       "Лицензионный", "FREE-NR-001", "RU", "Ambient",    1500, 0.003,  "RUB", 1.0m, -3),
+            MakeLine(1, null, pid23, "RU-A0A-25-00023", "4607011110018", "Точка Отсчёта", "Нулевой меридиан", "Spotify", "НацМуз", "ЦифрЗвук",  "Лицензионный", "FREE-NR-002", "RU", "Rock",       5100, 0.004,  "RUB", 1.0m, -2),
+            MakeLine(1, null, pidDe, "DE-A0D-25-00002", "4006001100002", "Stadt Klang",  "Leere Straßen",    "Spotify", "BMG",    "WMG",        "License",       "FREE-NR-003", "DE", "Electronic", 7800, 0.0042, "EUR", 100.3m, -2),
+            MakeLine(1, null, pidFr, "FR-A0E-25-00002", "3700000100002", "Claire Morin", "L'Absence",        "Apple Music", "PIAS", "UMG",       "License",       "FREE-NR-004", "FR", "Pop",        3300, 0.0039, "EUR", 100.3m, -1),
+            MakeLine(1, null, pid22, "RU-A0A-25-00022", "4607011110017", "Вакуум",       "Пустота",          "Apple Music", "Мелодия", "Звук",    "Лицензионный", "FREE-NR-001", "RU", "Ambient",    2200, 0.003,  "RUB", 1.0m, -1),
+        };
+        db.SuspenseLines.AddRange(freeNoRights);
+
+        await db.SaveChangesAsync();
+    }
+
+    private static async Task<SuspenseGroup> CreateGroupAsync(
+        SuspenseManagerDbContext db,
+        int status,
+        int accountId,
+        DateTime createTime,
+        int? catalogProductId = null,
+        string? postponeReason = null)
+    {
+        var group = new SuspenseGroup
+        {
+            BusinessStatus = status,
+            AccountId = accountId,
+            CatalogProductId = catalogProductId,
+            PostponeReason = postponeReason,
+            ArchiveLevel = 0,
+            CreateTime = createTime,
+            ChangeTime = createTime
+        };
+        db.SuspenseGroups.Add(group);
+        await db.SaveChangesAsync();
+        return group;
+    }
+
+    private static async Task SaveLinesAndLinksAsync(
+        SuspenseManagerDbContext db,
+        SuspenseLine[] lines,
+        int groupId,
+        int accountId,
+        int status)
+    {
+        db.SuspenseLines.AddRange(lines);
+        await db.SaveChangesAsync();
+
+        var links = lines.Select(l => new SuspenseGroupLink
+        {
+            SuspenseId = l.Id,
+            SuspenseGroupId = groupId,
+            AccountId = accountId,
+            BusinessStatus = status,
+            CreateTime = l.CreateTime,
+            ChangeTime = l.CreateTime
+        });
+        db.SuspenseGroupLinks.AddRange(links);
+        await db.SaveChangesAsync();
+    }
+
+    private static SuspenseLine MakeLine(
+        int status, int? groupId, int? productId,
+        string? isrc, string? barcode,
+        string artist, string title,
+        string op, string sender, string recipient,
+        string agType, string agNumber, string territory,
+        string genre, int qty, double ppd, string currency, decimal rate,
+        int daysAgo)
+    {
+        return new SuspenseLine
+        {
+            BusinessStatus = status,
+            GroupId = groupId,
+            ProductId = productId,
+            Isrc = isrc,
+            Barcode = barcode,
+            Artist = artist,
+            TrackTitle = title,
+            Operator = op,
+            SenderCompany = sender,
+            RecipientCompany = recipient,
+            AgreementType = agType,
+            AgreementNumber = agNumber,
+            TerritoryCode = territory,
+            Genre = genre,
+            Qty = qty,
+            Ppd = ppd,
+            ExchangeCurrency = currency,
+            ExchangeRate = rate,
+            CauseSuspense = status == 0
+                ? "Продукт не найден в каталоге"
+                : "Продукт найден, права не определены",
+            CreateTime = DateTime.UtcNow.AddDays(daysAgo),
+            ArchiveLevel = 0
+        };
     }
 }

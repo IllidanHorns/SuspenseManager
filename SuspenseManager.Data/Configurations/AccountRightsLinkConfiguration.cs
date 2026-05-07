@@ -17,6 +17,8 @@ public class AccountRightsLinkConfiguration : IEntityTypeConfiguration<AccountRi
         builder.Property(x => x.CreateTime).IsRequired();
         builder.Property(x => x.ArchiveLevel).IsRequired();
 
-        builder.HasIndex(x => new { x.AccountId, x.RightId }).IsUnique();
+        builder.HasIndex(x => new { x.AccountId, x.RightId })
+            .IsUnique()
+            .HasFilter("[ArchiveLevel] = 0");
     }
 }

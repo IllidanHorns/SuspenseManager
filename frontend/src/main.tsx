@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './hooks/useAuth';
 import { App } from './App';
 import { ColorSchemeSync, DynamicNotifications } from './components/MePreferencesBootstrap';
+import { ThemePreferenceProvider, useThemePreference } from './theme/ThemePreferenceContext';
 
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
@@ -47,9 +48,11 @@ const queryClient = new QueryClient({
   },
 });
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <MantineProvider theme={theme} defaultColorScheme="light">
+function RootProviders() {
+  const { resolvedColorScheme } = useThemePreference();
+
+  return (
+    <MantineProvider theme={theme} forceColorScheme={resolvedColorScheme}>
       <ModalsProvider>
         <QueryClientProvider client={queryClient}>
           <BrowserRouter>
@@ -62,5 +65,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         </QueryClientProvider>
       </ModalsProvider>
     </MantineProvider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <ThemePreferenceProvider>
+      <RootProviders />
+    </ThemePreferenceProvider>
   </React.StrictMode>
 );

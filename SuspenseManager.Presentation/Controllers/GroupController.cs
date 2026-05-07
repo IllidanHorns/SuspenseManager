@@ -3,6 +3,7 @@ using Application.Interfaces;
 using Common.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SuspenseManager.Middleware;
 
 namespace SuspenseManager.Controllers;
 
@@ -32,6 +33,7 @@ public class GroupController : ControllerBase
     /// Группы "нет продукта" (статус 15) — п.8
     /// </summary>
     [HttpGet("no-product")]
+    [RequirePermission(PermissionCodes.GroupsNoProductView)]
     public async Task<IActionResult> GetNoProduct([FromQuery] GroupListRequest request, CancellationToken ct)
     {
         var result = await _groupService.GetNoProductGroupsAsync(request, GetCurrentAccountId(), ct);
@@ -42,6 +44,7 @@ public class GroupController : ControllerBase
     /// Группы "нет прав" (статус 16) — п.8
     /// </summary>
     [HttpGet("no-rights")]
+    [RequirePermission(PermissionCodes.GroupsNoRightsView)]
     public async Task<IActionResult> GetNoRights([FromQuery] GroupListRequest request, CancellationToken ct)
     {
         var result = await _groupService.GetNoRightsGroupsAsync(request, GetCurrentAccountId(), ct);
@@ -52,6 +55,7 @@ public class GroupController : ControllerBase
     /// Все сохранённые группы (статус 15 и 16) — п.10
     /// </summary>
     [HttpGet("saved")]
+    [RequirePermission(PermissionCodes.GroupsNoProductView, PermissionCodes.GroupsNoRightsView)]
     public async Task<IActionResult> GetSaved([FromQuery] GroupListRequest request, CancellationToken ct)
     {
         var result = await _groupService.GetSavedGroupsAsync(request, GetCurrentAccountId(), ct);
@@ -62,6 +66,7 @@ public class GroupController : ControllerBase
     /// Группа по ID с метаданными
     /// </summary>
     [HttpGet("{id:int}")]
+    [RequirePermission(PermissionCodes.GroupsNoProductView, PermissionCodes.GroupsNoRightsView)]
     public async Task<IActionResult> GetById(int id, CancellationToken ct)
     {
         var group = await _groupService.GetByIdAsync(id, ct);
@@ -77,6 +82,7 @@ public class GroupController : ControllerBase
     /// Суспенсы конкретной группы с пагинацией
     /// </summary>
     [HttpGet("{id:int}/suspenses")]
+    [RequirePermission(PermissionCodes.GroupsNoProductView, PermissionCodes.GroupsNoRightsView)]
     public async Task<IActionResult> GetGroupSuspenses(int id, [FromQuery] PagedRequest request, CancellationToken ct)
     {
         var result = await _groupService.GetGroupSuspensesAsync(id, request, ct);

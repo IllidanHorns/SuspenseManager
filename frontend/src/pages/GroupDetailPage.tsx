@@ -90,6 +90,8 @@ import { CollapsibleFilters } from '../components/common/CollapsibleFilters';
 import { SearchRightsCatalogModal } from '../components/groups/SearchRightsCatalogModal';
 import { ProductDetailModal } from '../components/groups/ProductDetailModal';
 import { useDefaultPageSize } from '../hooks/useDefaultPageSize';
+import { usePermissions } from '../hooks/usePermissions';
+import { PermissionCodes } from '../utils/permissions';
 import type {
   GroupMetadata,
   GroupMetaRights,
@@ -229,11 +231,12 @@ function MetadataTab({
   groupId,
   metadata,
   readOnly,
+  linkedToProduct,
 }: {
   groupId: number;
   metadata: GroupMetadata | null;
-  /** После привязки к продукту каталога — только просмотр (данные синхронизируются с каталогом). */
   readOnly: boolean;
+  linkedToProduct?: boolean;
 }) {
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
@@ -295,8 +298,9 @@ function MetadataTab({
     return (
       <Stack gap="md">
         <Alert color="blue" variant="light" icon={<IconCircleCheck size={18} />}>
-          Группа привязана к продукту каталога. Поля продукта показываются из метаданных (синхронизированы с
-          каталогом) и не редактируются отдельно.
+          {linkedToProduct
+            ? 'Группа привязана к продукту каталога. Поля продукта показываются из метаданных (синхронизированы с каталогом) и не редактируются отдельно.'
+            : 'Просмотр метаданных. Для редактирования необходимо право быстрой каталогизации.'}
         </Alert>
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
           <Box>
@@ -390,7 +394,7 @@ function MetadataTab({
 
 // ─── Meta-Rights Form ─────────────────────────────────────────────────────────
 
-function MetaRightsTab({ groupId, metaRights }: { groupId: number; metaRights: GroupMetaRights | null }) {
+function MetaRightsTab({ groupId, metaRights, readOnly = false }: { groupId: number; metaRights: GroupMetaRights | null; readOnly?: boolean }) {
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
 
@@ -583,11 +587,13 @@ function MetaRightsTab({ groupId, metaRights }: { groupId: number; metaRights: G
 
         <Text size="xs" c="dimmed">* — обязательные поля для валидации</Text>
 
-        <Group justify="flex-end">
-          <Button type="submit" loading={saving} color="violet" leftSection={<IconEdit size={14} />}>
-            Сохранить права
-          </Button>
-        </Group>
+        {!readOnly && (
+          <Group justify="flex-end">
+            <Button type="submit" loading={saving} color="violet" leftSection={<IconEdit size={14} />}>
+              Сохранить права
+            </Button>
+          </Group>
+        )}
       </Stack>
     </form>
   );
@@ -944,6 +950,16 @@ export function GroupDetailPage() {
   const groupId = Number(id);
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { hasPermission, hasAnyPermission } = usePermissions();
+
+  const permCatalogFast = hasPermission(PermissionCodes.groupsNoProductCatalogFast);
+  const permPossibleProducts = hasPermission(PermissionCodes.groupsNoProductPossibleProducts);
+  const permCorrectRights = hasPermission(PermissionCodes.groupsNoRightsCorrectRights);
+  const permExport = hasPermission(PermissionCodes.groupsExport);
+  const permSendBackoffice = hasAnyPermission([PermissionCodes.groupsNoProductSendBackoffice, PermissionCodes.groupsNoRightsSendBackoffice]);
+  const permPostpone = hasAnyPermission([PermissionCodes.groupsNoProductPostpone, PermissionCodes.groupsNoRightsPostpone]);
+  const permUngroup = hasAnyPermission([PermissionCodes.groupsNoProductUngroup, PermissionCodes.groupsNoRightsUngroup]);
+  const permReturn = hasPermission(PermissionCodes.postponedReturn);
 
   const { data: group, isLoading, error } = useQuery({
     queryKey: ['group', groupId],
@@ -1085,7 +1101,7 @@ export function GroupDetailPage() {
   const isNoProduct = group.businessStatus === 15;
   const isNoRights = group.businessStatus === 16;
   const isPostponed = group.businessStatus === 30 || group.businessStatus === 32;
-  const canUngroup = [15, 16, 30, 32].includes(group.businessStatus);
+  const statusAllowsUngroup = [15, 16, 30, 32].includes(group.businessStatus);
 
   const metaForCheck = metadata ?? group.groupMetaData ?? null;
   const missingForQuick = getMissingProductIdentityForQuickCatalog(metaForCheck);
@@ -1122,40 +1138,40 @@ export function GroupDetailPage() {
 
           {/* Action buttons */}
           <Group gap="xs" wrap="wrap">
-            {isNoProduct && (
-              <>
-                <Tooltip
-                  label={
-                    missingForQuick.length
-                      ? `Сначала заполните в метаданных: ${missingForQuick.join(', ')}`
-                      : 'Быстрая каталогизация — создать новый продукт из метаданных'
-                  }
-                >
-                  <Button
-                    size="sm"
-                    color="teal"
-                    variant="light"
-                    leftSection={<IconWand size={14} />}
-                    loading={actionLoading === 'catalog-fast'}
-                    disabled={missingForQuick.length > 0}
-                    onClick={handleCatalogFast}
-                  >
-                    Быстрый каталог
-                  </Button>
-                </Tooltip>
+            {isNoProduct && permCatalogFast && (
+              <Tooltip
+                label={
+                  missingForQuick.length
+                    ? `Сначала заполните в метаданных: ${missingForQuick.join(', ')}`
+                    : 'Быстрая каталогизация — создать новый продукт из метаданных'
+                }
+              >
                 <Button
                   size="sm"
-                  color="blue"
+                  color="teal"
                   variant="light"
-                  leftSection={<IconSearch size={14} />}
-                  onClick={openPossible}
+                  leftSection={<IconWand size={14} />}
+                  loading={actionLoading === 'catalog-fast'}
+                  disabled={missingForQuick.length > 0}
+                  onClick={handleCatalogFast}
                 >
-                  Возможные продукты
+                  Быстрый каталог
                 </Button>
-              </>
+              </Tooltip>
+            )}
+            {isNoProduct && permPossibleProducts && (
+              <Button
+                size="sm"
+                color="blue"
+                variant="light"
+                leftSection={<IconSearch size={14} />}
+                onClick={openPossible}
+              >
+                Возможные продукты
+              </Button>
             )}
 
-            {isNoRights && (
+            {isNoRights && permCorrectRights && (
               <>
                 <Tooltip label="Создать права в каталоге из заполненных метаправ и перевести группу в статус 88">
                   <Button
@@ -1183,17 +1199,19 @@ export function GroupDetailPage() {
               </>
             )}
 
-            <Button
-              size="sm"
-              color="green"
-              variant="light"
-              leftSection={<IconDownload size={14} />}
-              onClick={handleExport}
-            >
-              Экспорт
-            </Button>
+            {permExport && (
+              <Button
+                size="sm"
+                color="green"
+                variant="light"
+                leftSection={<IconDownload size={14} />}
+                onClick={handleExport}
+              >
+                Экспорт
+              </Button>
+            )}
 
-            {(isNoProduct || isNoRights) && (
+            {(isNoProduct || isNoRights) && permSendBackoffice && (
               <Tooltip label="Эскалация в бэк-офис">
                 <Button
                   size="sm"
@@ -1206,7 +1224,7 @@ export function GroupDetailPage() {
                 </Button>
               </Tooltip>
             )}
-            {(isNoProduct || isNoRights) && (
+            {(isNoProduct || isNoRights) && permPostpone && (
               <Button
                 size="sm"
                 color="yellow"
@@ -1217,7 +1235,7 @@ export function GroupDetailPage() {
                 Отложить
               </Button>
             )}
-            {isPostponed && (
+            {isPostponed && permReturn && (
               <Button
                 size="sm"
                 color="green"
@@ -1229,7 +1247,7 @@ export function GroupDetailPage() {
                 Вернуть в обработку
               </Button>
             )}
-            {canUngroup && (
+            {statusAllowsUngroup && permUngroup && (
               <Button
                 size="sm"
                 color="red"
@@ -1263,7 +1281,8 @@ export function GroupDetailPage() {
             <MetadataTab
               groupId={groupId}
               metadata={metadata ?? null}
-              readOnly={group.catalogProductId != null}
+              readOnly={group.catalogProductId != null || !permCatalogFast}
+              linkedToProduct={group.catalogProductId != null}
             />
           </Paper>
         </Tabs.Panel>
@@ -1271,7 +1290,7 @@ export function GroupDetailPage() {
         {isNoRights && (
           <Tabs.Panel value="rights" pt="md">
             <Paper withBorder radius="md" p="md">
-              <MetaRightsTab groupId={groupId} metaRights={metaRights ?? null} />
+              <MetaRightsTab groupId={groupId} metaRights={metaRights ?? null} readOnly={!permCorrectRights} />
             </Paper>
           </Tabs.Panel>
         )}

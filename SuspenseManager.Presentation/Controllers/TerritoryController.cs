@@ -1,7 +1,9 @@
 using Application.Interfaces;
 using Common.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Models;
+using SuspenseManager.Middleware;
 
 namespace SuspenseManager.Controllers;
 
@@ -10,6 +12,7 @@ namespace SuspenseManager.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class TerritoryController : ControllerBase
 {
     private readonly ITerritoryService _territoryService;
@@ -21,6 +24,7 @@ public class TerritoryController : ControllerBase
 
     /// <summary>Список территорий с пагинацией.</summary>
     [HttpGet]
+    [RequirePermission(PermissionCodes.CatalogView)]
     public async Task<IActionResult> GetAll([FromQuery] PagedRequest request, CancellationToken ct)
     {
         var result = await _territoryService.GetTerritoriesAsync(request, ct);
@@ -29,6 +33,7 @@ public class TerritoryController : ControllerBase
 
     /// <summary>Создать территорию.</summary>
     [HttpPost]
+    [RequirePermission(PermissionCodes.CatalogTerritoriesEdit)]
     public async Task<IActionResult> Create([FromBody] CreateTerritoryDto dto, CancellationToken ct)
     {
         var territory = await _territoryService.CreateAsync(dto, ct);
@@ -37,6 +42,7 @@ public class TerritoryController : ControllerBase
 
     /// <summary>Обновить территорию.</summary>
     [HttpPut("{id:int}")]
+    [RequirePermission(PermissionCodes.CatalogTerritoriesEdit)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateTerritoryDto dto, CancellationToken ct)
     {
         var territory = await _territoryService.UpdateAsync(id, dto, ct);

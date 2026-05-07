@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { login as apiLogin, revoke } from '../api/auth';
 import { saveTokens, clearTokens, isAuthenticated, getSession } from '../utils/auth';
+import { registerSessionUpdateCallback } from '../api/client';
 import type { LoginDto } from '../types';
 
 interface AuthCtx {
@@ -20,6 +21,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [accountId, setAccountId] = useState(session.accountId);
   const [loginName, setLoginName] = useState(session.login);
   const [permissions, setPermissions] = useState<string[]>(session.permissions);
+
+  useEffect(() => {
+    registerSessionUpdateCallback((data) => {
+      setAccountId(data.accountId);
+      setLoginName(data.login);
+      setPermissions(data.permissions);
+    });
+  }, []);
 
   const login = useCallback(async (dto: LoginDto) => {
     const data = await apiLogin(dto);

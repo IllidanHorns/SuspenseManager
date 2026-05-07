@@ -53,8 +53,26 @@ function rejectAsUserFriendlyError(error: unknown): Promise<never> {
       })
     );
   }
+  if (status === 403) {
+    return Promise.reject(
+      new ApiRequestError('Недостаточно прав для выполнения этого действия.', {
+        statusCode: 403,
+        businessCode: 'FORBIDDEN',
+        fieldErrors: [],
+      })
+    );
+  }
   if (status === 404) {
     return Promise.reject(new ApiRequestError('Данные не найдены.', { statusCode: 404, fieldErrors: [] }));
+  }
+  if (status === 409) {
+    return Promise.reject(
+      new ApiRequestError('Конфликт данных: запись уже существует или нарушено ограничение.', {
+        statusCode: 409,
+        businessCode: 'DB_CONFLICT',
+        fieldErrors: [],
+      })
+    );
   }
   if (status != null && status >= 500) {
     return Promise.reject(
@@ -87,6 +105,13 @@ client.interceptors.request.use((config) => {
 });
 
 let refreshing: Promise<string | null> | null = null;
+
+type SessionUpdateCallback = (data: TokenResponseDto) => void;
+let onSessionUpdated: SessionUpdateCallback | null = null;
+
+export function registerSessionUpdateCallback(cb: SessionUpdateCallback) {
+  onSessionUpdated = cb;
+}
 
 // Auto-refresh on 401
 client.interceptors.response.use(
@@ -155,6 +180,7 @@ async function doRefresh(): Promise<string | null> {
     const data = res.data.data;
     if (!data) return null;
     saveTokens(data);
+    onSessionUpdated?.(data);
     return data.accessToken;
   } catch {
     return null;

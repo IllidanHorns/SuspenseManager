@@ -1,12 +1,16 @@
 using Application.Interfaces;
 using Common.DTOs;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using SuspenseManager.Middleware;
+
 namespace SuspenseManager.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class UploadController : ControllerBase
 {
     private readonly IExcelParsingService _excelParsingService;
@@ -33,6 +37,7 @@ public class UploadController : ControllerBase
     /// Ручной ввод одной строки суспенса.
     /// </summary>
     [HttpPost("manual")]
+    [RequirePermission(PermissionCodes.UploadsCreate)]
     public async Task<IActionResult> UploadManual([FromBody] SuspenseLineDto dto)
     {
         if (dto == null)
@@ -67,6 +72,7 @@ public class UploadController : ControllerBase
     /// </summary>
     [HttpPost]
     [RequestSizeLimit(50 * 1024 * 1024)]
+    [RequirePermission(PermissionCodes.UploadsCreate)]
     public async Task<IActionResult> Upload(IFormFile file)
     {
         if (file == null || file.Length == 0)

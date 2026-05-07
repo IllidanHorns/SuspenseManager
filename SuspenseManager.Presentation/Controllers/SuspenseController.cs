@@ -4,6 +4,7 @@ using Common.DTOs;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SuspenseManager.Middleware;
 
 namespace SuspenseManager.Controllers;
 
@@ -43,6 +44,7 @@ public class SuspenseController : ControllerBase
     /// Список суспенсов с пагинацией, фильтрацией, сортировкой
     /// </summary>
     [HttpGet]
+    [RequirePermission(PermissionCodes.UploadsView)]
     public async Task<IActionResult> GetAll([FromQuery] SuspenseListRequest request, CancellationToken ct)
     {
         var result = await _suspenseService.GetSuspensesAsync(request, GetCurrentAccountId(), ct);
@@ -53,6 +55,7 @@ public class SuspenseController : ControllerBase
     /// Суспенс по ID
     /// </summary>
     [HttpGet("{id:int}")]
+    [RequirePermission(PermissionCodes.UploadsView)]
     public async Task<IActionResult> GetById(int id, CancellationToken ct)
     {
         var entity = await _suspenseService.GetByIdAsync(id, ct);
@@ -68,6 +71,7 @@ public class SuspenseController : ControllerBase
     /// Несгруппированные суспенсы (статус 0 — нет продукта, статус 1 — нет прав)
     /// </summary>
     [HttpGet("ungrouped")]
+    [RequirePermission(PermissionCodes.UploadsView)]
     public async Task<IActionResult> GetUngrouped([FromQuery] int status, [FromQuery] PagedRequest request, CancellationToken ct)
     {
         var result = await _suspenseService.GetUngroupedAsync(status, request, ct);
@@ -78,6 +82,7 @@ public class SuspenseController : ControllerBase
     /// Ручной ввод суспенса через форму
     /// </summary>
     [HttpPost]
+    [RequirePermission(PermissionCodes.UploadsCreate)]
     public async Task<IActionResult> Create([FromBody] SuspenseLineDto dto)
     {
         var validationResult = await _validator.ValidateAsync(dto);
@@ -125,6 +130,7 @@ public class SuspenseController : ControllerBase
     /// Обновление суспенса (п.26)
     /// </summary>
     [HttpPut("{id:int}")]
+    [RequirePermission(PermissionCodes.UploadsCreate)]
     public async Task<IActionResult> Update(int id, [FromBody] SuspenseLineDto dto)
     {
         var entity = await _suspenseService.UpdateAsync(id, dto);
@@ -138,6 +144,7 @@ public class SuspenseController : ControllerBase
     /// Мягкая архивация суспенс-строки (доступно только для статусов 0 и 1)
     /// </summary>
     [HttpDelete("{id:int}")]
+    [RequirePermission(PermissionCodes.UploadsCreate)]
     public async Task<IActionResult> Archive(int id, CancellationToken ct)
     {
         await _suspenseService.ArchiveAsync(id, ct);

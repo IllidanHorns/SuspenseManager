@@ -51,6 +51,8 @@ import { ResizableTh } from '../components/common/ResizableTh';
 import { CollapsibleFilters } from '../components/common/CollapsibleFilters';
 import { notifications } from '@mantine/notifications';
 import { useDefaultPageSize } from '../hooks/useDefaultPageSize';
+import { usePermissions } from '../hooks/usePermissions';
+import { PermissionCodes } from '../utils/permissions';
 import type { SuspenseGroup } from '../types';
 
 function val(v: string | null | undefined) {
@@ -268,6 +270,7 @@ function hasActiveFilters(f: FilterState) {
 // ─── TabContent ──────────────────────────────────────────────────────────────
 
 function TabContent({ type }: { type: 'no-product' | 'no-rights' }) {
+  const { hasPermission } = usePermissions();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useDefaultPageSize();
   const [kpiOpened, setKpiOpened] = useState(false);
@@ -358,9 +361,11 @@ function TabContent({ type }: { type: 'no-product' | 'no-rights' }) {
             </Button>
           </Group>
         </Group>
-        <Button size="xs" variant="light" color="green" leftSection={<IconDownload size={14} />} onClick={handleExport}>
-          Экспорт
-        </Button>
+        {hasPermission(PermissionCodes.groupsExport) && (
+          <Button size="xs" variant="light" color="green" leftSection={<IconDownload size={14} />} onClick={handleExport}>
+            Экспорт
+          </Button>
+        )}
       </Group>
 
       <CollapsibleFilters activeCount={Object.keys(applied).length}>

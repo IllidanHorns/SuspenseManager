@@ -307,6 +307,22 @@
         <member name="P:Common.DTOs.UpdateMeSettingsDto.CurrentPassword">
             <summary>Смена пароля: укажите текущий и новый.</summary>
         </member>
+        <member name="T:Common.DTOs.OperatorMonitorDto">
+            <summary>
+            Сводная строка по оператору: агрегированная статистика по всем его активным группам.
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.OperatorMonitorDto.FullName">
+            <summary>Фамилия Имя, если привязан пользователь</summary>
+        </member>
+        <member name="T:Common.DTOs.OperatorGroupDto">
+            <summary>
+            Детальная строка по одной группе оператора.
+            </summary>
+        </member>
+        <member name="P:Common.DTOs.OperatorGroupDto.FlagLevel">
+            <summary>"none" | "warning" | "critical"</summary>
+        </member>
         <member name="T:Common.DTOs.PagedRequest">
             <summary>
             Базовый запрос с пагинацией, сортировкой и динамическими фильтрами.

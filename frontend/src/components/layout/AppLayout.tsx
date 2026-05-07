@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AppShell, Burger, Group, Text, NavLink, ActionIcon, Tooltip, Avatar, Menu, Divider, useMantineColorScheme, useMantineTheme } from '@mantine/core';
+import { AppShell, Burger, Group, Text, NavLink, ActionIcon, Tooltip, Avatar, Menu, Divider, useMantineTheme } from '@mantine/core';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import {
@@ -20,33 +20,49 @@ import {
   IconUserCircle,
   IconSettingsCog,
   IconSettings,
+  IconUsersGroup,
 } from '@tabler/icons-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useMeSettingsQuery, ME_SETTINGS_QUERY_KEY } from '../../hooks/useMeSettings';
 import { updateMeSettings } from '../../api/me';
 import { hasAdminAccess } from '../../utils/adminAccess';
 import { MyProfileModal } from '../common/MyProfileModal';
+import { useThemePreference } from '../../theme/ThemePreferenceContext';
+import {
+  canAccessUpload,
+  canAccessSuspenses,
+  canAccessGrouping,
+  canAccessSavedGroups,
+  canAccessPostponed,
+  canAccessAudit,
+  canAccessBackoffice,
+  canAccessCatalog,
+  canAccessMonitor,
+} from '../../utils/permissions';
 
-const NAV_ITEMS_BASE = [
-  { path: '/', label: 'Дашборд', icon: IconDashboard },
-  { path: '/upload', label: 'Загрузка', icon: IconUpload },
-  { path: '/suspenses', label: 'Сасп. строки', icon: IconList },
-  { path: '/grouping', label: 'Группировка', icon: IconLayersSubtract },
-  { path: '/groups', label: 'Сохранённые группы', icon: IconFolderOpen },
-  { path: '/postponed', label: 'Отложенные', icon: IconClock },
-  { path: '/audit', label: 'Аудит', icon: IconHistory },
-  { path: '/backoffice/tasks', label: 'Бэк-офис', icon: IconBriefcase },
-  { path: '/catalog', label: 'Каталог', icon: IconBook2 },
-  { path: '/knowledge', label: 'База знаний', icon: IconBooks },
-  { path: '/settings', label: 'Настройки', icon: IconSettings },
-] as const;
+type NavItem = { path: string; label: string; icon: React.ElementType };
 
-const NAV_ADMIN = { path: '/admin', label: 'Админка', icon: IconSettingsCog } as const;
+function buildNavItems(permissions: string[]): NavItem[] {
+  const items: NavItem[] = [{ path: '/', label: 'Дашборд', icon: IconDashboard }];
+  if (canAccessUpload(permissions))       items.push({ path: '/upload', label: 'Загрузка', icon: IconUpload });
+  if (canAccessSuspenses(permissions))    items.push({ path: '/suspenses', label: 'Сасп. строки', icon: IconList });
+  if (canAccessGrouping(permissions))     items.push({ path: '/grouping', label: 'Группировка', icon: IconLayersSubtract });
+  if (canAccessSavedGroups(permissions))  items.push({ path: '/groups', label: 'Сохранённые группы', icon: IconFolderOpen });
+  if (canAccessPostponed(permissions))    items.push({ path: '/postponed', label: 'Отложенные', icon: IconClock });
+  if (canAccessMonitor(permissions))      items.push({ path: '/monitor', label: 'Мониторинг', icon: IconUsersGroup });
+  if (canAccessAudit(permissions))        items.push({ path: '/audit', label: 'Аудит', icon: IconHistory });
+  if (canAccessBackoffice(permissions))   items.push({ path: '/backoffice/tasks', label: 'Бэк-офис', icon: IconBriefcase });
+  if (canAccessCatalog(permissions))      items.push({ path: '/catalog', label: 'Каталог', icon: IconBook2 });
+  items.push({ path: '/knowledge', label: 'База знаний', icon: IconBooks });
+  items.push({ path: '/settings', label: 'Настройки', icon: IconSettings });
+  if (hasAdminAccess(permissions))        items.push({ path: '/admin', label: 'Админка', icon: IconSettingsCog });
+  return items;
+}
 
 export function AppLayout() {
   const [opened, setOpened] = useState(false);
   const [profileOpened, setProfileOpened] = useState(false);
-  const { colorScheme, setColorScheme } = useMantineColorScheme({ keepTransitions: true });
+  const { preference, resolvedColorScheme, setPreference } = useThemePreference();
   const theme = useMantineTheme();
   const queryClient = useQueryClient();
   const { data: meSettings } = useMeSettingsQuery();
@@ -61,19 +77,30 @@ export function AppLayout() {
   const { accountId, loginName, logout, permissions } = useAuth();
 
   const toggleTheme = () => {
-    const next = colorScheme === 'dark' ? 'light' : 'dark';
-    setColorScheme(next);
-    if (!meSettings?.preferences) return;
-    savePrefsMutation.mutate({
+    if (savePrefsMutation.isPending) return;
+    const previousSettings = meSettings;
+    const previousPreference = preference;
+    const next: 'light' | 'dark' = resolvedColorScheme === 'dark' ? 'light' : 'dark';
+    setPreference(next);
+    if (!previousSettings?.preferences) return;
+    const optimisticSettings = {
+      ...previousSettings,
       preferences: {
-        ...meSettings.preferences,
+        ...previousSettings.preferences,
         colorScheme: next,
+      },
+    };
+    queryClient.setQueryData(ME_SETTINGS_QUERY_KEY, optimisticSettings);
+    savePrefsMutation.mutate({
+      preferences: optimisticSettings.preferences,
+    }, {
+      onError: () => {
+        queryClient.setQueryData(ME_SETTINGS_QUERY_KEY, previousSettings);
+        setPreference(previousPreference);
       },
     });
   };
-  const navItems = hasAdminAccess(permissions)
-    ? [...NAV_ITEMS_BASE, NAV_ADMIN]
-    : [...NAV_ITEMS_BASE];
+  const navItems = buildNavItems(permissions);
 
   const handleLogout = async () => {
     await logout();
@@ -102,9 +129,9 @@ export function AppLayout() {
           </Group>
 
           <Group gap="xs">
-            <Tooltip label={colorScheme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}>
+            <Tooltip label={resolvedColorScheme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}>
               <ActionIcon variant="subtle" color="gray" onClick={toggleTheme} loading={savePrefsMutation.isPending}>
-                {colorScheme === 'dark' ? <IconSun size={18} /> : <IconMoon size={18} />}
+                {resolvedColorScheme === 'dark' ? <IconSun size={18} /> : <IconMoon size={18} />}
               </ActionIcon>
             </Tooltip>
 

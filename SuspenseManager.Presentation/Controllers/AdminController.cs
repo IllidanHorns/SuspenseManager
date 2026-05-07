@@ -2,6 +2,7 @@ using Application.Interfaces;
 using Common.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SuspenseManager.Middleware;
 
 namespace SuspenseManager.Controllers;
 
@@ -19,6 +20,7 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet("metrics")]
+    [RequirePermission(PermissionCodes.AdminUsersManage)]
     public async Task<IActionResult> GetMetrics(CancellationToken ct)
     {
         var data = await _metrics.GetMetricsAsync(ct);

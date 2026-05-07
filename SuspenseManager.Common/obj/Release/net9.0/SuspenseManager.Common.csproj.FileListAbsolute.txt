@@ -15,3 +15,4 @@ C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Common\obj\Rele
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Common\obj\Release\net9.0\SuspenseManager.Common.xml
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Common\obj\Release\net9.0\SuspenseManager.Common.pdb
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Common\obj\Release\net9.0\ref\SuspenseManager.Common.dll
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Common\obj\Release\net9.0\SuspenseManager.Common.sourcelink.json

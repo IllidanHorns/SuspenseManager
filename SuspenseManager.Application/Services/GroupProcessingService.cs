@@ -185,6 +185,24 @@ public class GroupProcessingService : IGroupProcessingService
         var genre = meta?.Genre ?? firstSuspense?.Genre;
         var formatCode = meta?.ProductTypeCode ?? "DIGI";
 
+        if (!string.IsNullOrWhiteSpace(isrc) &&
+            await _db.CatalogProducts.AnyAsync(p => p.Isrc == isrc && p.ArchiveLevel == 0, ct))
+            throw new BusinessException(
+                $"Продукт с ISRC «{isrc}» уже существует в каталоге. Используйте «Привязать продукт» для связки с существующим продуктом.",
+                "PRODUCT_ISRC_EXISTS", 409);
+
+        if (!string.IsNullOrWhiteSpace(barcode) &&
+            await _db.CatalogProducts.AnyAsync(p => p.Barcode == barcode && p.ArchiveLevel == 0, ct))
+            throw new BusinessException(
+                $"Продукт с баркодом «{barcode}» уже существует в каталоге. Используйте «Привязать продукт» для связки с существующим продуктом.",
+                "PRODUCT_BARCODE_EXISTS", 409);
+
+        if (!string.IsNullOrWhiteSpace(catalogNumber) &&
+            await _db.CatalogProducts.AnyAsync(p => p.CatalogNumber == catalogNumber && p.ArchiveLevel == 0, ct))
+            throw new BusinessException(
+                $"Продукт с каталожным номером «{catalogNumber}» уже существует в каталоге. Используйте «Привязать продукт» для связки с существующим продуктом.",
+                "PRODUCT_CATALOG_NUMBER_EXISTS", 409);
+
         int productTypeId;
         if (meta?.ProductTypeId.HasValue == true)
         {
@@ -272,6 +290,8 @@ public class GroupProcessingService : IGroupProcessingService
 
     public async Task<SuspenseGroup> LinkProductAsync(int groupId, LinkProductDto dto, CancellationToken ct = default)
     {
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+
         var group = await GetGroupOrThrowAsync(groupId, ct);
 
         if (group.BusinessStatus != (int)BusinessStatus.InGroupNoProduct)
@@ -301,16 +321,14 @@ public class GroupProcessingService : IGroupProcessingService
         group.BusinessStatus = newStatus;
         group.ChangeTime = DateTime.UtcNow;
 
+        if (group.MetaDataId == null)
+            group.MetaDataId = meta.Id;
+
         await UpdateSuspenseStatusAsync(groupId, newStatus, product.Id, ct);
         await _db.SaveChangesAsync(ct);
-
-        if (group.MetaDataId == null)
-        {
-            group.MetaDataId = meta.Id;
-            await _db.SaveChangesAsync(ct);
-        }
         await _audit.LogGroupAsync(groupId, (int)BusinessStatus.InGroupNoProduct, newStatus, ct);
         await _audit.LogGroupLinesAsync(groupId, (int)BusinessStatus.InGroupNoProduct, newStatus, ct);
+        await tx.CommitAsync(ct);
         return group;
     }
 

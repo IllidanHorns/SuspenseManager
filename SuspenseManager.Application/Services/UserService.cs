@@ -37,11 +37,12 @@ public class UserService : IUserService
 
     public async Task<User> CreateAsync(CreateUserDto dto, CancellationToken ct = default)
     {
-        var exists = await _db.Users.AnyAsync(u => u.Email == dto.Email && u.ArchiveLevel == 0, ct);
-        if (exists)
-        {
+        if (await _db.Users.AnyAsync(u => u.Email == dto.Email && u.ArchiveLevel == 0, ct))
             throw new BusinessException("Пользователь с таким email уже существует", "USER_EXISTS", 409);
-        }
+
+        if (!string.IsNullOrWhiteSpace(dto.PhoneNumber) &&
+            await _db.Users.AnyAsync(u => u.PhoneNumber == dto.PhoneNumber && u.ArchiveLevel == 0, ct))
+            throw new BusinessException("Пользователь с таким номером телефона уже существует", "USER_PHONE_EXISTS", 409);
 
         var user = new User
         {
@@ -93,6 +94,10 @@ public class UserService : IUserService
         }
         if (dto.PhoneNumber != null)
         {
+            if (!string.IsNullOrWhiteSpace(dto.PhoneNumber) &&
+                await _db.Users.AnyAsync(u => u.PhoneNumber == dto.PhoneNumber && u.Id != id && u.ArchiveLevel == 0, ct))
+                throw new BusinessException("Пользователь с таким номером телефона уже существует", "USER_PHONE_EXISTS", 409);
+
             user.PhoneNumber = dto.PhoneNumber;
         }
 

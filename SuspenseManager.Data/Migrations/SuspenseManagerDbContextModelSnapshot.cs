@@ -105,7 +105,8 @@ namespace Data.Migrations
                     b.HasIndex("RightId");
 
                     b.HasIndex("AccountId", "RightId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[ArchiveLevel] = 0");
 
                     b.ToTable("AccountRightsLinks", (string)null);
                 });
@@ -361,6 +362,9 @@ namespace Data.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
 
                     b.ToTable("CatalogProductTypes", (string)null);
                 });

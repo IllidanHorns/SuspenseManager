@@ -38,6 +38,8 @@ import { getGroupingPreview, commitGroup, previewGroupLines, exportPreviewLines 
 import { exportGroupSuspenses } from '../api/processing';
 import { downloadBlob } from '../utils/format';
 import { useAuth } from '../hooks/useAuth';
+import { usePermissions } from '../hooks/usePermissions';
+import { PermissionCodes } from '../utils/permissions';
 import { PageSizeSelect } from '../components/common/PageSizeSelect';
 import { ResizableTh } from '../components/common/ResizableTh';
 import { CollapsibleFilters } from '../components/common/CollapsibleFilters';
@@ -76,6 +78,7 @@ const STATUS_1_COLS = [
 
 export function GroupingPage() {
   const { accountId } = useAuth();
+  const { canCommitGrouping, hasPermission } = usePermissions();
   const [status, setStatus] = useState<'0' | '1'>('0');
   const [columns, setColumns] = useState<string[]>(['Artist', 'TrackTitle']);
   const [page, setPage] = useState(1);
@@ -587,27 +590,31 @@ export function GroupingPage() {
                         <Button size="xs" variant="subtle" color="gray" onClick={() => openLinesModal(item)}>
                           Строки
                         </Button>
-                        <Button size="xs" color="indigo" variant="light" onClick={() => openCommitDialog(item)}>
-                          Зафиксировать
-                        </Button>
-                        <Tooltip label="Скачать строки в Excel">
-                          <ActionIcon
-                            size="sm"
-                            variant="subtle"
-                            color="green"
-                            onClick={() =>
-                              exportPreviewLines({
-                                businessStatus: Number(status),
-                                groupByColumns: effectiveColumns,
-                                keyValues: item.key,
-                              })
-                                .then((blob) => downloadBlob(blob, 'suspenses_preview.xlsx'))
-                                .catch((e: unknown) => notifications.show({ title: 'Ошибка экспорта', message: e instanceof Error ? e.message : 'Ошибка', color: 'red' }))
-                            }
-                          >
-                            <IconDownload size={14} />
-                          </ActionIcon>
-                        </Tooltip>
+                        {canCommitGrouping && (
+                          <Button size="xs" color="indigo" variant="light" onClick={() => openCommitDialog(item)}>
+                            Зафиксировать
+                          </Button>
+                        )}
+                        {hasPermission(PermissionCodes.groupsExport) && (
+                          <Tooltip label="Скачать строки в Excel">
+                            <ActionIcon
+                              size="sm"
+                              variant="subtle"
+                              color="green"
+                              onClick={() =>
+                                exportPreviewLines({
+                                  businessStatus: Number(status),
+                                  groupByColumns: effectiveColumns,
+                                  keyValues: item.key,
+                                })
+                                  .then((blob) => downloadBlob(blob, 'suspenses_preview.xlsx'))
+                                  .catch((e: unknown) => notifications.show({ title: 'Ошибка экспорта', message: e instanceof Error ? e.message : 'Ошибка', color: 'red' }))
+                              }
+                            >
+                              <IconDownload size={14} />
+                            </ActionIcon>
+                          </Tooltip>
+                        )}
                       </Group>
                     </Table.Td>
                   </Table.Tr>

@@ -43,6 +43,8 @@ import { ResizableTh } from '../components/common/ResizableTh';
 import { CollapsibleFilters } from '../components/common/CollapsibleFilters';
 import { notifications } from '@mantine/notifications';
 import { useDefaultPageSize } from '../hooks/useDefaultPageSize';
+import { usePermissions } from '../hooks/usePermissions';
+import { PermissionCodes } from '../utils/permissions';
 
 function val(v: string | null | undefined) {
   return v ?? '—';
@@ -81,6 +83,9 @@ function filterToRequest(f: FilterState): Partial<GroupListRequest> {
 }
 
 export function PostponedPage() {
+  const { hasPermission, hasAnyPermission } = usePermissions();
+  const canReturn = hasPermission(PermissionCodes.postponedReturn);
+  const canUngroup = hasAnyPermission([PermissionCodes.groupsNoProductUngroup, PermissionCodes.groupsNoRightsUngroup]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useDefaultPageSize();
   const [returning, setReturning] = useState<number | null>(null);
@@ -279,18 +284,22 @@ export function PostponedPage() {
                               <IconEye size={14} />
                             </ActionIcon>
                           </Tooltip>
-                          <Tooltip label="Вернуть в обработку">
-                            <ActionIcon variant="light" color="green" size="sm"
-                              loading={returning === g.id} onClick={() => handleReturn(g.id)}>
-                              <IconArrowBack size={14} />
-                            </ActionIcon>
-                          </Tooltip>
-                          <Tooltip label="Расформировать группу">
-                            <ActionIcon variant="light" color="red" size="sm"
-                              onClick={() => openUngroupConfirm(g.id)}>
-                              <IconUnlink size={14} />
-                            </ActionIcon>
-                          </Tooltip>
+                          {canReturn && (
+                            <Tooltip label="Вернуть в обработку">
+                              <ActionIcon variant="light" color="green" size="sm"
+                                loading={returning === g.id} onClick={() => handleReturn(g.id)}>
+                                <IconArrowBack size={14} />
+                              </ActionIcon>
+                            </Tooltip>
+                          )}
+                          {canUngroup && (
+                            <Tooltip label="Расформировать группу">
+                              <ActionIcon variant="light" color="red" size="sm"
+                                onClick={() => openUngroupConfirm(g.id)}>
+                                <IconUnlink size={14} />
+                              </ActionIcon>
+                            </Tooltip>
+                          )}
                         </Group>
                       </Table.Td>
                     </Table.Tr>

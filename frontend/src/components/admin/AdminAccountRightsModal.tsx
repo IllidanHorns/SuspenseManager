@@ -46,10 +46,14 @@ export function AdminAccountRightsModal({ opened, onClose, accountId, loginLabel
 
   useEffect(() => {
     if (!opened || !currentRights) return;
-    setSelected(new Set(currentRights.map((r) => r.id)));
-    setPresetId(null);
+    const ids = new Set(currentRights.map((r) => r.id));
+    setSelected(ids);
     setFilter('');
-  }, [opened, currentRights, accountId]);
+    const matched = presets.find(
+      (p) => p.rightIds.length === ids.size && p.rightIds.every((id) => ids.has(id))
+    );
+    setPresetId(matched?.id ?? null);
+  }, [opened, currentRights, accountId, presets]);
 
   const byModule = useMemo(() => {
     const q = filter.trim().toLowerCase();

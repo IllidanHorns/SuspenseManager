@@ -5,6 +5,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Models;
+using SuspenseManager.Middleware;
 
 namespace SuspenseManager.Controllers;
 
@@ -44,6 +45,7 @@ public class GroupProcessingController : ControllerBase
     // --- п.22 Выгрузка метаданных группы ---
 
     [HttpGet("{groupId:int}/metadata")]
+    [RequirePermission(PermissionCodes.GroupsNoProductView, PermissionCodes.GroupsNoRightsView)]
     public async Task<IActionResult> GetMetadata(int groupId, CancellationToken ct)
     {
         var meta = await _processingService.GetMetadataAsync(groupId, ct);
@@ -58,6 +60,7 @@ public class GroupProcessingController : ControllerBase
     // --- п.23 Выгрузка метаправ группы ---
 
     [HttpGet("{groupId:int}/meta-rights")]
+    [RequirePermission(PermissionCodes.GroupsNoRightsView)]
     public async Task<IActionResult> GetMetaRights(int groupId, CancellationToken ct)
     {
         var metaRights = await _processingService.GetMetaRightsAsync(groupId, ct);
@@ -72,6 +75,7 @@ public class GroupProcessingController : ControllerBase
     // --- п.14 Обновление метаданных продукта (нет продукта) ---
 
     [HttpPut("{groupId:int}/metadata")]
+    [RequirePermission(PermissionCodes.GroupsNoProductCatalogFast)]
     public async Task<IActionResult> UpdateMetadata(int groupId, [FromBody] UpdateGroupMetadataDto dto, CancellationToken ct)
     {
         var meta = await _processingService.UpdateMetadataAsync(groupId, dto, ct);
@@ -82,6 +86,7 @@ public class GroupProcessingController : ControllerBase
     // --- п.15 Обновление метаправ (нет прав) ---
 
     [HttpPut("{groupId:int}/meta-rights")]
+    [RequirePermission(PermissionCodes.GroupsNoRightsCorrectRights)]
     public async Task<IActionResult> UpdateMetaRights(int groupId, [FromBody] UpdateGroupMetaRightsDto dto, CancellationToken ct)
     {
         var metaRights = await _processingService.UpdateMetaRightsAsync(groupId, dto, ct);
@@ -96,6 +101,7 @@ public class GroupProcessingController : ControllerBase
     /// Группа переводится в статус 16 (нет прав). Body не требуется.
     /// </summary>
     [HttpPost("{groupId:int}/catalog-fast")]
+    [RequirePermission(PermissionCodes.GroupsNoProductCatalogFast)]
     public async Task<IActionResult> QuickCatalog(int groupId, CancellationToken ct)
     {
         var product = await _processingService.QuickCatalogAsync(groupId, ct);
@@ -106,6 +112,7 @@ public class GroupProcessingController : ControllerBase
     // --- п.17 Возможные продукты ---
 
     [HttpGet("{groupId:int}/possible-products")]
+    [RequirePermission(PermissionCodes.GroupsNoProductPossibleProducts)]
     public async Task<IActionResult> GetPossibleProducts(int groupId, [FromQuery] PagedRequest request, CancellationToken ct)
     {
         var result = await _processingService.GetPossibleProductsAsync(groupId, request, ct);
@@ -115,6 +122,7 @@ public class GroupProcessingController : ControllerBase
     // --- п.25 Привязка группы к продукту ---
 
     [HttpPost("{groupId:int}/link-product")]
+    [RequirePermission(PermissionCodes.GroupsNoProductPossibleProducts)]
     public async Task<IActionResult> LinkProduct(int groupId, [FromBody] LinkProductDto dto, CancellationToken ct)
     {
         var group = await _processingService.LinkProductAsync(groupId, dto, ct);
@@ -125,7 +133,7 @@ public class GroupProcessingController : ControllerBase
     // --- п.20 Отправка в бэк-офис ---
 
     [HttpPost("{groupId:int}/send-to-backoffice")]
-    [Authorize]
+    [RequirePermission(PermissionCodes.GroupsNoProductSendBackoffice, PermissionCodes.GroupsNoRightsSendBackoffice)]
     public async Task<IActionResult> SendToBackOffice(int groupId, [FromBody] SendToBackOfficeDto dto, CancellationToken ct)
     {
         var validationResult = await _sendToBackOfficeValidator.ValidateAsync(dto, ct);
@@ -137,7 +145,9 @@ public class GroupProcessingController : ControllerBase
             return BadRequest(ApiResponse<object>.Fail(400, "Ошибки валидации", "VALIDATION_ERROR", errors));
         }
 
-        var accountId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var claimValue = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("account_id");
+        if (!int.TryParse(claimValue, out var accountId))
+            return Unauthorized(ApiResponse<object>.Fail(401, "Не удалось определить аккаунт", "UNAUTHORIZED"));
         var group = await _processingService.SendToBackOfficeAsync(groupId, dto, accountId, ct);
         _logger.LogInformation("Группа отправлена в бэк-офис: GroupId={GroupId}, AccountId={AccountId}", groupId, accountId);
         return Ok(ApiResponse<Models.SuspenseGroup>.Success(group, "Группа передана в бэк-офис", "SENT_TO_BACKOFFICE"));
@@ -146,6 +156,7 @@ public class GroupProcessingController : ControllerBase
     // --- п.21 Отложить ---
 
     [HttpPost("{groupId:int}/postpone")]
+    [RequirePermission(PermissionCodes.GroupsNoProductPostpone, PermissionCodes.GroupsNoRightsPostpone)]
     public async Task<IActionResult> Postpone(int groupId, [FromBody] PostponeGroupDto dto, CancellationToken ct)
     {
         var group = await _processingService.PostponeAsync(groupId, dto, ct);
@@ -156,6 +167,7 @@ public class GroupProcessingController : ControllerBase
     // --- п.24 Разгруппировка ---
 
     [HttpPost("{groupId:int}/ungroup")]
+    [RequirePermission(PermissionCodes.GroupsNoProductUngroup, PermissionCodes.GroupsNoRightsUngroup)]
     public async Task<IActionResult> Ungroup(int groupId, CancellationToken ct)
     {
         await _processingService.UngroupAsync(groupId, ct);
@@ -166,6 +178,7 @@ public class GroupProcessingController : ControllerBase
     // --- п.19 Экспорт суспенсов группы в Excel ---
 
     [HttpGet("{groupId:int}/export-suspenses")]
+    [RequirePermission(PermissionCodes.GroupsExport)]
     public async Task<IActionResult> ExportGroupSuspenses(int groupId, CancellationToken ct)
     {
         var bytes = await _excelExportService.ExportGroupSuspensesAsync(groupId, ct);
@@ -176,6 +189,7 @@ public class GroupProcessingController : ControllerBase
     // --- п.18 Экспорт всех групп в Excel ---
 
     [HttpGet("export")]
+    [RequirePermission(PermissionCodes.GroupsExport)]
     public async Task<IActionResult> ExportGroups([FromQuery] int status, CancellationToken ct)
     {
         var bytes = await _excelExportService.ExportGroupsAsync(status, ct);
@@ -191,6 +205,7 @@ public class GroupProcessingController : ControllerBase
     /// 2. Если прав нет — создаёт права из GroupMetaRights и переводит в 88.
     /// </summary>
     [HttpPost("{groupId:int}/create-rights")]
+    [RequirePermission(PermissionCodes.GroupsNoRightsCorrectRights)]
     public async Task<IActionResult> CreateRights(int groupId, CancellationToken ct)
     {
         var group = await _processingService.CreateRightsAsync(groupId, ct);
@@ -205,6 +220,7 @@ public class GroupProcessingController : ControllerBase
     /// Используется оператором для выбора прав с похожего продукта.
     /// </summary>
     [HttpGet("{groupId:int}/search-rights")]
+    [RequirePermission(PermissionCodes.GroupsNoRightsCorrectRights)]
     public async Task<IActionResult> SearchRights(
         int groupId,
         [FromQuery] string? artist,
@@ -230,6 +246,7 @@ public class GroupProcessingController : ControllerBase
     /// и переводит группу в статус 88 (валидирована).
     /// </summary>
     [HttpPost("{groupId:int}/copy-rights")]
+    [RequirePermission(PermissionCodes.GroupsNoRightsCorrectRights)]
     public async Task<IActionResult> CopyRights(int groupId, [FromBody] CopyRightsDto dto, CancellationToken ct)
     {
         var group = await _processingService.CopyRightsToProductAsync(groupId, dto.RightsId, ct);
@@ -240,6 +257,7 @@ public class GroupProcessingController : ControllerBase
     // --- Отложенные группы ---
 
     [HttpGet("/api/postponed")]
+    [RequirePermission(PermissionCodes.PostponedView)]
     public async Task<IActionResult> GetPostponed([FromQuery] GroupListRequest request, CancellationToken ct)
     {
         var result = await _processingService.GetPostponedGroupsAsync(request, GetCurrentAccountId(), ct);
@@ -247,6 +265,7 @@ public class GroupProcessingController : ControllerBase
     }
 
     [HttpPost("/api/postponed/{groupId:int}/return")]
+    [RequirePermission(PermissionCodes.PostponedReturn)]
     public async Task<IActionResult> ReturnFromPostponed(int groupId, CancellationToken ct)
     {
         var group = await _processingService.ReturnFromPostponedAsync(groupId, ct);

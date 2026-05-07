@@ -41,6 +41,8 @@ builder.Services.AddScoped<IBackOfficeService, BackOfficeService>();
 builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddScoped<IRightsCatalogService, RightsCatalogService>();
 builder.Services.AddScoped<IAdminMetricsService, AdminMetricsService>();
+builder.Services.AddScoped<IMonitorService, MonitorService>();
+builder.Services.AddScoped<ISampleExcelService, SampleExcelService>();
 builder.Services.AddHttpContextAccessor();
 
 // FluentValidation
@@ -116,31 +118,30 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Seed тестовых данных в Development
-if (app.Environment.IsDevelopment())
+// Авто-миграции + сидер при каждом старте (идемпотентно)
+using (var scope = app.Services.CreateScope())
 {
-    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<SuspenseManagerDbContext>();
-    var adminPasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123!");
+    await db.Database.MigrateAsync();
+    var adminPassword = app.Configuration["AdminPassword"] ?? "Admin123!";
+    var adminPasswordHash = BCrypt.Net.BCrypt.HashPassword(adminPassword);
+    var operatorPasswordHash = BCrypt.Net.BCrypt.HashPassword("Operator123!");
+    var backOfficePasswordHash = BCrypt.Net.BCrypt.HashPassword("Backoffice123!");
     await DatabaseSeeder.EnsurePasswordsAsync(db, adminPasswordHash);
-    await DatabaseSeeder.SeedAsync(db, adminPasswordHash);
+    await DatabaseSeeder.SeedAsync(db, adminPasswordHash, operatorPasswordHash, backOfficePasswordHash);
 }
 
 // Глобальная обработка ошибок — первый middleware в пайплайне
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-// Swagger
-if (app.Environment.IsDevelopment())
+// Swagger доступен всегда (удобно для демонстрации)
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Suspense Manager API v1");
-        c.RoutePrefix = string.Empty;
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Suspense Manager API v1");
+    c.RoutePrefix = string.Empty;
+});
 
-app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

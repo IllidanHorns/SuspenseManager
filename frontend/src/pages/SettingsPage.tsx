@@ -20,6 +20,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateMeSettings } from '../api/me';
 import { useMeSettingsQuery, ME_SETTINGS_QUERY_KEY } from '../hooks/useMeSettings';
 import type { ColorSchemePreference, NotificationsPositionPreference, UpdateMeSettingsDto } from '../types';
+import { useThemePreference } from '../theme/ThemePreferenceContext';
 
 const PAGE_SIZE_OPTIONS = ['2', '5', '10', '15', '20', '50', '100'].map((v) => ({ value: v, label: v }));
 
@@ -40,6 +41,7 @@ const NOTIFICATIONS_POSITION_OPTIONS: { value: NotificationsPositionPreference; 
 
 export function SettingsPage() {
   const queryClient = useQueryClient();
+  const { setPreference } = useThemePreference();
   const { data, isLoading, error, isFetching } = useMeSettingsQuery();
 
   const form = useForm({
@@ -66,8 +68,13 @@ export function SettingsPage() {
 
   const saveMutation = useMutation({
     mutationFn: (dto: UpdateMeSettingsDto) => updateMeSettings(dto),
+    onMutate: async () => {
+      // Отменяем фоновые рефетчи, чтобы они не перезаписали только что сохранённые данные.
+      await queryClient.cancelQueries({ queryKey: ME_SETTINGS_QUERY_KEY });
+    },
     onSuccess: (updated) => {
       queryClient.setQueryData(ME_SETTINGS_QUERY_KEY, updated);
+      setPreference(updated.preferences.colorScheme as ColorSchemePreference);
       notifications.show({ color: 'green', title: 'Сохранено', message: 'Настройки обновлены' });
     },
     onError: (e: Error) => {

@@ -48,6 +48,7 @@ import { ResizableTh } from '../components/common/ResizableTh';
 import { STATUS_LABELS, STATUS_COLORS } from '../types';
 import type { ValidationResultDto, CatalogProduct, SuspenseLine, BusinessStatus, RowFormatError } from '../types';
 import { fmtDateTime, fmtNumber } from '../utils/format';
+import { usePermissions } from '../hooks/usePermissions';
 import { DbMax, optMaxLen } from '../utils/fieldValidation';
 import { UploadReportRequirementsModal } from '../components/upload/UploadReportRequirementsModal';
 
@@ -95,6 +96,7 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 }
 
 export function UploadPage() {
+  const { canCreateUpload } = usePermissions();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ValidationResultDto | null>(null);
@@ -500,79 +502,85 @@ export function UploadPage() {
           >
             Справка по файлу
           </Button>
-          <Button
-            variant="light"
-            leftSection={<IconPencilPlus size={16} />}
-            onClick={openManual}
-          >
-            Ввести вручную
-          </Button>
+          {canCreateUpload && (
+            <Button
+              variant="light"
+              leftSection={<IconPencilPlus size={16} />}
+              onClick={openManual}
+            >
+              Ввести вручную
+            </Button>
+          )}
         </Group>
       </Group>
 
-      <Paper
-        withBorder
-        radius="md"
-        p="xl"
-        style={{
-          borderStyle: 'dashed',
-          borderWidth: 2,
-          textAlign: 'center',
-          cursor: 'pointer',
-        }}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={handleDrop}
-        onClick={() => inputRef.current?.click()}
-      >
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".xlsx,.xls"
-          style={{ display: 'none' }}
-          onChange={handleFileChange}
-        />
-        <ThemeIcon size={56} radius="xl" color="indigo" variant="light" mx="auto" mb="md">
-          <IconUpload size={28} />
-        </ThemeIcon>
-        <Text size="lg" fw={500} mb={4}>
-          {file ? file.name : 'Перетащите файл или нажмите для выбора'}
-        </Text>
-        <Text size="sm" c="dimmed">Поддерживаются форматы .xlsx и .xls (до 50 МБ)</Text>
-
-        {file && (
-          <Group justify="center" mt="md" gap="xs">
-            <IconFile size={16} />
-            <Text size="sm" fw={500}>{file.name}</Text>
-            <Text size="sm" c="dimmed">({(file.size / 1024).toFixed(0)} KB)</Text>
-          </Group>
-        )}
-      </Paper>
-
-      {error && (
-        <Alert icon={<IconAlertCircle size={16} />} color="red" radius="md" title="Не удалось обработать файл">
-          <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>{error}</Text>
-        </Alert>
-      )}
-
-      {file && (
-        <Group>
-          <Button
-            leftSection={<IconUpload size={16} />}
-            color="indigo"
-            loading={loading}
-            onClick={handleUpload}
+      {canCreateUpload && (
+        <>
+          <Paper
+            withBorder
+            radius="md"
+            p="xl"
+            style={{
+              borderStyle: 'dashed',
+              borderWidth: 2,
+              textAlign: 'center',
+              cursor: 'pointer',
+            }}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleDrop}
+            onClick={() => inputRef.current?.click()}
           >
-            Загрузить и валидировать
-          </Button>
-          <Button
-            variant="subtle"
-            color="gray"
-            leftSection={<IconX size={16} />}
-            onClick={() => { setFile(null); setResult(null); setError(''); }}
-          >
-            Очистить
-          </Button>
-        </Group>
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              style={{ display: 'none' }}
+              onChange={handleFileChange}
+            />
+            <ThemeIcon size={56} radius="xl" color="indigo" variant="light" mx="auto" mb="md">
+              <IconUpload size={28} />
+            </ThemeIcon>
+            <Text size="lg" fw={500} mb={4}>
+              {file ? file.name : 'Перетащите файл или нажмите для выбора'}
+            </Text>
+            <Text size="sm" c="dimmed">Поддерживаются форматы .xlsx и .xls (до 50 МБ)</Text>
+
+            {file && (
+              <Group justify="center" mt="md" gap="xs">
+                <IconFile size={16} />
+                <Text size="sm" fw={500}>{file.name}</Text>
+                <Text size="sm" c="dimmed">({(file.size / 1024).toFixed(0)} KB)</Text>
+              </Group>
+            )}
+          </Paper>
+
+          {error && (
+            <Alert icon={<IconAlertCircle size={16} />} color="red" radius="md" title="Не удалось обработать файл">
+              <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>{error}</Text>
+            </Alert>
+          )}
+
+          {file && (
+            <Group>
+              <Button
+                leftSection={<IconUpload size={16} />}
+                color="indigo"
+                loading={loading}
+                onClick={handleUpload}
+              >
+                Загрузить и валидировать
+              </Button>
+              <Button
+                variant="subtle"
+                color="gray"
+                leftSection={<IconX size={16} />}
+                onClick={() => { setFile(null); setResult(null); setError(''); }}
+              >
+                Очистить
+              </Button>
+            </Group>
+          )}
+        </>
       )}
 
       {result && (

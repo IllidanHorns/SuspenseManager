@@ -1,7 +1,9 @@
 using Application.Interfaces;
 using Common.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Models;
+using SuspenseManager.Middleware;
 
 namespace SuspenseManager.Controllers;
 
@@ -11,6 +13,7 @@ namespace SuspenseManager.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/backoffice")]
+[Authorize]
 public class BackOfficeController : ControllerBase
 {
     private readonly IBackOfficeService _boService;
@@ -36,6 +39,7 @@ public class BackOfficeController : ControllerBase
     /// Опциональный фильтр: taskType=120 (нет продукта) или taskType=320 (нет прав).
     /// </summary>
     [HttpGet("tasks")]
+    [RequirePermission(PermissionCodes.BackofficeView)]
     public async Task<IActionResult> GetTasks([FromQuery] BackOfficeTasksRequest request, CancellationToken ct)
     {
         var (items, totalCount, totalPages) = await _boService.GetTasksAsync(request, ct);
@@ -51,6 +55,7 @@ public class BackOfficeController : ControllerBase
 
     /// <summary>Детальная карточка задания с полной информацией о группе.</summary>
     [HttpGet("tasks/{taskId:int}")]
+    [RequirePermission(PermissionCodes.BackofficeView)]
     public async Task<IActionResult> GetTask(int taskId, CancellationToken ct)
     {
         var task = await _boService.GetTaskAsync(taskId, ct);
@@ -62,6 +67,7 @@ public class BackOfficeController : ControllerBase
     /// Задание закрывается.
     /// </summary>
     [HttpPost("tasks/{taskId:int}/return")]
+    [RequirePermission(PermissionCodes.BackofficeReturn)]
     public async Task<IActionResult> ReturnGroup(int taskId, CancellationToken ct)
     {
         var group = await _boService.ReturnGroupAsync(taskId, ct);
@@ -74,6 +80,7 @@ public class BackOfficeController : ControllerBase
     /// Используется когда стримы не принадлежат компании и могут быть проигнорированы.
     /// </summary>
     [HttpPost("tasks/{taskId:int}/delete-group")]
+    [RequirePermission(PermissionCodes.BackofficeDelete)]
     public async Task<IActionResult> DeleteGroup(int taskId, CancellationToken ct)
     {
         await _boService.DeleteGroupAsync(taskId, ct);
@@ -87,6 +94,7 @@ public class BackOfficeController : ControllerBase
     /// Если прав нет → 320, задание остаётся открытым.
     /// </summary>
     [HttpPost("tasks/{taskId:int}/link-product")]
+    [RequirePermission(PermissionCodes.BackofficeLinkProduct)]
     public async Task<IActionResult> LinkProduct(int taskId, [FromBody] BoLinkProductDto dto, CancellationToken ct)
     {
         var group = await _boService.LinkProductAsync(taskId, dto.ProductId, ct);
@@ -102,6 +110,7 @@ public class BackOfficeController : ControllerBase
     /// При успехе → 88, задание закрывается.
     /// </summary>
     [HttpPost("tasks/{taskId:int}/complete")]
+    [RequirePermission(PermissionCodes.BackofficeValidate)]
     public async Task<IActionResult> CompleteTask(int taskId, CancellationToken ct)
     {
         var group = await _boService.CompleteTaskAsync(taskId, ct);
@@ -111,6 +120,7 @@ public class BackOfficeController : ControllerBase
 
     /// <summary>Поиск возможных продуктов для привязки к группе 120.</summary>
     [HttpGet("tasks/{taskId:int}/possible-products")]
+    [RequirePermission(PermissionCodes.BackofficeLinkProduct)]
     public async Task<IActionResult> GetPossibleProducts(
         int taskId, [FromQuery] PagedRequest request, CancellationToken ct)
     {
@@ -120,6 +130,7 @@ public class BackOfficeController : ControllerBase
 
     /// <summary>Поиск прав в каталоге для копирования в группу 320.</summary>
     [HttpGet("tasks/{taskId:int}/search-rights")]
+    [RequirePermission(PermissionCodes.BackofficeCopyRights)]
     public async Task<IActionResult> SearchRights(
         int taskId,
         [FromQuery] string? artist,
@@ -143,6 +154,7 @@ public class BackOfficeController : ControllerBase
     /// При успехе → 88, задание закрывается.
     /// </summary>
     [HttpPost("tasks/{taskId:int}/copy-rights")]
+    [RequirePermission(PermissionCodes.BackofficeCopyRights)]
     public async Task<IActionResult> CopyRights(int taskId, [FromBody] BoCopyRightsDto dto, CancellationToken ct)
     {
         var group = await _boService.CopyRightsToProductAsync(taskId, dto.RightsId, ct);
@@ -157,6 +169,7 @@ public class BackOfficeController : ControllerBase
 
     /// <summary>Обновить метаданные группы (доступно для 120 и 320).</summary>
     [HttpPut("tasks/{taskId:int}/groups/{groupId:int}/metadata")]
+    [RequirePermission(PermissionCodes.BackofficeLinkProduct)]
     public async Task<IActionResult> UpdateMetadata(
         int taskId, int groupId, [FromBody] UpdateGroupMetadataDto dto, CancellationToken ct)
     {
@@ -171,6 +184,7 @@ public class BackOfficeController : ControllerBase
 
     /// <summary>Обновить метаправа группы (доступно для 320).</summary>
     [HttpPut("tasks/{taskId:int}/groups/{groupId:int}/meta-rights")]
+    [RequirePermission(PermissionCodes.BackofficeCopyRights)]
     public async Task<IActionResult> UpdateMetaRights(
         int taskId, int groupId, [FromBody] UpdateGroupMetaRightsDto dto, CancellationToken ct)
     {

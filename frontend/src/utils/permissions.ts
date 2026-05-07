@@ -36,6 +36,8 @@ export const PermissionCodes = {
 
   groupsExport: 'groups.export',
 
+  monitorView: 'monitor.view',
+
   adminUsersManage: 'admin.users.manage',
   adminPermissionsManage: 'admin.permissions.manage',
 } as const;
@@ -103,11 +105,19 @@ export function canAccessPostponed(permissions: string[]): boolean {
 }
 
 export function canAccessSuspenses(permissions: string[]): boolean {
-  return hasAnyPermission(permissions, AnyWorkAccessPermissions);
+  return hasAnyPermission(permissions, [PermissionCodes.uploadsView, PermissionCodes.uploadsCreate]);
 }
 
 export function canAccessAudit(permissions: string[]): boolean {
-  return hasAnyPermission(permissions, AnyWorkAccessPermissions);
+  return hasAnyPermission(permissions, [
+    PermissionCodes.uploadsView,
+    PermissionCodes.groupsNoProductView,
+    PermissionCodes.groupsNoRightsView,
+    PermissionCodes.backofficeView,
+    PermissionCodes.monitorView,
+    PermissionCodes.adminUsersManage,
+    PermissionCodes.adminPermissionsManage,
+  ]);
 }
 
 export function canAccessBackoffice(permissions: string[]): boolean {
@@ -130,6 +140,10 @@ export function canAccessAdminUsers(permissions: string[]): boolean {
 
 export function canAccessAdminPermissions(permissions: string[]): boolean {
   return hasPermission(permissions, PermissionCodes.adminPermissionsManage);
+}
+
+export function canAccessMonitor(permissions: string[]): boolean {
+  return hasPermission(permissions, PermissionCodes.monitorView);
 }
 
 export function canAccessAdmin(permissions: string[]): boolean {

@@ -62,11 +62,17 @@ public class AccountService : IAccountService
 
     public async Task<Account?> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        return await _db.Accounts
+        var account = await _db.Accounts
             .AsNoTracking()
             .Include(a => a.User)
-            .Include(a => a.Rights)
+            .Include(a => a.RightsLinks.Where(rl => rl.ArchiveLevel == 0))
+                .ThenInclude(rl => rl.Rights)
             .FirstOrDefaultAsync(a => a.Id == id && a.ArchiveLevel == 0, ct);
+
+        if (account != null)
+            account.Rights = account.RightsLinks.Select(rl => rl.Rights).ToList();
+
+        return account;
     }
 
     public async Task<Account> CreateAsync(CreateAccountDto dto, CancellationToken ct = default)
@@ -154,7 +160,7 @@ public class AccountService : IAccountService
             ?? throw new KeyNotFoundException($"Аккаунт с ID {accountId} не найден");
 
         var existingLinks = await _db.AccountRightsLinks
-            .Where(l => l.AccountId == accountId && rightIds.Contains(l.RightId))
+            .Where(l => l.AccountId == accountId && rightIds.Contains(l.RightId) && l.ArchiveLevel == 0)
             .Select(l => l.RightId)
             .ToListAsync(ct);
 

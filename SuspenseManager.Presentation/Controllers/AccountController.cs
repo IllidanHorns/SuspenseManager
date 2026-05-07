@@ -3,6 +3,7 @@ using Application.Interfaces;
 using Common.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SuspenseManager.Middleware;
 
 namespace SuspenseManager.Controllers;
 
@@ -21,6 +22,7 @@ public class AccountController : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission(PermissionCodes.AdminUsersManage)]
     public async Task<IActionResult> GetAll([FromQuery] PagedRequest request, [FromQuery] string? userLink, CancellationToken ct)
     {
         // Явный query userLink=linked|unlinked: вложенный Filters[UserProfile] из строки запроса к Dictionary в PagedRequest на практике не биндится.
@@ -35,6 +37,7 @@ public class AccountController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [RequirePermission(PermissionCodes.AdminUsersManage)]
     public async Task<IActionResult> GetById(int id, CancellationToken ct)
     {
         var account = await _accountService.GetByIdAsync(id, ct);
@@ -47,6 +50,7 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission(PermissionCodes.AdminUsersManage)]
     public async Task<IActionResult> Create([FromBody] CreateAccountDto dto, CancellationToken ct)
     {
         var account = await _accountService.CreateAsync(dto, ct);
@@ -55,6 +59,7 @@ public class AccountController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [RequirePermission(PermissionCodes.AdminUsersManage)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateAccountDto dto, CancellationToken ct)
     {
         var account = await _accountService.UpdateAsync(id, dto, ct);
@@ -63,6 +68,7 @@ public class AccountController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [RequirePermission(PermissionCodes.AdminUsersManage)]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         await _accountService.DeleteAsync(id, ct);
@@ -73,6 +79,7 @@ public class AccountController : ControllerBase
     // --- п.29 Управление правами аккаунта ---
 
     [HttpGet("{id:int}/rights")]
+    [RequirePermission(PermissionCodes.AdminUsersManage)]
     public async Task<IActionResult> GetRights(int id, CancellationToken ct)
     {
         var rights = await _accountService.GetAccountRightsAsync(id, ct);
@@ -80,6 +87,7 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost("{id:int}/rights")]
+    [RequirePermission(PermissionCodes.AdminPermissionsManage)]
     public async Task<IActionResult> AddRights(int id, [FromBody] AccountRightsDto dto, CancellationToken ct)
     {
         await _accountService.AddRightsAsync(id, dto.RightIds, ct);
@@ -88,6 +96,7 @@ public class AccountController : ControllerBase
     }
 
     [HttpDelete("{id:int}/rights")]
+    [RequirePermission(PermissionCodes.AdminPermissionsManage)]
     public async Task<IActionResult> RemoveRights(int id, [FromBody] AccountRightsDto dto, CancellationToken ct)
     {
         await _accountService.RemoveRightsAsync(id, dto.RightIds, ct);
@@ -97,6 +106,7 @@ public class AccountController : ControllerBase
 
     /// <summary>Полная замена набора прав аккаунта (админка).</summary>
     [HttpPut("{id:int}/rights")]
+    [RequirePermission(PermissionCodes.AdminPermissionsManage)]
     public async Task<IActionResult> ReplaceRights(int id, [FromBody] ReplaceAccountRightsDto dto, CancellationToken ct)
     {
         await _accountService.ReplaceRightsAsync(id, dto.RightIds, ct);

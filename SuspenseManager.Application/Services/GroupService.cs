@@ -78,25 +78,13 @@ public class GroupService : IGroupService
 
     public async Task<SuspenseGroup?> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        var group = await _db.SuspenseGroups
+        return await _db.SuspenseGroups
             .AsNoTracking()
             .Include(g => g.Account)
             .Include(g => g.GroupMetaData)
             .Include(g => g.GroupMetaRights)
             .Include(g => g.CatalogProduct)
-            .Include(g => g.SuspenseLines)
             .FirstOrDefaultAsync(g => g.Id == id && g.ArchiveLevel == 0, ct);
-
-        if (group?.SuspenseLines is { Count: > 0 } lines)
-        {
-            foreach (var line in lines)
-            {
-                GroupMetadataSuspenseDisplay.ApplyToSuspenseLine(
-                    line, group.GroupMetaData, group.CatalogProduct, group.BusinessStatus);
-            }
-        }
-
-        return group;
     }
 
     public async Task<PagedResponse<SuspenseLine>> GetGroupSuspensesAsync(int groupId, PagedRequest request, CancellationToken ct = default)

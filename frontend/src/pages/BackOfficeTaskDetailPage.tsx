@@ -29,6 +29,8 @@ import { ResizableTh } from '../components/common/ResizableTh';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { STATUS_LABELS } from '../types';
 import { fmtDateTime } from '../utils/format';
+import { usePermissions } from '../hooks/usePermissions';
+import { PermissionCodes } from '../utils/permissions';
 import { DbMax, combine, dateIsoOptional, optMaxLen, required, sharePercent } from '../utils/fieldValidation';
 import type {
   CatalogProduct,
@@ -52,6 +54,13 @@ export function BackOfficeTaskDetailPage() {
   const status = group?.businessStatus;
   const is120 = status === 120;
   const is320 = status === 320;
+
+  const { hasPermission } = usePermissions();
+  const permLinkProduct = hasPermission(PermissionCodes.backofficeLinkProduct);
+  const permCopyRights = hasPermission(PermissionCodes.backofficeCopyRights);
+  const permValidate = hasPermission(PermissionCodes.backofficeValidate);
+  const permReturn = hasPermission(PermissionCodes.backofficeReturn);
+  const permDelete = hasPermission(PermissionCodes.backofficeDelete);
 
   const refresh = () => qc.invalidateQueries({ queryKey: ['bo-task', tid] });
   const [searchRightsOpen, { open: openSearchRights, close: closeSearchRights }] = useDisclosure(false);
@@ -93,39 +102,45 @@ export function BackOfficeTaskDetailPage() {
 
       {/* Action buttons */}
       <Group gap="sm">
-        {is120 && (
+        {is120 && permLinkProduct && (
           <PossibleProductsButton taskId={tid} groupId={groupId!} onLinked={refresh} />
         )}
         {is320 && (
           <>
-            <CompleteTaskButton taskId={tid} group={group!} onDone={() => navigate('/backoffice/tasks')} />
-            <Button
-              leftSection={<IconSearch size={14} />}
-              variant="light"
-              color="violet"
-              onClick={openSearchRights}
-              size="sm"
-            >
-              Найти права
-            </Button>
-            <SearchRightsCatalogModal
-              opened={searchRightsOpen}
-              onClose={closeSearchRights}
-              group={group!}
-              onApplied={() => {
-                qc.invalidateQueries({ queryKey: ['bo-tasks'] });
-                refresh();
-                navigate('/backoffice/tasks');
-              }}
-              searchRights={(p) => boSearchRights(tid, p)}
-              copyRights={async (rightsId) => {
-                await boCopyRights(tid, rightsId);
-              }}
-            />
+            {permValidate && (
+              <CompleteTaskButton taskId={tid} group={group!} onDone={() => navigate('/backoffice/tasks')} />
+            )}
+            {permCopyRights && (
+              <>
+                <Button
+                  leftSection={<IconSearch size={14} />}
+                  variant="light"
+                  color="violet"
+                  onClick={openSearchRights}
+                  size="sm"
+                >
+                  Найти права
+                </Button>
+                <SearchRightsCatalogModal
+                  opened={searchRightsOpen}
+                  onClose={closeSearchRights}
+                  group={group!}
+                  onApplied={() => {
+                    qc.invalidateQueries({ queryKey: ['bo-tasks'] });
+                    refresh();
+                    navigate('/backoffice/tasks');
+                  }}
+                  searchRights={(p) => boSearchRights(tid, p)}
+                  copyRights={async (rightsId) => {
+                    await boCopyRights(tid, rightsId);
+                  }}
+                />
+              </>
+            )}
           </>
         )}
-        <ReturnButton taskId={tid} onDone={() => navigate('/backoffice/tasks')} />
-        <DeleteButton taskId={tid} onDone={() => navigate('/backoffice/tasks')} />
+        {permReturn && <ReturnButton taskId={tid} onDone={() => navigate('/backoffice/tasks')} />}
+        {permDelete && <DeleteButton taskId={tid} onDone={() => navigate('/backoffice/tasks')} />}
       </Group>
 
       {/* Tabs */}
@@ -141,7 +156,7 @@ export function BackOfficeTaskDetailPage() {
         </Tabs.Panel>
 
         <Tabs.Panel value="metadata" pt="md">
-          <MetadataTab taskId={tid} groupId={groupId!} group={group!} onSaved={refresh} readOnly={is320} />
+          <MetadataTab taskId={tid} groupId={groupId!} group={group!} onSaved={refresh} readOnly={is320 || !permLinkProduct} />
         </Tabs.Panel>
 
         {is320 && (

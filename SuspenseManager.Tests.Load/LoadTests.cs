@@ -17,7 +17,7 @@ namespace SuspenseManager.Tests.Load;
 ///   - POST /api/auth/login:       P99 &lt; 3000 мс, успех &gt; 95%
 ///   - Смешанная нагрузка:         успех &gt; 95%
 /// </summary>
-public class LoadTests : IAsyncLifetime
+public class NLoadTests : IAsyncLifetime
 {
     private LoadTestWebFactory _factory = null!;
     private HttpClient _client = null!;

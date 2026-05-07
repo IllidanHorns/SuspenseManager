@@ -20,6 +20,8 @@ import { PageSizeSelect } from '../components/common/PageSizeSelect';
 import { ResizableTh } from '../components/common/ResizableTh';
 import { CollapsibleFilters } from '../components/common/CollapsibleFilters';
 import { useDefaultPageSize } from '../hooks/useDefaultPageSize';
+import { usePermissions } from '../hooks/usePermissions';
+import { PermissionCodes } from '../utils/permissions';
 import { fmtDate } from '../utils/format';
 import {
   CATALOG_RIGHTS_MANDATORY_FIELDS_TEXT,
@@ -54,6 +56,8 @@ import type {
 // ── Products Tab ──────────────────────────────────────────────────────────────
 
 function ProductsTab() {
+  const { hasPermission } = usePermissions();
+  const canEdit = hasPermission(PermissionCodes.catalogProductsEdit);
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useDefaultPageSize();
@@ -265,14 +269,16 @@ function ProductsTab() {
                     </Button>
                   </Group>
                 </Group>
-                <Button
-                  leftSection={<IconPlus size={14} />}
-                  size="xs"
-                  style={{ flexShrink: 0 }}
-                  onClick={() => handleOpen()}
-                >
-                  Добавить продукт
-                </Button>
+                {canEdit && (
+                  <Button
+                    leftSection={<IconPlus size={14} />}
+                    size="xs"
+                    style={{ flexShrink: 0 }}
+                    onClick={() => handleOpen()}
+                  >
+                    Добавить продукт
+                  </Button>
+                )}
               </Group>
               <Text size="xs" c="dimmed">
                 Обязательные поля данных продукта: <Text span fw={600} c="dark">{CATALOG_PRODUCT_MANDATORY_FIELDS_TEXT}</Text>.
@@ -333,9 +339,11 @@ function ProductsTab() {
                           <IconAlertCircle size={18} />
                         </ActionIcon>
                       ) : null}
-                      <ActionIcon variant="subtle" size="sm" aria-label="Редактировать" onClick={() => handleOpen(p)}>
-                        <IconPencil size={14} />
-                      </ActionIcon>
+                      {canEdit && (
+                        <ActionIcon variant="subtle" size="sm" aria-label="Редактировать" onClick={() => handleOpen(p)}>
+                          <IconPencil size={14} />
+                        </ActionIcon>
+                      )}
                     </Group>
                   </Table.Td>
                 </Table.Tr>
@@ -440,6 +448,8 @@ function ProductsTab() {
 // ── Rights Tab ────────────────────────────────────────────────────────────────
 
 function RightsTab() {
+  const { hasPermission } = usePermissions();
+  const canEdit = hasPermission(PermissionCodes.catalogRightsEdit);
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useDefaultPageSize();
@@ -643,14 +653,16 @@ function RightsTab() {
                     </Button>
                   </Group>
                 </Group>
-                <Button
-                  leftSection={<IconPlus size={14} />}
-                  size="xs"
-                  style={{ flexShrink: 0 }}
-                  onClick={handleOpenCreate}
-                >
-                  Добавить права
-                </Button>
+                {canEdit && (
+                  <Button
+                    leftSection={<IconPlus size={14} />}
+                    size="xs"
+                    style={{ flexShrink: 0 }}
+                    onClick={handleOpenCreate}
+                  >
+                    Добавить права
+                  </Button>
+                )}
               </Group>
               <Text size="xs" c="dimmed">
                 Обязательные поля записи прав: <Text span fw={600} c="dark">{CATALOG_RIGHTS_MANDATORY_FIELDS_TEXT}</Text>.
@@ -713,9 +725,11 @@ function RightsTab() {
                           <IconAlertCircle size={18} />
                         </ActionIcon>
                       ) : null}
-                      <ActionIcon variant="subtle" size="sm" aria-label="Редактировать" onClick={() => handleOpenEdit(r)}>
-                        <IconPencil size={14} />
-                      </ActionIcon>
+                      {canEdit && (
+                        <ActionIcon variant="subtle" size="sm" aria-label="Редактировать" onClick={() => handleOpenEdit(r)}>
+                          <IconPencil size={14} />
+                        </ActionIcon>
+                      )}
                     </Group>
                   </Table.Td>
                 </Table.Tr>
@@ -854,6 +868,8 @@ function RightsTab() {
 // ── Territories Tab ───────────────────────────────────────────────────────────
 
 function TerritoriesTab() {
+  const { hasPermission } = usePermissions();
+  const canEdit = hasPermission(PermissionCodes.catalogTerritoriesEdit);
   const qc = useQueryClient();
   const [editItem, setEditItem] = useState<Territory | null>(null);
   const [opened, { open, close }] = useDisclosure(false);
@@ -923,9 +939,11 @@ function TerritoriesTab() {
       <Group justify="space-between" mb="sm" mt="sm" px="sm">
         <TextInput size="xs" placeholder="Поиск по коду или описанию..." style={{ width: 260 }}
           leftSection={<IconSearch size={12} />} value={search} onChange={(e) => handleSearch(e.target.value)} />
-        <Button leftSection={<IconPlus size={14} />} size="xs" onClick={() => handleOpen()}>
-          Добавить территорию
-        </Button>
+        {canEdit && (
+          <Button leftSection={<IconPlus size={14} />} size="xs" onClick={() => handleOpen()}>
+            Добавить территорию
+          </Button>
+        )}
       </Group>
 
       {isLoading ? (
@@ -955,9 +973,11 @@ function TerritoriesTab() {
                     <Table.Td><Badge variant="outline" size="sm">{t.territoryCode}</Badge></Table.Td>
                     <Table.Td><Text size="sm">{t.territoryName ?? '—'}</Text></Table.Td>
                     <Table.Td>
-                      <ActionIcon variant="subtle" size="sm" onClick={() => handleOpen(t)}>
-                        <IconPencil size={14} />
-                      </ActionIcon>
+                      {canEdit && (
+                        <ActionIcon variant="subtle" size="sm" onClick={() => handleOpen(t)}>
+                          <IconPencil size={14} />
+                        </ActionIcon>
+                      )}
                     </Table.Td>
                   </Table.Tr>
                 ))}
@@ -993,6 +1013,8 @@ function TerritoriesTab() {
 // ── Companies Tab ─────────────────────────────────────────────────────────────
 
 function CompaniesTab() {
+  const { hasPermission } = usePermissions();
+  const canEdit = hasPermission(PermissionCodes.catalogCompaniesEdit);
   const qc = useQueryClient();
   const [editItem, setEditItem] = useState<Company | null>(null);
   const [opened, { open, close }] = useDisclosure(false);
@@ -1090,9 +1112,11 @@ function CompaniesTab() {
       <Group justify="space-between" mb="sm" mt="sm" px="sm">
         <TextInput size="xs" placeholder="Поиск по наименованию или коду..." style={{ width: 280 }}
           leftSection={<IconSearch size={12} />} value={search} onChange={(e) => handleSearch(e.target.value)} />
-        <Button leftSection={<IconPlus size={14} />} size="xs" onClick={() => handleOpen()}>
-          Добавить компанию
-        </Button>
+        {canEdit && (
+          <Button leftSection={<IconPlus size={14} />} size="xs" onClick={() => handleOpen()}>
+            Добавить компанию
+          </Button>
+        )}
       </Group>
 
       {isLoading ? (
@@ -1124,9 +1148,11 @@ function CompaniesTab() {
                     <Table.Td><Text size="sm" fw={500}>{c.shortName}</Text></Table.Td>
                     <Table.Td><Text size="sm" c="dimmed">{c.companyCode ?? '—'}</Text></Table.Td>
                     <Table.Td>
-                      <ActionIcon variant="subtle" size="sm" onClick={() => handleOpen(c)}>
-                        <IconPencil size={14} />
-                      </ActionIcon>
+                      {canEdit && (
+                        <ActionIcon variant="subtle" size="sm" onClick={() => handleOpen(c)}>
+                          <IconPencil size={14} />
+                        </ActionIcon>
+                      )}
                     </Table.Td>
                   </Table.Tr>
                 ))}

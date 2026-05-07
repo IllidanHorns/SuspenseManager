@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SuspenseManager.Tests.Unit")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8fc5b797d9be4b7ba5b2d0f9ee32005aaa675bf9")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e33144a8b9e178e112dbfdd0b07c2fdb5ec43c95")]
 [assembly: System.Reflection.AssemblyProductAttribute("SuspenseManager.Tests.Unit")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SuspenseManager.Tests.Unit")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

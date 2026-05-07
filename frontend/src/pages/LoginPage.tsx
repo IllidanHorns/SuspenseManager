@@ -10,7 +10,6 @@ import {
   Stack,
   Alert,
   Box,
-  useMantineColorScheme,
   ActionIcon,
   Tooltip,
 } from '@mantine/core';
@@ -19,13 +18,14 @@ import { IconAlertCircle, IconSun, IconMoon } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { combine, DbMax, maxLen, required } from '../utils/fieldValidation';
+import { useThemePreference } from '../theme/ThemePreferenceContext';
 
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const { resolvedColorScheme, setPreference } = useThemePreference();
 
   const form = useForm({
     initialValues: { login: '', password: '' },
@@ -51,9 +51,13 @@ export function LoginPage() {
   return (
     <Box style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Box p="md" style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <Tooltip label={colorScheme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}>
-          <ActionIcon variant="subtle" color="gray" onClick={toggleColorScheme}>
-            {colorScheme === 'dark' ? <IconSun size={18} /> : <IconMoon size={18} />}
+        <Tooltip label={resolvedColorScheme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}>
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            onClick={() => setPreference(resolvedColorScheme === 'dark' ? 'light' : 'dark')}
+          >
+            {resolvedColorScheme === 'dark' ? <IconSun size={18} /> : <IconMoon size={18} />}
           </ActionIcon>
         </Tooltip>
       </Box>

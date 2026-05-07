@@ -2,6 +2,7 @@ using Application.Interfaces;
 using Common.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SuspenseManager.Middleware;
 
 namespace SuspenseManager.Controllers;
 
@@ -20,6 +21,7 @@ public class UserController : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission(PermissionCodes.AdminUsersManage)]
     public async Task<IActionResult> GetAll([FromQuery] PagedRequest request, CancellationToken ct)
     {
         var result = await _userService.GetUsersAsync(request, ct);
@@ -27,6 +29,7 @@ public class UserController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [RequirePermission(PermissionCodes.AdminUsersManage)]
     public async Task<IActionResult> GetById(int id, CancellationToken ct)
     {
         var user = await _userService.GetByIdAsync(id, ct);
@@ -39,6 +42,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission(PermissionCodes.AdminUsersManage)]
     public async Task<IActionResult> Create([FromBody] CreateUserDto dto, CancellationToken ct)
     {
         var user = await _userService.CreateAsync(dto, ct);
@@ -47,6 +51,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [RequirePermission(PermissionCodes.AdminUsersManage)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateUserDto dto, CancellationToken ct)
     {
         var user = await _userService.UpdateAsync(id, dto, ct);
@@ -55,6 +60,7 @@ public class UserController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [RequirePermission(PermissionCodes.AdminUsersManage)]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         await _userService.DeleteAsync(id, ct);

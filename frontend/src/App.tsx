@@ -13,14 +13,34 @@ import { BackOfficeTasksPage } from './pages/BackOfficeTasksPage';
 import { BackOfficeTaskDetailPage } from './pages/BackOfficeTaskDetailPage';
 import { CatalogPage } from './pages/CatalogPage';
 import { AdminPage } from './pages/AdminPage';
+import { MonitorPage } from './pages/MonitorPage';
 import { KnowledgeBasePage } from './pages/KnowledgeBasePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { useAuth } from './hooks/useAuth';
 import { hasAdminAccess } from './utils/adminAccess';
+import {
+  canAccessUpload,
+  canAccessGrouping,
+  canAccessSavedGroups,
+  canAccessGroupDetail,
+  canAccessPostponed,
+  canAccessSuspenses,
+  canAccessAudit,
+  canAccessBackoffice,
+  canAccessCatalog,
+  canAccessMonitor,
+} from './utils/permissions';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isLoggedIn } = useAuth();
   return isLoggedIn ? <>{children}</> : <Navigate to="/login" replace />;
+}
+
+function PermissionRoute({ children, check }: { children: React.ReactNode; check: (p: string[]) => boolean }) {
+  const { isLoggedIn, permissions } = useAuth();
+  if (!isLoggedIn) return <Navigate to="/login" replace />;
+  if (!check(permissions)) return <Navigate to="/" replace />;
+  return <>{children}</>;
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
@@ -42,16 +62,17 @@ export function App() {
         }
       >
         <Route index element={<DashboardPage />} />
-        <Route path="upload" element={<UploadPage />} />
-        <Route path="grouping" element={<GroupingPage />} />
-        <Route path="groups" element={<SavedGroupsPage />} />
-        <Route path="groups/:id" element={<GroupDetailPage />} />
-        <Route path="postponed" element={<PostponedPage />} />
-        <Route path="suspenses" element={<SuspensesPage />} />
-        <Route path="audit" element={<AuditPage />} />
-        <Route path="backoffice/tasks" element={<BackOfficeTasksPage />} />
-        <Route path="backoffice/tasks/:taskId" element={<BackOfficeTaskDetailPage />} />
-        <Route path="catalog" element={<CatalogPage />} />
+        <Route path="upload" element={<PermissionRoute check={canAccessUpload}><UploadPage /></PermissionRoute>} />
+        <Route path="grouping" element={<PermissionRoute check={canAccessGrouping}><GroupingPage /></PermissionRoute>} />
+        <Route path="groups" element={<PermissionRoute check={canAccessSavedGroups}><SavedGroupsPage /></PermissionRoute>} />
+        <Route path="groups/:id" element={<PermissionRoute check={canAccessGroupDetail}><GroupDetailPage /></PermissionRoute>} />
+        <Route path="postponed" element={<PermissionRoute check={canAccessPostponed}><PostponedPage /></PermissionRoute>} />
+        <Route path="suspenses" element={<PermissionRoute check={canAccessSuspenses}><SuspensesPage /></PermissionRoute>} />
+        <Route path="audit" element={<PermissionRoute check={canAccessAudit}><AuditPage /></PermissionRoute>} />
+        <Route path="backoffice/tasks" element={<PermissionRoute check={canAccessBackoffice}><BackOfficeTasksPage /></PermissionRoute>} />
+        <Route path="backoffice/tasks/:taskId" element={<PermissionRoute check={canAccessBackoffice}><BackOfficeTaskDetailPage /></PermissionRoute>} />
+        <Route path="catalog" element={<PermissionRoute check={canAccessCatalog}><CatalogPage /></PermissionRoute>} />
+        <Route path="monitor" element={<PermissionRoute check={canAccessMonitor}><MonitorPage /></PermissionRoute>} />
         <Route path="knowledge" element={<KnowledgeBasePage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route

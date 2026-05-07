@@ -1,3 +1,4 @@
+using Common.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
@@ -5,16 +6,17 @@ namespace SuspenseManager.Middleware;
 
 /// <summary>
 /// Атрибут для проверки наличия права доступа у текущего пользователя.
-/// Используется на контроллерах и действиях: [RequirePermission("groups.no_product.catalog_fast")]
+/// При нескольких правах — доступ открыт, если есть ХОТЯ БЫ ОДНО из перечисленных.
+/// Использование: [RequirePermission("groups.no_product.postpone", "groups.no_rights.postpone")]
 /// </summary>
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = true)]
 public class RequirePermissionAttribute : Attribute, IAuthorizationFilter
 {
-    private readonly string _permission;
+    private readonly string[] _permissions;
 
-    public RequirePermissionAttribute(string permission)
+    public RequirePermissionAttribute(params string[] permissions)
     {
-        _permission = permission;
+        _permissions = permissions;
     }
 
     public void OnAuthorization(AuthorizationFilterContext context)
@@ -23,18 +25,23 @@ public class RequirePermissionAttribute : Attribute, IAuthorizationFilter
 
         if (!user.Identity?.IsAuthenticated ?? true)
         {
-            context.Result = new UnauthorizedResult();
+            context.Result = new UnauthorizedObjectResult(
+                ApiResponse<object>.Fail(401, "Требуется авторизация", "UNAUTHORIZED"));
             return;
         }
 
-        var permissions = user.Claims
+        var userPermissions = user.Claims
             .Where(c => c.Type == "permission")
             .Select(c => c.Value)
-            .ToList();
+            .ToHashSet();
 
-        if (!permissions.Contains(_permission))
+        if (!_permissions.Any(p => userPermissions.Contains(p)))
         {
-            context.Result = new ForbidResult();
+            context.Result = new ObjectResult(
+                ApiResponse<object>.Fail(403, "Недостаточно прав для выполнения этого действия", "FORBIDDEN"))
+            {
+                StatusCode = 403
+            };
         }
     }
 }

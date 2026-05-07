@@ -1,7 +1,9 @@
 using Application.Interfaces;
 using Common.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Models;
+using SuspenseManager.Middleware;
 
 namespace SuspenseManager.Controllers;
 
@@ -11,6 +13,7 @@ namespace SuspenseManager.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/catalog")]
+[Authorize]
 public class CatalogController : ControllerBase
 {
     private readonly ICatalogService _catalogService;
@@ -26,6 +29,7 @@ public class CatalogController : ControllerBase
 
     /// <summary>Справочник типов продуктов (CD, VINYL, DIGI, CASS). Используется для выпадающего списка.</summary>
     [HttpGet("product-types")]
+    [RequirePermission(PermissionCodes.CatalogView)]
     public async Task<IActionResult> GetProductTypes(CancellationToken ct)
     {
         var types = await _catalogService.GetProductTypesAsync(ct);
@@ -36,6 +40,7 @@ public class CatalogController : ControllerBase
 
     /// <summary>Список продуктов каталога с пагинацией. Фильтр <c>Filters[IdentityIncomplete]=true</c> — только продукты без полного набора полей (название, исполнитель, ISRC, баркод, каталожный номер).</summary>
     [HttpGet("products")]
+    [RequirePermission(PermissionCodes.CatalogView)]
     public async Task<IActionResult> GetProducts([FromQuery] PagedRequest request, CancellationToken ct)
     {
         var result = await _catalogService.GetProductsAsync(request, ct);
@@ -44,6 +49,7 @@ public class CatalogController : ControllerBase
 
     /// <summary>Продукт по ID со всеми правами.</summary>
     [HttpGet("products/{id:int}")]
+    [RequirePermission(PermissionCodes.CatalogView)]
     public async Task<IActionResult> GetProduct(int id, CancellationToken ct)
     {
         var product = await _catalogService.GetProductByIdAsync(id, ct);
@@ -52,6 +58,7 @@ public class CatalogController : ControllerBase
 
     /// <summary>Создать новый продукт каталога.</summary>
     [HttpPost("products")]
+    [RequirePermission(PermissionCodes.CatalogProductsEdit)]
     public async Task<IActionResult> CreateProduct([FromBody] CreateCatalogProductDto dto, CancellationToken ct)
     {
         var product = await _catalogService.CreateProductAsync(dto, ct);
@@ -61,6 +68,7 @@ public class CatalogController : ControllerBase
 
     /// <summary>Обновить продукт каталога (частичное обновление — передаются только изменяемые поля).</summary>
     [HttpPut("products/{id:int}")]
+    [RequirePermission(PermissionCodes.CatalogProductsEdit)]
     public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateCatalogProductDto dto, CancellationToken ct)
     {
         var product = await _catalogService.UpdateProductAsync(id, dto, ct);
@@ -72,6 +80,7 @@ public class CatalogController : ControllerBase
 
     /// <summary>Список прав. Опциональный фильтр productId — права конкретного продукта. Фильтр <c>Filters[RightsIncomplete]=true</c> — только записи с незаполненными обязательными полями.</summary>
     [HttpGet("rights")]
+    [RequirePermission(PermissionCodes.CatalogView)]
     public async Task<IActionResult> GetRights(
         [FromQuery] PagedRequest request,
         [FromQuery] int? productId,
@@ -83,6 +92,7 @@ public class CatalogController : ControllerBase
 
     /// <summary>Добавить права на продукт каталога.</summary>
     [HttpPost("rights")]
+    [RequirePermission(PermissionCodes.CatalogRightsEdit)]
     public async Task<IActionResult> CreateRights([FromBody] CreateCatalogProductRightsDto dto, CancellationToken ct)
     {
         var rights = await _catalogService.CreateRightsAsync(dto, ct);
@@ -92,6 +102,7 @@ public class CatalogController : ControllerBase
 
     /// <summary>Обновить запись прав (частичное обновление).</summary>
     [HttpPut("rights/{id:int}")]
+    [RequirePermission(PermissionCodes.CatalogRightsEdit)]
     public async Task<IActionResult> UpdateRights(int id, [FromBody] UpdateCatalogProductRightsDto dto, CancellationToken ct)
     {
         var rights = await _catalogService.UpdateRightsAsync(id, dto, ct);

@@ -241,33 +241,17 @@ public class ValidationService : IValidationService
         // Совпадение территории
         query = query.Where(r => r.TerritoryCode == dto.TerritoryCode);
 
-        // Совпадение компании-отправителя
+        // Совпадение компании-отправителя (если указана)
         if (dto.SenderCompanyId.HasValue)
-        {
             query = query.Where(r => r.CompanySenderId == dto.SenderCompanyId.Value);
-        }
         else if (!string.IsNullOrWhiteSpace(dto.SenderCompany))
-        {
             query = query.Where(r => r.CompanySender == dto.SenderCompany);
-        }
-        else
-        {
-            return false;
-        }
 
-        // Совпадение компании-получателя
+        // Совпадение компании-получателя (если указана)
         if (dto.RecipientCompanyId.HasValue)
-        {
             query = query.Where(r => r.CompanyReceiverId == dto.RecipientCompanyId.Value);
-        }
         else if (!string.IsNullOrWhiteSpace(dto.RecipientCompany))
-        {
             query = query.Where(r => r.CompanyReceiver == dto.RecipientCompany);
-        }
-        else
-        {
-            return false;
-        }
 
         return await query.AnyAsync();
     }

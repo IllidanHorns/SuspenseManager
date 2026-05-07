@@ -1,6 +1,9 @@
+using System.Security.Claims;
 using Application.Interfaces;
 using Common.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SuspenseManager.Middleware;
 
 namespace SuspenseManager.Controllers;
 
@@ -11,6 +14,7 @@ namespace SuspenseManager.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 [Produces("application/json")]
 public class GroupingController : ControllerBase
 {
@@ -49,6 +53,7 @@ public class GroupingController : ControllerBase
     /// <response code="200">Группировка выполнена успешно</response>
     /// <response code="400">Невалидный запрос (неверный статус, столбец, отсутствует ProductId для статуса 1)</response>
     [HttpGet("preview")]
+    [RequirePermission(PermissionCodes.GroupingView)]
     [ProducesResponseType(typeof(ApiResponse<PagedResponse<GroupingPreviewItem>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Preview([FromQuery] GroupingPreviewRequest request, CancellationToken ct)
@@ -73,37 +78,10 @@ public class GroupingController : ControllerBase
     }
 
     /// <summary>
-    /// Фиксация (сохранение) динамической группы.
-    /// </summary>
-    /// <remarks>
-    /// Находит все суспенсы, соответствующие критериям группировки (те же столбцы и значения),
-    /// и создаёт из них постоянную группу (SuspenseGroup).
-    ///
-    /// **Что происходит при фиксации:**
-    /// - Создаётся SuspenseGroup со статусом 15 (нет продукта) или 16 (нет прав)
-    /// - Все подходящие SuspenseLine обновляются: GroupId, BusinessStatus (0→15 или 1→16)
-    /// - Для каждой строки создаётся SuspenseGroupLink (аудит)
-    /// - Для статуса 1: CatalogProductId из строк переносится на группу
-    ///
-    /// **Пример запроса:**
-    /// ```json
-    /// {
-    ///   "businessStatus": 0,
-    ///   "groupByColumns": ["Isrc", "Artist"],
-    ///   "keyValues": { "Isrc": "RU1234567890", "Artist": "Артист" },
-    ///   "accountId": 1
-    /// }
-    /// ```
-    /// </remarks>
-    /// <param name="request">Критерии группировки и значения ключей для фиксации</param>
-    /// <param name="ct">Токен отмены</param>
-    /// <returns>Информация о созданной группе</returns>
-    /// <response code="200">Группа успешно зафиксирована</response>
-    /// <response code="400">Невалидный запрос или не найдено суспенсов</response>
-    /// <summary>
     /// Предпросмотр строк суспенса внутри потенциальной группы (без фиксации).
     /// </summary>
     [HttpPost("preview-lines")]
+    [RequirePermission(PermissionCodes.GroupingView)]
     public async Task<IActionResult> PreviewLines([FromBody] GroupLinesPreviewRequest request, CancellationToken ct)
     {
         var result = await _groupingService.PreviewLinesAsync(request, ct);
@@ -111,6 +89,7 @@ public class GroupingController : ControllerBase
     }
 
     [HttpPost("export-lines")]
+    [RequirePermission(PermissionCodes.GroupsExport)]
     public async Task<IActionResult> ExportLines([FromBody] GroupLinesPreviewRequest request, CancellationToken ct)
     {
         var bytes = await _groupingService.ExportPreviewLinesAsync(request, ct);
@@ -120,10 +99,15 @@ public class GroupingController : ControllerBase
     }
 
     [HttpPost("commit")]
+    [RequirePermission(PermissionCodes.GroupingCreate)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Commit([FromBody] GroupingCommitRequest request, CancellationToken ct)
     {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("account_id");
+        if (int.TryParse(value, out var accountId))
+            request.AccountId = accountId;
+
         var group = await _groupingService.CommitAsync(request, ct);
         return Ok(ApiResponse<object>.Success(new
         {

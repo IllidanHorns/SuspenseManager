@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Common.DTOs;
 using Common.Exceptions;
+using Microsoft.EntityFrameworkCore;
 
 namespace SuspenseManager.Middleware;
 
@@ -40,6 +41,7 @@ public class ExceptionHandlingMiddleware
             KeyNotFoundException => (404, "NOT_FOUND", "Запрашиваемый ресурс не найден"),
             UnauthorizedAccessException => (401, "UNAUTHORIZED", "Требуется авторизация"),
             OperationCanceledException => (499, "REQUEST_CANCELLED", "Запрос отменён клиентом"),
+            DbUpdateException => (409, "DB_CONFLICT", "Конфликт данных: запись с такими параметрами уже существует или нарушено ограничение целостности"),
             _ => (500, "INTERNAL_ERROR", "Произошла внутренняя ошибка сервера")
         };
 

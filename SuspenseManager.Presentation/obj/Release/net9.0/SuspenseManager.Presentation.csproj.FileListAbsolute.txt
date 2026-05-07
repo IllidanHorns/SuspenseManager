@@ -70,14 +70,12 @@ C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\bi
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\bin\Release\net9.0\System.Composition.TypedParts.dll
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\bin\Release\net9.0\System.Configuration.ConfigurationManager.dll
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\bin\Release\net9.0\System.Drawing.Common.dll
-C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\bin\Release\net9.0\System.Formats.Asn1.dll
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\bin\Release\net9.0\System.IdentityModel.Tokens.Jwt.dll
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\bin\Release\net9.0\System.IO.Packaging.dll
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\bin\Release\net9.0\System.Memory.Data.dll
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\bin\Release\net9.0\System.Runtime.Caching.dll
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\bin\Release\net9.0\System.Security.Cryptography.ProtectedData.dll
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\bin\Release\net9.0\System.Security.Permissions.dll
-C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\bin\Release\net9.0\System.Text.Json.dll
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\bin\Release\net9.0\System.Windows.Extensions.dll
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\bin\Release\net9.0\cs\Microsoft.CodeAnalysis.resources.dll
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\bin\Release\net9.0\de\Microsoft.CodeAnalysis.resources.dll
@@ -188,3 +186,6 @@ C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\ob
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\obj\Release\net9.0\SuspenseManager.Presentation.pdb
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\obj\Release\net9.0\SuspenseManager.Presentation.genruntimeconfig.cache
 C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\obj\Release\net9.0\ref\SuspenseManager.Presentation.dll
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\bin\Release\net9.0\appsettings.Production.json
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\obj\Release\net9.0\SuspenseManager.Presentation.sourcelink.json
+C:\Users\apakhtusov\source\repos\SuspenseManager\SuspenseManager.Presentation\obj\Release\net9.0\swae.build.ex.cache

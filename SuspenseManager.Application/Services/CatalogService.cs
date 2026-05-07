@@ -87,6 +87,18 @@ public class CatalogService : ICatalogService
 
     public async Task<CatalogProduct> CreateProductAsync(CreateCatalogProductDto dto, CancellationToken ct = default)
     {
+        if (!string.IsNullOrWhiteSpace(dto.Isrc) &&
+            await _db.CatalogProducts.AnyAsync(p => p.Isrc == dto.Isrc && p.ArchiveLevel == 0, ct))
+            throw new BusinessException($"Продукт с ISRC «{dto.Isrc}» уже существует в каталоге", "PRODUCT_ISRC_EXISTS", 409);
+
+        if (!string.IsNullOrWhiteSpace(dto.Barcode) &&
+            await _db.CatalogProducts.AnyAsync(p => p.Barcode == dto.Barcode && p.ArchiveLevel == 0, ct))
+            throw new BusinessException($"Продукт с баркодом «{dto.Barcode}» уже существует в каталоге", "PRODUCT_BARCODE_EXISTS", 409);
+
+        if (!string.IsNullOrWhiteSpace(dto.CatalogNumber) &&
+            await _db.CatalogProducts.AnyAsync(p => p.CatalogNumber == dto.CatalogNumber && p.ArchiveLevel == 0, ct))
+            throw new BusinessException($"Продукт с каталожным номером «{dto.CatalogNumber}» уже существует в каталоге", "PRODUCT_CATALOG_NUMBER_EXISTS", 409);
+
         int productTypeId = dto.ProductTypeId ?? await GetDefaultProductTypeIdAsync(dto.ProductFormatCode, ct);
 
         var product = new CatalogProduct
@@ -117,6 +129,18 @@ public class CatalogService : ICatalogService
         var product = await _db.CatalogProducts
             .FirstOrDefaultAsync(p => p.Id == id && p.ArchiveLevel == 0, ct)
             ?? throw new KeyNotFoundException($"Продукт #{id} не найден");
+
+        if (dto.Isrc != null && !string.IsNullOrWhiteSpace(dto.Isrc) &&
+            await _db.CatalogProducts.AnyAsync(p => p.Isrc == dto.Isrc && p.Id != id && p.ArchiveLevel == 0, ct))
+            throw new BusinessException($"Продукт с ISRC «{dto.Isrc}» уже существует в каталоге", "PRODUCT_ISRC_EXISTS", 409);
+
+        if (dto.Barcode != null && !string.IsNullOrWhiteSpace(dto.Barcode) &&
+            await _db.CatalogProducts.AnyAsync(p => p.Barcode == dto.Barcode && p.Id != id && p.ArchiveLevel == 0, ct))
+            throw new BusinessException($"Продукт с баркодом «{dto.Barcode}» уже существует в каталоге", "PRODUCT_BARCODE_EXISTS", 409);
+
+        if (dto.CatalogNumber != null && !string.IsNullOrWhiteSpace(dto.CatalogNumber) &&
+            await _db.CatalogProducts.AnyAsync(p => p.CatalogNumber == dto.CatalogNumber && p.Id != id && p.ArchiveLevel == 0, ct))
+            throw new BusinessException($"Продукт с каталожным номером «{dto.CatalogNumber}» уже существует в каталоге", "PRODUCT_CATALOG_NUMBER_EXISTS", 409);
 
         if (dto.ProductName    != null) product.ProductName    = dto.ProductName;
         if (dto.Artist         != null) product.Artist         = dto.Artist;
@@ -206,6 +230,17 @@ public class CatalogService : ICatalogService
 
         CatalogProductRightsIdentity.EnsureCompleteForCreate(dto, territory);
 
+        var duplicate = await _db.CatalogProductRights.AnyAsync(r =>
+            r.CatalogProductId == dto.CatalogProductId &&
+            r.CompanySenderId  == dto.CompanySenderId &&
+            r.TerritoryCode    == territory.TerritoryCode &&
+            r.DocNumber        == dto.DocNumber &&
+            r.ArchiveLevel     == 0, ct);
+        if (duplicate)
+            throw new BusinessException(
+                "Запись прав с такой комбинацией продукта, отправителя, территории и номера договора уже существует",
+                "RIGHTS_DUPLICATE", 409);
+
         var rights = new CatalogProductRights
         {
             CatalogProductId  = product.Id,
@@ -268,6 +303,18 @@ public class CatalogService : ICatalogService
         if (dto.Share     != null) rights.Share     = dto.Share.Value;
         if (dto.DocStart  != null) rights.DocStart  = dto.DocStart.Value;
         if (dto.DocEnd    != null) rights.DocEnd    = dto.DocEnd.Value;
+
+        var duplicate = await _db.CatalogProductRights.AnyAsync(r =>
+            r.CatalogProductId == rights.CatalogProductId &&
+            r.CompanySenderId  == rights.CompanySenderId &&
+            r.TerritoryCode    == rights.TerritoryCode &&
+            r.DocNumber        == rights.DocNumber &&
+            r.Id               != id &&
+            r.ArchiveLevel     == 0, ct);
+        if (duplicate)
+            throw new BusinessException(
+                "Запись прав с такой комбинацией продукта, отправителя, территории и номера договора уже существует",
+                "RIGHTS_DUPLICATE", 409);
 
         CatalogProductRightsIdentity.EnsureCompleteRightsRecordOrThrow(rights);
 

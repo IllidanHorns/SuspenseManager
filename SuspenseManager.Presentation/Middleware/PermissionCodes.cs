@@ -52,6 +52,8 @@ public static class PermissionCodes
 
     public const string GroupsExport = "groups.export";
 
+    public const string MonitorView = "monitor.view";
+
     public const string AdminUsersManage = "admin.users.manage";
     public const string AdminPermissionsManage = "admin.permissions.manage";
 }
