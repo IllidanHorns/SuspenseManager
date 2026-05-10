@@ -47,7 +47,10 @@ bld/
 CLAUDE.md
 docs/
 *.xsd
+*.xslt
+*.cd
 Руководство_пользователя.txt
+TestData/suspense_report_1000.xlsx
 
 ## OS
 .DS_Store
