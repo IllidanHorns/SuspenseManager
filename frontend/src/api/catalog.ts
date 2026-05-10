@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPut } from './client';
+﻿import { apiGet, apiPost, apiPut } from './client';
 import type {
   CatalogProduct,
   CatalogProductType,
@@ -17,14 +17,14 @@ import type {
   UpdateTerritoryDto,
 } from '../types';
 
-// ── Типы продуктов ────────────────────────────────────────────────────────────
+// Типы продуктов
 
 export async function getCatalogProductTypes(): Promise<CatalogProductType[]> {
   const res = await apiGet<CatalogProductType[]>('/catalog/product-types');
   return res;
 }
 
-// ── Продукты ──────────────────────────────────────────────────────────────────
+// Продукты
 
 export async function getCatalogProducts(params: PagedRequest): Promise<PagedResponse<CatalogProduct>> {
   return apiGet<PagedResponse<CatalogProduct>>('/catalog/products', params as Record<string, unknown>);
@@ -42,7 +42,7 @@ export async function updateCatalogProduct(id: number, dto: UpdateCatalogProduct
   return apiPut<CatalogProduct>(`/catalog/products/${id}`, dto);
 }
 
-// ── Права на продукт ──────────────────────────────────────────────────────────
+// Права на продукт
 
 export async function getCatalogRights(params: PagedRequest & { productId?: number; Filters?: Record<string, string> }): Promise<PagedResponse<CatalogProductRights>> {
   return apiGet<PagedResponse<CatalogProductRights>>('/catalog/rights', params as Record<string, unknown>);
@@ -56,7 +56,7 @@ export async function updateCatalogRights(id: number, dto: UpdateCatalogProductR
   return apiPut<CatalogProductRights>(`/catalog/rights/${id}`, dto);
 }
 
-// ── Компании ──────────────────────────────────────────────────────────────────
+// Компании
 
 export async function getCatalogCompanies(params?: { pageSize?: number }): Promise<PagedResponse<Company>> {
   return apiGet<PagedResponse<Company>>('/company', { pageSize: 200, ...params } as Record<string, unknown>);
@@ -70,7 +70,7 @@ export async function updateCompany(id: number, dto: UpdateCompanyDto): Promise<
   return apiPut<Company>(`/company/${id}`, dto);
 }
 
-// ── Территории ────────────────────────────────────────────────────────────────
+// Территории
 
 export async function getCatalogTerritories(): Promise<PagedResponse<Territory>> {
   return apiGet<PagedResponse<Territory>>('/territory', { pageSize: 500 } as Record<string, unknown>);

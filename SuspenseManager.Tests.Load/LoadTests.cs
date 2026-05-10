@@ -5,18 +5,8 @@ using SuspenseManager.Tests.Load.Fixtures;
 
 namespace SuspenseManager.Tests.Load;
 
-/// <summary>
-/// Нагрузочные тесты SuspenseManager API.
-///
-/// Используют NBomber для имитации параллельных пользователей.
-/// Тесты запускаются против InMemory-сервера (WebApplicationFactory),
-/// поэтому измеряют задержку приложения без задержки сети и базы данных.
-///
-/// Цели производительности (SLA):
-///   - GET /api/group/no-product:  P99 &lt; 500 мс,  успех &gt; 99%
-///   - POST /api/auth/login:       P99 &lt; 3000 мс, успех &gt; 95%
-///   - Смешанная нагрузка:         успех &gt; 95%
-/// </summary>
+// InMemory-сервер — тесты меряют приложение, а не сеть/БД.
+// Пороги: no-product P99<500ms >99%, login P99<3s >95%, mixed >95%
 public class NLoadTests : IAsyncLifetime
 {
     private LoadTestWebFactory _factory = null!;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import {
   Stack,
   Title,
@@ -228,7 +228,7 @@ function GroupTable({
   );
 }
 
-// ─── Pending filter state ────────────────────────────────────────────────────
+// Pending filter state
 
 interface FilterState {
   artist: string;
@@ -267,7 +267,7 @@ function hasActiveFilters(f: FilterState) {
   return Object.values(f).some((v) => v !== '' && v !== null && v !== undefined);
 }
 
-// ─── TabContent ──────────────────────────────────────────────────────────────
+// TabContent
 
 function TabContent({ type }: { type: 'no-product' | 'no-rights' }) {
   const { hasPermission } = usePermissions();

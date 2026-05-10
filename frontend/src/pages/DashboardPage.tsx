@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { DatePickerInput } from '@mantine/dates';
 import {
@@ -39,7 +39,7 @@ import { notifications } from '@mantine/notifications';
 import { apiGet } from '../api/client';
 import { STATUS_LABELS, STATUS_COLORS } from '../types';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// Types
 
 type DRange = [Date | null, Date | null];
 
@@ -68,7 +68,7 @@ interface DashboardDto {
   topCompanies: CompanyStatDto[];
 }
 
-// ─── Query helpers ────────────────────────────────────────────────────────────
+// Query helpers
 
 function toParams(dates: DRange): Record<string, unknown> {
   const p: Record<string, unknown> = {};
@@ -104,7 +104,7 @@ function truncate(s: string, n: number): string {
   return s.length > n ? s.slice(0, n) + '…' : s;
 }
 
-// ─── Small components ─────────────────────────────────────────────────────────
+// Small components
 
 function ChartDateFilter({ value, onChange }: { value: DRange; onChange: (v: DRange) => void }) {
   const hasValue = value[0] !== null || value[1] !== null;
@@ -163,7 +163,7 @@ function StatCard({ label, value, icon: Icon, color, onClick }: {
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// Page
 
 export function DashboardPage() {
   const navigate = useNavigate();

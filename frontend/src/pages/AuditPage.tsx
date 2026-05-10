@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import {
   Stack,
   Title,
@@ -53,7 +53,7 @@ import type { AuditGroupDto, AuditLineDto, AuditLogEntryDto, BusinessStatus } fr
 import { UserProfileModal } from '../components/common/UserProfileModal';
 import { useDefaultPageSize } from '../hooks/useDefaultPageSize';
 
-// ── Status transition arrow ───────────────────────────────────────────────────
+// Status transition arrow
 
 function StatusArrow({ from, fromName, to, toName }: {
   from: number | null;
@@ -73,7 +73,7 @@ function StatusArrow({ from, fromName, to, toName }: {
   );
 }
 
-// ── Log history modal ─────────────────────────────────────────────────────────
+// Log history modal
 
 function LogHistoryModal({
   opened,
@@ -126,7 +126,7 @@ function LogHistoryModal({
   );
 }
 
-// ── Groups tab ────────────────────────────────────────────────────────────────
+// Groups tab
 
 const STATUS_OPTIONS = [
   { value: '', label: 'Все статусы' },
@@ -382,7 +382,7 @@ function GroupsTab() {
   );
 }
 
-// ── Lines tab ─────────────────────────────────────────────────────────────────
+// Lines tab
 
 function LinesTab() {
   const [page, setPage] = useState(1);
@@ -629,7 +629,7 @@ function LinesTab() {
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+// Page
 
 export function AuditPage() {
   const [searchParams, setSearchParams] = useSearchParams();

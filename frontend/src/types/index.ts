@@ -1,4 +1,4 @@
-// ─── API wrapper ────────────────────────────────────────────────────────────
+﻿// API wrapper
 
 export interface ApiResponse<T> {
   statusCode: number;
@@ -17,7 +17,7 @@ export interface PagedResponse<T> {
   totalPages: number;
 }
 
-// ─── Auth ────────────────────────────────────────────────────────────────────
+// Auth
 
 export interface LoginDto {
   login: string;
@@ -34,7 +34,7 @@ export interface TokenResponseDto {
   permissions: string[];
 }
 
-// ─── Enums ───────────────────────────────────────────────────────────────────
+// Enums
 
 export type BusinessStatus = 0 | 1 | 15 | 16 | 30 | 32 | 88 | 120 | 320;
 
@@ -62,7 +62,7 @@ export const STATUS_COLORS: Record<number, string> = {
   320: 'dark',
 };
 
-// ─── SuspenseLine ────────────────────────────────────────────────────────────
+// SuspenseLine
 
 export interface SuspenseLine {
   id: number;
@@ -94,7 +94,7 @@ export interface SuspenseLine {
   archiveLevel: number;
 }
 
-// ─── CatalogProductType ──────────────────────────────────────────────────────
+// CatalogProductType
 
 export interface CatalogProductType {
   id: number;
@@ -102,7 +102,7 @@ export interface CatalogProductType {
   description: string;
 }
 
-// ─── CatalogProduct ──────────────────────────────────────────────────────────
+// CatalogProduct
 
 export interface CatalogProduct {
   id: number;
@@ -119,7 +119,7 @@ export interface CatalogProduct {
   archiveLevel: number;
 }
 
-// ─── Groups ──────────────────────────────────────────────────────────────────
+// Groups
 
 export interface SuspenseGroup {
   id: number;
@@ -206,7 +206,7 @@ export interface UpdateGroupMetaRightsDto {
   share?: number | null;
 }
 
-// ─── CatalogProductRights ─────────────────────────────────────────────────────
+// CatalogProductRights
 
 export interface CatalogProductRights {
   id: number;
@@ -227,7 +227,7 @@ export interface CatalogProductRights {
   archiveLevel: number;
 }
 
-// ─── Grouping ────────────────────────────────────────────────────────────────
+// Grouping
 
 export interface GroupingPreviewItem {
   key: Record<string, string>;
@@ -262,7 +262,7 @@ export interface SuspenseLinePreviewDto {
   exchangeRate: number;
 }
 
-// ─── Upload ──────────────────────────────────────────────────────────────────
+// Upload
 
 export interface RowFormatError {
   rowNumber: number;
@@ -286,7 +286,7 @@ export interface ValidationLineResultDto {
   productId: number | null;
 }
 
-// ─── Reference data ──────────────────────────────────────────────────────────
+// Reference data
 
 export interface Company {
   id: number;
@@ -377,7 +377,7 @@ export interface Territory {
   territoryName: string | null;
 }
 
-// ─── Paging ──────────────────────────────────────────────────────────────────
+// Paging
 
 export interface PagedRequest {
   pageNumber?: number;
@@ -388,7 +388,7 @@ export interface PagedRequest {
   [key: string]: unknown;
 }
 
-// ─── Back Office ─────────────────────────────────────────────────────────────
+// Back Office
 
 export interface BackOfficeTaskDto {
   id: number;
@@ -419,7 +419,7 @@ export interface BackOfficeTask {
   archiveLevel: number;
 }
 
-// ─── Catalog create/update DTOs ──────────────────────────────────────────────
+// Catalog create/update DTOs
 
 export interface CreateCatalogProductDto {
   productName?: string | null;
@@ -484,7 +484,7 @@ export interface UpdateTerritoryDto {
   territoryName?: string | null;
 }
 
-// ─── Audit ───────────────────────────────────────────────────────────────────
+// Audit
 
 export interface AuditGroupDto {
   id: number;

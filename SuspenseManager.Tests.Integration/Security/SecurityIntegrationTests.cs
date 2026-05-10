@@ -8,11 +8,6 @@ using SuspenseManager.Tests.Integration.Fixtures;
 
 namespace SuspenseManager.Tests.Integration.Security;
 
-/// <summary>
-/// Тесты безопасности.
-/// Проверяют защиту от SQL-injection, некорректных JWT, перечисления ресурсов,
-/// небезопасных входных данных и нарушений авторизации.
-/// </summary>
 public class SecurityIntegrationTests : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly CustomWebApplicationFactory _factory;

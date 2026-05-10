@@ -40,9 +40,18 @@ bld/
 .idea/
 *.DotSettings.user
 
+## Claude Code
+.claude/settings.local.json
+
 ## OS
 .DS_Store
 Thumbs.db
+
+## Test results
+TestResults/
+*.trx
+*.coveragexml
+coverage/
 
 ## App secrets / config
 appsettings.*.json

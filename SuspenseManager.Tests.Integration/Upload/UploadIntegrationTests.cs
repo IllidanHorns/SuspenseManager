@@ -9,10 +9,6 @@ using SuspenseManager.Tests.Integration.Fixtures;
 
 namespace SuspenseManager.Tests.Integration.Upload;
 
-/// <summary>
-/// Интеграционные тесты UploadController.
-/// Проверяют загрузку Excel-отчётов: форматы, размер, поля, результаты валидации.
-/// </summary>
 public class UploadIntegrationTests : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly CustomWebApplicationFactory _factory;

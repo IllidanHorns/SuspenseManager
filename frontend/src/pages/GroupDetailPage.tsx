@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import {
   Stack,
   Title,
@@ -225,7 +225,7 @@ function buildGroupSuspenseApplied(
   return f;
 }
 
-// ─── Metadata Form ────────────────────────────────────────────────────────────
+// Metadata Form
 
 function MetadataTab({
   groupId,
@@ -392,7 +392,7 @@ function MetadataTab({
   );
 }
 
-// ─── Meta-Rights Form ─────────────────────────────────────────────────────────
+// Meta-Rights Form
 
 function MetaRightsTab({ groupId, metaRights, readOnly = false }: { groupId: number; metaRights: GroupMetaRights | null; readOnly?: boolean }) {
   const qc = useQueryClient();
@@ -599,7 +599,7 @@ function MetaRightsTab({ groupId, metaRights, readOnly = false }: { groupId: num
   );
 }
 
-// ─── Possible Products Modal ──────────────────────────────────────────────────
+// Possible Products Modal
 
 function PossibleProductsModal({
   opened,
@@ -745,7 +745,7 @@ function PossibleProductsModal({
   );
 }
 
-// ─── Suspenses Tab ────────────────────────────────────────────────────────────
+// Suspenses Tab
 
 function SuspensesTab({ groupId, businessStatus }: { groupId: number; businessStatus: number }) {
   /** Сохранённые группы «нет продукта» (15) — договор/валюта/курс к правам не относятся, не показываем. */
@@ -943,7 +943,7 @@ function SuspensesTab({ groupId, businessStatus }: { groupId: number; businessSt
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// Main Page
 
 export function GroupDetailPage() {
   const { id } = useParams<{ id: string }>();

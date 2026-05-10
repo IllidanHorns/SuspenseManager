@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import {
   Stack, Box, Title, Text, Paper, Group, Button, Badge, Tabs,
   Table, ScrollArea, Pagination, Modal, Textarea, TextInput,
@@ -169,7 +169,7 @@ export function BackOfficeTaskDetailPage() {
   );
 }
 
-// ── Suspenses tab ─────────────────────────────────────────────────────────────
+// Suspenses tab
 
 function SuspensesTab({ groupId }: { groupId: number }) {
   const [page, setPage] = useState(1);
@@ -224,7 +224,7 @@ function SuspensesTab({ groupId }: { groupId: number }) {
   );
 }
 
-// ── Metadata tab ──────────────────────────────────────────────────────────────
+// Metadata tab
 
 function MetadataTab({ taskId, groupId, group, onSaved, readOnly }: {
   taskId: number; groupId: number; group: any; onSaved: () => void; readOnly: boolean;
@@ -328,7 +328,7 @@ function MetadataTab({ taskId, groupId, group, onSaved, readOnly }: {
   );
 }
 
-// ── Meta-rights tab ───────────────────────────────────────────────────────────
+// Meta-rights tab
 
 function MetaRightsTab({ taskId, groupId, group, onSaved }: {
   taskId: number; groupId: number; group: any; onSaved: () => void;
@@ -448,7 +448,7 @@ function MetaRightsTab({ taskId, groupId, group, onSaved }: {
   );
 }
 
-// ── Action buttons ────────────────────────────────────────────────────────────
+// Action buttons
 
 function PossibleProductsButton({ taskId, groupId, onLinked }: {
   taskId: number; groupId: number; onLinked: () => void;

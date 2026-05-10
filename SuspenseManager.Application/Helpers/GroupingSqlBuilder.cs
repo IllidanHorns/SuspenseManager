@@ -49,17 +49,11 @@ public static class GroupingSqlBuilder
         ["TerritoryCode"] = "s.[TerritoryCode]",
     };
 
-    /// <summary>
-    /// Возвращает допустимые столбцы для данного статуса
-    /// </summary>
     public static IReadOnlyDictionary<string, string> GetAllowedColumns(int businessStatus)
     {
         return businessStatus == 0 ? NoProductColumns : NoRightsColumns;
     }
 
-    /// <summary>
-    /// Валидация запроса группировки
-    /// </summary>
     public static void ValidateRequest(int businessStatus, List<string> groupByColumns)
     {
         if (businessStatus is not (0 or 1))
@@ -93,9 +87,7 @@ public static class GroupingSqlBuilder
         }
     }
 
-    /// <summary>
-    /// Строит SQL для предпросмотра группировки (SELECT ... GROUP BY ... с пагинацией)
-    /// </summary>
+    // отдельный countSql нужен для пагинации — оборачивает группировку в подзапрос
     public static (string sql, string countSql, List<SqlParameter> parameters) BuildPreviewSql(
         int businessStatus,
         List<string> groupByColumns,
@@ -253,9 +245,6 @@ public static class GroupingSqlBuilder
         return (sql, countSql, parameters);
     }
 
-    /// <summary>
-    /// Строит WHERE-условия для поиска суспенсов конкретной группы (при коммите)
-    /// </summary>
     public static (string whereClause, List<SqlParameter> parameters) BuildCommitWhereClause(
         int businessStatus,
         List<string> groupByColumns,

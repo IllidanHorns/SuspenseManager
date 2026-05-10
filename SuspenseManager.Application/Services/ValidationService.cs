@@ -12,11 +12,6 @@ using Models.Enums;
 
 namespace Application.Services;
 
-/// <summary>
-/// Сервис валидации строк из отчётов стриминговых платформ.
-/// Проверяет наличие продукта в каталоге и прав на него.
-/// Все строки сохраняются в таблицу SuspenseLines с соответствующим статусом.
-/// </summary>
 public class ValidationService : IValidationService
 {
     private readonly SuspenseManagerDbContext _db;
@@ -94,14 +89,12 @@ public class ValidationService : IValidationService
     {
         var product = await FindProductAsync(dto);
 
-        // Шаг 2: Определение статуса
         int status;
         string cause;
         int? productId = null;
 
         if (product == null)
         {
-            // Продукт не найден в каталоге
             status = (int)BusinessStatus.NoProduct;
             cause = "Продукт не найден в каталоге";
         }
@@ -109,8 +102,7 @@ public class ValidationService : IValidationService
         {
             productId = product.Id;
 
-            // Шаг 3: Поиск прав для найденного продукта
-            // Все поля должны совпасть: номер договора + территория + компания-отправитель + компания-получатель
+            // все поля должны совпасть: договор + территория + отправитель + получатель
             var rightsFound = await FindRightsAsync(product.Id, dto);
 
             if (!rightsFound)
@@ -125,7 +117,7 @@ public class ValidationService : IValidationService
             }
         }
 
-        // Шаг 4: Создание записи SuspenseLine (всегда, независимо от статуса)
+        // сохраняем в любом случае — и ошибки, и успех попадают в SuspenseLines
         var suspenseLine = MapToEntity(dto, status, cause, productId);
         _db.SuspenseLines.Add(suspenseLine);
 
@@ -256,9 +248,6 @@ public class ValidationService : IValidationService
         return await query.AnyAsync();
     }
 
-    /// <summary>
-    /// Маппинг DTO → Entity
-    /// </summary>
     private static SuspenseLine MapToEntity(SuspenseLineDto dto, int status, string cause, int? productId)
     {
         return new SuspenseLine

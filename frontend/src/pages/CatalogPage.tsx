@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+﻿import { useState, useMemo } from 'react';
 import {
   Stack, Box, Title, Text, Tabs, Paper, Table, ScrollArea,
   Group, Button, Modal, TextInput, NumberInput, Select, ActionIcon,
@@ -53,7 +53,7 @@ import type {
   CreateTerritoryDto, UpdateTerritoryDto,
 } from '../types';
 
-// ── Products Tab ──────────────────────────────────────────────────────────────
+// Products Tab
 
 function ProductsTab() {
   const { hasPermission } = usePermissions();
@@ -445,7 +445,7 @@ function ProductsTab() {
   );
 }
 
-// ── Rights Tab ────────────────────────────────────────────────────────────────
+// Rights Tab
 
 function RightsTab() {
   const { hasPermission } = usePermissions();
@@ -865,7 +865,7 @@ function RightsTab() {
   );
 }
 
-// ── Territories Tab ───────────────────────────────────────────────────────────
+// Territories Tab
 
 function TerritoriesTab() {
   const { hasPermission } = usePermissions();
@@ -1010,7 +1010,7 @@ function TerritoriesTab() {
   );
 }
 
-// ── Companies Tab ─────────────────────────────────────────────────────────────
+// Companies Tab
 
 function CompaniesTab() {
   const { hasPermission } = usePermissions();
@@ -1226,7 +1226,7 @@ function CompaniesTab() {
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
+// Main Page
 
 export function CatalogPage() {
   return (

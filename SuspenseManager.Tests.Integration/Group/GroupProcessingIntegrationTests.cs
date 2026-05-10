@@ -10,10 +10,6 @@ using SuspenseManager.Tests.Integration.Fixtures;
 
 namespace SuspenseManager.Tests.Integration.Group;
 
-/// <summary>
-/// Интеграционные тесты GroupProcessingController.
-/// Проверяют HTTP-уровень операций над группами: postpone, ungroup, back-office, link-product.
-/// </summary>
 public class GroupProcessingIntegrationTests : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly CustomWebApplicationFactory _factory;

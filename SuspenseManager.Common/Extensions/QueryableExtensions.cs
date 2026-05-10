@@ -10,10 +10,6 @@ namespace Common.Extensions;
 /// </summary>
 public static class QueryableExtensions
 {
-    /// <summary>
-    /// Применяет пагинацию, сортировку и фильтрацию из PagedRequest.
-    /// Возвращает PagedResponse с данными.
-    /// </summary>
     public static async Task<PagedResponse<T>> ToPagedResponseAsync<T>(
         this IQueryable<T> query,
         PagedRequest request,
@@ -38,9 +34,6 @@ public static class QueryableExtensions
         };
     }
 
-    /// <summary>
-    /// Динамическая сортировка по имени свойства
-    /// </summary>
     public static IQueryable<T> ApplySorting<T>(
         this IQueryable<T> query,
         string? sortBy,
@@ -77,11 +70,7 @@ public static class QueryableExtensions
         return query.Provider.CreateQuery<T>(resultExpression);
     }
 
-    /// <summary>
-    /// Динамическая фильтрация по словарю фильтров.
-    /// Поддерживает суффиксы: _contains, _gt, _lt, _gte, _lte, _from, _to
-    /// Без суффикса — точное совпадение (для строк — contains по умолчанию)
-    /// </summary>
+    // суффиксы: _contains, _gt, _lt, _gte, _lte, _from, _to; без суффикса — contains для строк, eq для остальных
     public static IQueryable<T> ApplyFilters<T>(
         this IQueryable<T> query,
         Dictionary<string, string>? filters) where T : class
