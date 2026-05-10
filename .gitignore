@@ -43,6 +43,12 @@ bld/
 ## Claude Code
 .claude/settings.local.json
 
+## Docs / local dev artifacts
+CLAUDE.md
+docs/
+*.xsd
+Руководство_пользователя.txt
+
 ## OS
 .DS_Store
 Thumbs.db
