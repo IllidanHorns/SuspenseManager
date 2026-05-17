@@ -82,7 +82,7 @@ public class GroupController : ControllerBase
     /// Суспенсы конкретной группы с пагинацией
     /// </summary>
     [HttpGet("{id:int}/suspenses")]
-    [RequirePermission(PermissionCodes.GroupsNoProductView, PermissionCodes.GroupsNoRightsView)]
+    [RequirePermission(PermissionCodes.GroupsNoProductView, PermissionCodes.GroupsNoRightsView, PermissionCodes.BackofficeView)]
     public async Task<IActionResult> GetGroupSuspenses(int id, [FromQuery] PagedRequest request, CancellationToken ct)
     {
         var result = await _groupService.GetGroupSuspensesAsync(id, request, ct);

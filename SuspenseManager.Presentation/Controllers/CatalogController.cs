@@ -49,7 +49,9 @@ public class CatalogController : ControllerBase
 
     /// <summary>Продукт по ID со всеми правами.</summary>
     [HttpGet("products/{id:int}")]
-    [RequirePermission(PermissionCodes.CatalogView)]
+    [RequirePermission(PermissionCodes.CatalogView, PermissionCodes.UploadsView,
+        PermissionCodes.GroupsNoProductView, PermissionCodes.GroupsNoRightsView,
+        PermissionCodes.BackofficeView)]
     public async Task<IActionResult> GetProduct(int id, CancellationToken ct)
     {
         var product = await _catalogService.GetProductByIdAsync(id, ct);

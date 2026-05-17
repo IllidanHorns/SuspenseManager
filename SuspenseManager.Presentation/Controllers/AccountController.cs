@@ -37,7 +37,6 @@ public class AccountController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    [RequirePermission(PermissionCodes.AdminUsersManage)]
     public async Task<IActionResult> GetById(int id, CancellationToken ct)
     {
         var account = await _accountService.GetByIdAsync(id, ct);
